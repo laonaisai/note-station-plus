@@ -1,0 +1,50 @@
+{
+  "name": "note-station-plus",
+  "version": "0.1.0",
+  "description": "Cross-platform enhanced Synology Note Station desktop client with Markdown, multi-session tabs, and sync",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "synology",
+    "note-station",
+    "markdown",
+    "electron",
+    "vue"
+  ],
+  "author": "laonaisai",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.468.0",
+    "markdown-it": "^14.1.0",
+    "pinia": "^2.3.0",
+    "tailwind-merge": "^2.5.5",
+    "turndown": "^7.2.0",
+    "vditor": "^3.10.7",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.10.2",
+    "@types/turndown": "^5.0.6",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^2.1.8",
+    "vue-tsc": "^2.2.0"
+  }
+}
