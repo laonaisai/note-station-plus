@@ -56,6 +56,18 @@
             保存
           </button>
 
+          <!-- Export as Markdown Button -->
+          <button
+            @click="exportCurrentNote"
+            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            title="导出为 Markdown (.md) 文件"
+          >
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            导出 .md
+          </button>
+
           <!-- Sync to other servers button (REQ-3) -->
           <button
             @click="$emit('open-sync')"
@@ -151,6 +163,7 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
+import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
 defineEmits(['open-sync']);
 
@@ -211,6 +224,16 @@ async function saveNote() {
   if (success) {
     isModified.value = false;
   }
+}
+
+function exportCurrentNote() {
+  if (!noteStore.activeNote) return;
+  const currentNote = {
+    ...noteStore.activeNote,
+    title: editTitle.value.trim() || noteStore.activeNote.title || '无标题便签',
+    markdownContent: editMarkdown.value
+  };
+  exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
 }
 
 function insertMarkdown(prefix: string, suffix = '') {

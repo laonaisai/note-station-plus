@@ -51,16 +51,30 @@
             {{ note.title || '无标题便签' }}
           </h4>
 
-          <!-- Delete Note Action -->
-          <button
-            @click.stop="confirmDeleteNote(note)"
-            class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-0.5 transition"
-            title="删除便签"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+          <!-- Actions: Export & Delete -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <!-- Quick Export Note to .md -->
+            <button
+              @click.stop="quickExportNote(note)"
+              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
+              title="导出此便签为 .md 文件"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+
+            <!-- Delete Note Action -->
+            <button
+              @click.stop="confirmDeleteNote(note)"
+              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-0.5 transition"
+              title="删除便签"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
@@ -76,9 +90,27 @@
 
 <script setup lang="ts">
 import { useNoteStore } from '@/stores/noteStore';
+import { useSessionStore } from '@/stores/sessionStore';
 import { SynoNote } from '@/types/synology';
+import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
 const noteStore = useNoteStore();
+const sessionStore = useSessionStore();
+
+async function quickExportNote(note: SynoNote) {
+  let noteToExport = note;
+  if (!noteToExport.markdownContent) {
+    const client = sessionStore.activeClient;
+    if (client) {
+      try {
+        noteToExport = await client.getNote(note.object_id);
+      } catch (e) {
+        console.error('Failed to get note details for export', e);
+      }
+    }
+  }
+  exportSingleNoteAsMarkdown(noteToExport, noteStore.activeNotebook?.title);
+}
 
 function formatTime(timestamp?: number): string {
   if (!timestamp) return '';
