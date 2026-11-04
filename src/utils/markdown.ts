@@ -81,3 +81,4 @@ export function noteHtmlToMarkdown(html: string): string {
   const cleanHtml = html.replace(commentRegex, '');
   return turndown.turndown(cleanHtml);
 }
+

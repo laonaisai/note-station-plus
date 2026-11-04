@@ -94,3 +94,4 @@ export class ConfigManager {
     localStorage.setItem(STORAGE_KEY_ACTIVE_PROFILE, id);
   }
 }
+

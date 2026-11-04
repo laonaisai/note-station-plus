@@ -357,3 +357,4 @@ export class SynologyApiClient {
     return res.data.data?.tags || [];
   }
 }
+

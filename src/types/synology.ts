@@ -81,3 +81,4 @@ export interface SyncTargetResult {
   targetNoteId?: string;
   error?: string;
 }
+

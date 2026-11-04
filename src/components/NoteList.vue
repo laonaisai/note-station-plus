@@ -108,3 +108,4 @@ async function confirmDeleteNote(note: SynoNote) {
   }
 }
 </script>
+

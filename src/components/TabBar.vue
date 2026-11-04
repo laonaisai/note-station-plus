@@ -141,3 +141,4 @@ function confirmRemoveProfile(profile: ServerProfile) {
   }
 }
 </script>
+

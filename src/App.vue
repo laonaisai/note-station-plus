@@ -99,3 +99,4 @@ async function handleSaveServer(profile: ServerProfile) {
   await noteStore.fetchNotebooks();
 }
 </script>
+
