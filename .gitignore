@@ -13,7 +13,6 @@ dist
 dist-electron
 release
 out
-build
 
 # OS metadata
 .DS_Store

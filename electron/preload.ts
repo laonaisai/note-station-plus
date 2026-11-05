@@ -1,8 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-// Expose safe native capabilities to renderer if contextIsolation is enabled
-contextBridge.exposeInMainWorld('electronAPI', {
+const api = {
   platform: process.platform,
   version: process.versions.electron
-});
+};
+
+// Expose safe native capabilities to renderer
+try {
+  if (process.contextIsolated) {
+    contextBridge.exposeInMainWorld('electronAPI', api);
+  } else {
+    (window as any).electronAPI = api;
+  }
+} catch {
+  (window as any).electronAPI = api;
+}
+
 

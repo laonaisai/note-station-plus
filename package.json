@@ -2,10 +2,11 @@
   "name": "note-station-plus",
   "version": "0.1.0",
   "description": "Cross-platform enhanced Synology Note Station desktop client with Markdown, multi-session tabs, and sync",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:win": "vite",
     "build": "vue-tsc && vite build && electron-builder",
     "build:linux": "vue-tsc && vite build && electron-builder --linux",
     "build:win": "vue-tsc && vite build && electron-builder --win",
@@ -22,15 +23,8 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Office",
-      "maintainer": "laonaisai <lianggengbin@qq.com>"
-    },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis",
         "portable"
@@ -38,7 +32,18 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office",
+      "maintainer": "laonaisai <lianggengbin@qq.com>"
     }
   },
   "keywords": [

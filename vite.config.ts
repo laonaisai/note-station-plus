@@ -7,6 +7,9 @@ import http from 'http';
 import https from 'https';
 import { URL } from 'url';
 
+// Ensure ELECTRON_RUN_AS_NODE is never leaked to child Electron processes
+delete process.env.ELECTRON_RUN_AS_NODE;
+
 /**
  * Transparent proxy middleware for Synology API in Web Browser mode
  * Eliminates browser CORS and private network blocks
@@ -94,6 +97,7 @@ export default defineConfig(() => {
       {
         entry: 'electron/main.ts',
         onstart(options) {
+          delete process.env.ELECTRON_RUN_AS_NODE;
           if (!isHeadless) {
             options.startup();
           } else {
@@ -103,9 +107,15 @@ export default defineConfig(() => {
         },
         vite: {
           build: {
+            lib: false,
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron']
+              external: ['electron'],
+              input: 'electron/main.ts',
+              output: {
+                format: 'cjs',
+                entryFileNames: '[name].cjs'
+              }
             }
           }
         }
@@ -119,9 +129,15 @@ export default defineConfig(() => {
         },
         vite: {
           build: {
+            lib: false,
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron']
+              external: ['electron'],
+              input: 'electron/preload.ts',
+              output: {
+                format: 'cjs',
+                entryFileNames: '[name].cjs'
+              }
             }
           }
         }
