@@ -106,7 +106,7 @@
             : 'text-slate-700 hover:bg-slate-200/70'
         ]"
       >
-        <div class="flex items-center space-x-2 truncate">
+        <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
           <svg
             class="w-3.5 h-3.5 shrink-0"
             :class="noteStore.activeNotebookId === nb.object_id ? 'text-white' : 'text-slate-400'"
@@ -117,6 +117,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
           <span class="truncate">{{ nb.title || '默认笔记本' }}</span>
+          <span
+            :class="[
+              'text-[11px] font-normal shrink-0 ml-1',
+              noteStore.activeNotebookId === nb.object_id ? 'text-blue-100' : 'text-slate-400'
+            ]"
+          >
+            ({{ noteStore.getNotebookNoteCount(nb) }})
+          </span>
         </div>
 
         <!-- Action Buttons -->
@@ -148,6 +156,76 @@
             <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag Filter Section (Requirement 2: 标签筛选栏) -->
+    <div class="border-t border-slate-200/90 flex flex-col shrink-0 max-h-56 min-h-[100px] bg-slate-50/50">
+      <!-- Tag Filter Header -->
+      <div class="h-8 px-3 border-b border-slate-200/70 flex items-center justify-between text-[11px] font-semibold text-slate-600 shrink-0 bg-slate-100/60">
+        <span class="flex items-center space-x-1.5 truncate">
+          <svg class="w-3.5 h-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          <span>标签筛选</span>
+        </span>
+        <button
+          v-if="noteStore.selectedTag"
+          @click="noteStore.selectTag(null)"
+          class="text-[10px] text-syno-blue hover:text-blue-700 font-normal hover:underline cursor-pointer"
+          title="清除标签筛选"
+        >
+          清除筛选
+        </button>
+        <span v-else class="text-[10px] text-slate-400 font-normal">
+          {{ noteStore.tagListWithCounts.length }} 个
+        </span>
+      </div>
+
+      <!-- Tag Capsule Buttons (Vertically Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-2">
+        <div v-if="noteStore.tagListWithCounts.length === 0" class="text-center py-4 text-[11px] text-slate-400">
+          暂无便签标签
+        </div>
+        <div v-else class="flex flex-wrap gap-1.5">
+          <!-- "全部标签" Pill -->
+          <button
+            @click="noteStore.selectTag(null)"
+            :class="[
+              'px-2 py-1 rounded-md text-[11px] transition flex items-center shrink-0 border cursor-pointer',
+              !noteStore.selectedTag
+                ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
+                : 'bg-white hover:bg-slate-200/70 text-slate-600 border-slate-200/80'
+            ]"
+          >
+            全部
+          </button>
+
+          <!-- Individual Tag Pills -->
+          <button
+            v-for="tagItem in noteStore.tagListWithCounts"
+            :key="tagItem.name"
+            @click="noteStore.selectTag(tagItem.name)"
+            :class="[
+              'px-2 py-1 rounded-md text-[11px] transition flex items-center shrink-0 border cursor-pointer group',
+              noteStore.selectedTag === tagItem.name
+                ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
+                : 'bg-white hover:bg-slate-200/70 text-slate-600 border-slate-200/80 hover:border-slate-300'
+            ]"
+            :title="`筛选 #${tagItem.name} 标签便签 (当前分类共 ${tagItem.count} 篇)`"
+          >
+            <span class="mr-0.5" :class="noteStore.selectedTag === tagItem.name ? 'text-blue-200' : 'text-slate-400'">#</span>
+            <span class="truncate max-w-[120px]">{{ tagItem.name }}</span>
+            <span
+              :class="[
+                'ml-1 text-[10px] px-1 py-0.2 rounded-full',
+                noteStore.selectedTag === tagItem.name ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+              ]"
+            >
+              {{ tagItem.count }}
+            </span>
           </button>
         </div>
       </div>

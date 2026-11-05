@@ -20,10 +20,30 @@ export const useNoteStore = defineStore('notes', () => {
   const activeNote = ref<SynoNote | null>(null);
 
   const searchQuery = ref<string>('');
+  const selectedTag = ref<string | null>(null);
   const isLoading = ref<boolean>(false);
   const isCreating = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
   const lastSaveTime = ref<number | null>(null);
+
+  function getNotebookNoteCount(nb: SynoNotebook): number {
+    const targetId = String(nb.object_id || nb.notebook_id || '');
+    if (targetId === '__all_notes__') {
+      return notes.value.length;
+    }
+    const itemSet = new Set(nb.items?.map(i => String(i)) || []);
+
+    if (notes.value.length > 0) {
+      const count = notes.value.filter(n => {
+        const pId = String(n.parent_id || '');
+        const nbId = String((n as any).notebook_id || '');
+        const oId = String(n.object_id || '');
+        return pId === targetId || nbId === targetId || itemSet.has(oId);
+      }).length;
+      return Math.max(count, nb.items?.length || 0);
+    }
+    return nb.items?.length || 0;
+  }
 
   const filteredNotes = computed(() => {
     let list = notes.value;
@@ -45,6 +65,14 @@ export const useNoteStore = defineStore('notes', () => {
           targetNbItems.has(noteId)
         );
       });
+    }
+
+    // Filter by selected tag
+    if (selectedTag.value) {
+      const tagFilter = selectedTag.value.toLowerCase().trim();
+      list = list.filter(n =>
+        (n.tag || []).some(t => t.toLowerCase().trim() === tagFilter)
+      );
     }
 
     if (!searchQuery.value.trim()) return list;
@@ -80,6 +108,51 @@ export const useNoteStore = defineStore('notes', () => {
     });
     return Array.from(tagSet).sort();
   });
+
+  const tagListWithCounts = computed<{ name: string; count: number }[]>(() => {
+    const tagCountMap = new Map<string, number>();
+
+    // Calculate tag counts for notes in current notebook (or all notes if no notebook selected)
+    const targetNotes = (activeNotebookId.value && activeNotebookId.value !== '__all_notes__')
+      ? notes.value.filter(n => {
+          const targetId = String(activeNotebookId.value);
+          const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
+          const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
+          return String(n.parent_id || '') === targetId || String((n as any).notebook_id || '') === targetId || targetNbItems.has(String(n.object_id));
+        })
+      : notes.value;
+
+    for (const note of targetNotes) {
+      for (const t of note.tag || []) {
+        const cleanTag = t?.trim();
+        if (cleanTag) {
+          tagCountMap.set(cleanTag, (tagCountMap.get(cleanTag) || 0) + 1);
+        }
+      }
+    }
+
+    // Also include any other tags from the whole account so users can see all available tags
+    for (const note of notes.value) {
+      for (const t of note.tag || []) {
+        const cleanTag = t?.trim();
+        if (cleanTag && !tagCountMap.has(cleanTag)) {
+          tagCountMap.set(cleanTag, 0);
+        }
+      }
+    }
+
+    return Array.from(tagCountMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  });
+
+  function selectTag(tag: string | null) {
+    if (selectedTag.value === tag) {
+      selectedTag.value = null; // Toggle off if clicked again
+    } else {
+      selectedTag.value = tag;
+    }
+  }
 
   async function fetchNotebooks() {
     const client = sessionStore.activeClient;
@@ -413,6 +486,7 @@ export const useNoteStore = defineStore('notes', () => {
     activeNoteId.value = null;
     activeNote.value = null;
     searchQuery.value = '';
+    selectedTag.value = null;
     isLoading.value = false;
     isCreating.value = false;
     isSaving.value = false;
@@ -424,6 +498,10 @@ export const useNoteStore = defineStore('notes', () => {
     activeNotebookId,
     activeNotebook,
     allTags,
+    tagListWithCounts,
+    selectedTag,
+    selectTag,
+    getNotebookNoteCount,
     notes,
     filteredNotes,
     activeNoteId,

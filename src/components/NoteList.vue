@@ -5,72 +5,97 @@
       layoutStore.isNoteListCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-64 border-r border-slate-200'
     ]"
   >
-    <!-- Search & New / Import Note Bar -->
-    <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5 shrink-0 bg-white/50 backdrop-blur-xs">
-      <div class="relative flex-1">
-        <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <!-- Top Action Toolbar (Header Row) -->
+    <div class="h-9 px-2.5 border-b border-slate-200/70 flex items-center justify-between shrink-0 bg-white/60 backdrop-blur-xs">
+      <!-- Title & Note Count -->
+      <div class="flex items-center space-x-1 text-xs font-semibold text-slate-700 truncate min-w-0 pr-1">
+        <span class="truncate">{{ noteStore.activeNotebook?.title || '便签列表' }}</span>
+        <span class="text-[11px] text-slate-400 font-normal shrink-0">({{ noteStore.filteredNotes.length }})</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-1 shrink-0">
+        <!-- New Note Button -->
+        <button
+          @click="createNewNote"
+          :disabled="noteStore.isCreating || !noteStore.activeNotebookId"
+          class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-xs flex items-center shadow-2xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          title="新建便签"
+        >
+          <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>{{ noteStore.isCreating ? '创建中' : '新建' }}</span>
+        </button>
+
+        <!-- Refresh Button -->
+        <button
+          @click="noteStore.fetchNotes(undefined, true)"
+          :disabled="noteStore.isLoading"
+          class="h-6 w-6 rounded hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition flex items-center justify-center disabled:opacity-40 cursor-pointer"
+          title="刷新便签列表"
+        >
+          <svg :class="['w-3.5 h-3.5', noteStore.isLoading ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+
+        <!-- Collapse NoteList Button -->
+        <button
+          @click="layoutStore.toggleNoteList"
+          class="h-6 w-6 rounded hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition flex items-center justify-center cursor-pointer"
+          title="折叠便签列表"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dedicated Search Bar Row (Requirement 3: 搜索框单独一行，充分释放输入空间) -->
+    <div class="p-2 border-b border-slate-200 bg-white/70 backdrop-blur-xs shrink-0">
+      <div class="relative w-full flex items-center">
+        <svg class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
           v-model="noteStore.searchQuery"
           type="text"
-          :placeholder="noteStore.filteredNotes.length > 0 ? `搜索便签 (共 ${noteStore.filteredNotes.length} 篇)...` : '搜索便签...'"
-          class="w-full pl-8 pr-2 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400"
+          :placeholder="noteStore.selectedTag ? `在 #${noteStore.selectedTag} 下搜索便签...` : (noteStore.filteredNotes.length > 0 ? `搜索便签 (共 ${noteStore.filteredNotes.length} 篇)...` : '搜索便签标题或标签...')"
+          class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
         />
+        <!-- Clear Search Query Button -->
+        <button
+          v-if="noteStore.searchQuery"
+          @click="noteStore.searchQuery = ''"
+          class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
+          title="清空搜索"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
-      <!-- Import Markdown Button -->
-      <button
-        @click="$emit('open-import')"
-        :disabled="!noteStore.activeNotebookId"
-        class="h-7 px-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs flex items-center shadow-xs shrink-0 transition disabled:opacity-40"
-        title="导入 Markdown (.md) 文件"
-      >
-        <svg class="w-3.5 h-3.5 mr-0.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-        导入
-      </button>
-
-      <!-- New Note Button with Spinner -->
-      <button
-        @click="createNewNote"
-        :disabled="noteStore.isCreating || !noteStore.activeNotebookId"
-        class="h-7 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded-md text-xs flex items-center shadow-sm shrink-0 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        title="新建便签"
-      >
-        <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-        </svg>
-        <svg v-else class="w-3.5 h-3.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        <span>{{ noteStore.isCreating ? '创建中' : '新建' }}</span>
-      </button>
-
-      <!-- Refresh Button -->
-      <button
-        @click="noteStore.fetchNotes(undefined, true)"
-        :disabled="noteStore.isLoading"
-        class="h-7 p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition shrink-0 disabled:opacity-40"
-        title="刷新便签列表"
-      >
-        <svg :class="['w-3.5 h-3.5', noteStore.isLoading ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-      </button>
-
-      <!-- Collapse NoteList Button -->
-      <button
-        @click="layoutStore.toggleNoteList"
-        class="h-7 p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition shrink-0"
-        title="折叠便签列表"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-        </svg>
-      </button>
+      <!-- Active Tag Filter Badge Strip (if tag is selected) -->
+      <div v-if="noteStore.selectedTag" class="mt-1.5 flex items-center justify-between text-[11px] bg-blue-50/80 border border-blue-200/70 rounded px-2 py-0.5 text-syno-blue">
+        <span class="flex items-center truncate">
+          <span class="font-medium mr-1">标签:</span>
+          <span class="truncate">#{{ noteStore.selectedTag }}</span>
+        </span>
+        <button
+          @click="noteStore.selectTag(null)"
+          class="ml-1 text-slate-400 hover:text-red-500 font-bold px-1 transition cursor-pointer"
+          title="移除此标签筛选"
+        >
+          ×
+        </button>
+      </div>
     </div>
 
     <!-- Notes List with Year-Month Grouping -->

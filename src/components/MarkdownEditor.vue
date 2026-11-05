@@ -110,67 +110,19 @@
           <button
             @click="saveNote"
             :disabled="noteStore.isSaving"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
             title="保存便签 (Ctrl+S)"
           >
-            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
             </svg>
             保存
           </button>
 
-          <!-- Import as Markdown Button -->
-          <button
-            @click="$emit('open-import', noteStore.activeNoteId)"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
-            title="导入 Markdown (.md) 文件更新或新建便签"
-          >
-            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            导入
-          </button>
-
-          <!-- Export as Markdown Button -->
-          <button
-            @click="exportCurrentNote"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
-            title="导出为 Markdown (.md) 文件"
-          >
-            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            导出
-          </button>
-
-          <!-- Share Management Button -->
-          <button
-            @click="$emit('open-share', noteStore.activeNoteId!)"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
-            title="便签分享管理 (公开链接及 DSM 用户权限)"
-          >
-            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-            分享
-          </button>
-
-          <!-- Version History Button -->
-          <button
-            @click="$emit('open-history', noteStore.activeNoteId!)"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
-            title="查看历史版本记录并可还原"
-          >
-            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            历史
-          </button>
-
           <!-- Sync to other servers button (REQ-3) -->
           <button
             @click="$emit('open-sync')"
-            class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-sm transition flex items-center"
+            class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
             title="将此便签同步到其他 Note Station 服务"
           >
             <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,6 +130,79 @@
             </svg>
             同步
           </button>
+
+          <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
+          <div class="relative inline-flex items-center">
+            <button
+              @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
+              :class="[
+                'px-2 py-1 rounded-md font-medium transition flex items-center border cursor-pointer text-xs',
+                isMoreMenuOpen ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80'
+              ]"
+              title="更多便签操作 (导入/导出/分享/历史)"
+            >
+              <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+              <span>更多</span>
+              <svg class="w-3 h-3 ml-1 text-slate-400 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div
+              v-if="isMoreMenuOpen"
+              @click.stop
+              class="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 shadow-xl rounded-lg py-1.5 z-40 text-xs animate-in fade-in duration-150"
+            >
+              <!-- 导入 -->
+              <button
+                @click="triggerImport"
+                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>导入 Markdown (.md)</span>
+              </button>
+
+              <!-- 导出 -->
+              <button
+                @click="triggerExport"
+                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>导出为 Markdown (.md)</span>
+              </button>
+
+              <div class="h-px bg-slate-100 my-1"></div>
+
+              <!-- 分享 -->
+              <button
+                @click="triggerShare"
+                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span>便签分享管理</span>
+              </button>
+
+              <!-- 历史 -->
+              <button
+                @click="triggerHistory"
+                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>历史版本记录</span>
+              </button>
+            </div>
+          </div>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
           <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
@@ -347,7 +372,7 @@ import { useNoteStore } from '@/stores/noteStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'open-sync'): void;
   (e: 'open-import', noteId?: string | null): void;
   (e: 'open-share', noteId: string): void;
@@ -364,6 +389,7 @@ const md = new MarkdownIt({
   breaks: true
 });
 
+const isMoreMenuOpen = ref(false);
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
 const editTitle = ref('');
 const editMarkdown = ref('');
@@ -395,6 +421,7 @@ watch(
     }
     isAddingTag.value = false;
     newTagText.value = '';
+    isMoreMenuOpen.value = false;
   },
   { immediate: true }
 );
@@ -497,6 +524,36 @@ function exportCurrentNote() {
   exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
 }
 
+function triggerImport() {
+  isMoreMenuOpen.value = false;
+  emit('open-import', noteStore.activeNoteId);
+}
+
+function triggerExport() {
+  isMoreMenuOpen.value = false;
+  exportCurrentNote();
+}
+
+function triggerShare() {
+  isMoreMenuOpen.value = false;
+  if (noteStore.activeNoteId) {
+    emit('open-share', noteStore.activeNoteId);
+  }
+}
+
+function triggerHistory() {
+  isMoreMenuOpen.value = false;
+  if (noteStore.activeNoteId) {
+    emit('open-history', noteStore.activeNoteId);
+  }
+}
+
+function onDocumentClick() {
+  if (isMoreMenuOpen.value) {
+    isMoreMenuOpen.value = false;
+  }
+}
+
 function insertMarkdown(prefix: string, suffix = '') {
   const textarea = textareaRef.value;
   if (!textarea) return;
@@ -532,10 +589,12 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
+  document.addEventListener('click', onDocumentClick);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('click', onDocumentClick);
   clearTimeout(saveTimer);
 });
 </script>

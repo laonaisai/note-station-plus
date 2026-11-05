@@ -312,5 +312,188 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.filteredNotes.length).toBe(3);
     expect(noteStore.activeNotebook?.title).toBe('全部笔记');
   });
+
+  it('需求1: getNotebookNoteCount 正确计算各笔记本的便签数量 (结合 items 与已加载便签)', () => {
+    const noteStore = useNoteStore();
+
+    const nb1 = {
+      object_id: 'nb_1',
+      title: '笔记本1',
+      category: 'notebook',
+      ctime: 0,
+      mtime: 0,
+      ver: '1',
+      preset: false,
+      stack: '',
+      items: ['n1', 'n2', 'n3', 'n4', 'n5'] // 服务端报告有 5 项
+    };
+
+    const nb2 = {
+      object_id: 'nb_2',
+      title: '笔记本2',
+      category: 'notebook',
+      ctime: 0,
+      mtime: 0,
+      ver: '1',
+      preset: false,
+      stack: ''
+    };
+
+    noteStore.notebooks = [nb1, nb2];
+
+    // 本地已加载 2 篇属于 nb1 的便签，1 篇属于 nb2 的便签
+    noteStore.notes = [
+      {
+        object_id: 'n1',
+        parent_id: 'nb_1',
+        title: '便签1',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'n2',
+        parent_id: 'nb_1',
+        title: '便签2',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'n_other',
+        parent_id: 'nb_2',
+        title: '便签3',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      }
+    ];
+
+    // nb1 的服务端 items 为 5，本地已加载 2，综合取真实计数值 5
+    expect(noteStore.getNotebookNoteCount(nb1)).toBe(5);
+
+    // nb2 无 items 数组，本地已加载 1 篇，返回 1
+    expect(noteStore.getNotebookNoteCount(nb2)).toBe(1);
+
+    // 全部笔记虚拟节点返回总便签数 3
+    const allNb = {
+      object_id: '__all_notes__',
+      title: '全部笔记',
+      category: 'all',
+      ctime: 0,
+      mtime: 0,
+      ver: '',
+      preset: true,
+      stack: ''
+    };
+    expect(noteStore.getNotebookNoteCount(allNb)).toBe(3);
+  });
+
+  it('需求2: 标签筛选功能联动过滤当前笔记本下的便签并支持与搜索组合', () => {
+    const noteStore = useNoteStore();
+
+    noteStore.notebooks = [
+      { object_id: 'nb_tech', title: '技术笔记', category: 'notebook', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' },
+      { object_id: 'nb_life', title: '生活日常', category: 'notebook', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }
+    ];
+
+    noteStore.notes = [
+      {
+        object_id: 't1',
+        parent_id: 'nb_tech',
+        title: 'Vue3 组合式 API 指南',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['前端', 'Vue']
+      },
+      {
+        object_id: 't2',
+        parent_id: 'nb_tech',
+        title: 'TypeScript 高级类型实战',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['前端', 'TypeScript']
+      },
+      {
+        object_id: 't3',
+        parent_id: 'nb_tech',
+        title: 'Go 语言高并发微服务',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['后端', 'Go']
+      },
+      {
+        object_id: 'l1',
+        parent_id: 'nb_life',
+        title: '周末烘焙指南',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['美食', '生活']
+      }
+    ];
+
+    noteStore.activeNotebookId = 'nb_tech';
+
+    // 1. 验证 tagListWithCounts 统计技术笔记本中的标签频次
+    const tagsInTech = noteStore.tagListWithCounts;
+    const frontendTag = tagsInTech.find(t => t.name === '前端');
+    expect(frontendTag).toBeDefined();
+    expect(frontendTag?.count).toBe(2);
+
+    const goTag = tagsInTech.find(t => t.name === 'Go');
+    expect(goTag?.count).toBe(1);
+
+    // 2. 选择“前端”标签筛选
+    noteStore.selectTag('前端');
+    expect(noteStore.selectedTag).toBe('前端');
+    expect(noteStore.filteredNotes.length).toBe(2);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['t1', 't2']);
+
+    // 3. 在“前端”标签筛选下，结合搜索框关键词组合筛选
+    noteStore.searchQuery = 'TypeScript';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('t2');
+
+    // 4. 清除搜索关键词，恢复为只有标签筛选
+    noteStore.searchQuery = '';
+    expect(noteStore.filteredNotes.length).toBe(2);
+
+    // 5. 再次点击当前选中标签，取消标签筛选 (Toggle off)
+    noteStore.selectTag('前端');
+    expect(noteStore.selectedTag).toBeNull();
+    expect(noteStore.filteredNotes.length).toBe(3); // 技术笔记下的所有 3 篇
+
+    // 6. 切换为生活日常笔记本
+    noteStore.activeNotebookId = 'nb_life';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].title).toBe('周末烘焙指南');
+
+    // 7. 调用 reset() 彻底重置选中标签
+    noteStore.selectTag('美食');
+    expect(noteStore.selectedTag).toBe('美食');
+    noteStore.reset();
+    expect(noteStore.selectedTag).toBeNull();
+  });
 });
 
