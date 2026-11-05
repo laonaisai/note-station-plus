@@ -60,12 +60,58 @@ export interface SynoNote {
   tag: string[];
   recycle?: boolean;
   encrypt?: boolean;
+  acl?: NoteAcl;
   attachment?: Array<{
     id: string;
     name: string;
     size: number;
     type: string;
   }>;
+}
+
+export interface NoteAcl {
+  enabled?: boolean;
+  public?: {
+    inherit?: boolean;
+    perm: 'ro' | 'rw';
+  };
+  dsm_user?: Record<string, { inherit?: boolean; name: string; perm: 'ro' | 'rw' }>;
+  dsm_group?: Record<string, { inherit?: boolean; name: string; perm: 'ro' | 'rw' }>;
+}
+
+export interface NoteVersion {
+  id: number;
+  version: string;
+  mtime: number;
+  author: string;
+  last_version?: string[];
+  commit_msg?: {
+    listable?: boolean;
+    first_version?: boolean;
+    device?: string;
+    [key: string]: any;
+  };
+}
+
+export interface SharePrivItem {
+  name: string;
+  type: 'user' | 'group';
+}
+
+export interface SharedMember {
+  name: string;
+  type: 'user' | 'group';
+  perm: 'ro' | 'rw';
+}
+
+export interface NoteShareInfo {
+  objectId: string;
+  publicUrl: string;
+  isPublicEnabled: boolean;
+  publicPerm: 'ro' | 'rw';
+  members: SharedMember[];
+  availableUsers: string[];
+  availableGroups: string[];
 }
 
 export interface SynoTag {

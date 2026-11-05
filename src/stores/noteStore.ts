@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { SynoNotebook, SynoNote } from '@/types/synology';
+import {
+  SynoNotebook,
+  SynoNote,
+  NoteVersion,
+  NoteShareInfo,
+  SharedMember
+} from '@/types/synology';
 import { useSessionStore } from './sessionStore';
 
 export const useNoteStore = defineStore('notes', () => {
@@ -267,6 +273,59 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function listNoteVersions(noteId: string): Promise<NoteVersion[]> {
+    const client = sessionStore.activeClient;
+    if (!client) return [];
+    return client.listNoteVersions(noteId);
+  }
+
+  async function getNoteVersionContent(noteId: string, ver: string): Promise<SynoNote | null> {
+    const client = sessionStore.activeClient;
+    if (!client) return null;
+    return client.getNote(noteId, ver);
+  }
+
+  async function restoreNoteVersion(noteId: string, ver: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client) return false;
+
+    const ok = await client.restoreNoteVersion(noteId, ver);
+    if (ok) {
+      // Re-fetch current note content
+      await selectNote(noteId);
+      if (activeNotebookId.value) {
+        await fetchNotes(activeNotebookId.value);
+      }
+    }
+    return ok;
+  }
+
+  async function getNoteShareInfo(noteId: string): Promise<NoteShareInfo | null> {
+    const client = sessionStore.activeClient;
+    if (!client) return null;
+    return client.getNoteShareInfo(noteId);
+  }
+
+  async function updateNoteShareSettings(params: {
+    objectId: string;
+    isPublicEnabled: boolean;
+    publicPerm: 'ro' | 'rw';
+    addedOrUpdatedMembers: SharedMember[];
+    removedMembers: SharedMember[];
+  }): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client) return false;
+    const ok = await client.updateNoteShareSettings(params);
+    if (ok && activeNoteId.value === params.objectId) {
+      // Refresh active note's acl
+      const updated = await client.getNote(params.objectId);
+      if (activeNote.value) {
+        activeNote.value.acl = updated.acl;
+      }
+    }
+    return ok;
+  }
+
   function reset() {
     notebooks.value = [];
     activeNotebookId.value = null;
@@ -299,6 +358,11 @@ export const useNoteStore = defineStore('notes', () => {
     importNote,
     updateActiveNote,
     deleteActiveNote,
+    listNoteVersions,
+    getNoteVersionContent,
+    restoreNoteVersion,
+    getNoteShareInfo,
+    updateNoteShareSettings,
     reset
   };
 });

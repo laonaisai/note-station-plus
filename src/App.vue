@@ -16,12 +16,18 @@
       <NotebookSidebar />
 
       <!-- Middle Column: Notes List -->
-      <NoteList @open-import="openImportModal(null)" />
+      <NoteList
+        @open-import="openImportModal(null)"
+        @open-share="openShareModal"
+        @open-history="openHistoryModal"
+      />
 
       <!-- Right Column: Markdown Editor / Preview -->
       <MarkdownEditor
         @open-sync="isSyncModalOpen = true"
         @open-import="openImportModal"
+        @open-share="openShareModal"
+        @open-history="openHistoryModal"
       />
     </div>
 
@@ -44,6 +50,21 @@
       :target-object-id="importTargetObjectId"
       @close="isImportModalOpen = false"
     />
+
+    <ShareModal
+      :is-open="isShareModalOpen"
+      :note-id="selectedShareNoteId"
+      :note-title="selectedShareNoteTitle"
+      @close="isShareModalOpen = false"
+    />
+
+    <HistoryModal
+      :is-open="isHistoryModalOpen"
+      :note-id="selectedHistoryNoteId"
+      :note-title="selectedHistoryNoteTitle"
+      @close="isHistoryModalOpen = false"
+      @restored="handleNoteRestored"
+    />
   </div>
 </template>
 
@@ -60,6 +81,8 @@ import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import ServerModal from '@/components/ServerModal.vue';
 import SyncModal from '@/components/SyncModal.vue';
 import ImportModal from '@/components/ImportModal.vue';
+import ShareModal from '@/components/ShareModal.vue';
+import HistoryModal from '@/components/HistoryModal.vue';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
@@ -71,6 +94,30 @@ const isSyncModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const importTargetObjectId = ref<string | null>(null);
 const droppedFile = ref<File | null>(null);
+
+const isShareModalOpen = ref(false);
+const selectedShareNoteId = ref<string | null>(null);
+const selectedShareNoteTitle = ref<string>('');
+
+const isHistoryModalOpen = ref(false);
+const selectedHistoryNoteId = ref<string | null>(null);
+const selectedHistoryNoteTitle = ref<string>('');
+
+function openShareModal(noteId: string, noteTitle?: string) {
+  selectedShareNoteId.value = noteId;
+  selectedShareNoteTitle.value = noteTitle || noteStore.notes.find(n => n.object_id === noteId)?.title || noteStore.activeNote?.title || '';
+  isShareModalOpen.value = true;
+}
+
+function openHistoryModal(noteId: string, noteTitle?: string) {
+  selectedHistoryNoteId.value = noteId;
+  selectedHistoryNoteTitle.value = noteTitle || noteStore.notes.find(n => n.object_id === noteId)?.title || noteStore.activeNote?.title || '';
+  isHistoryModalOpen.value = true;
+}
+
+function handleNoteRestored(noteId: string) {
+  console.log('Note restored to previous version:', noteId);
+}
 
 onMounted(async () => {
   await sessionStore.init();

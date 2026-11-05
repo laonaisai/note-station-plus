@@ -5,7 +5,11 @@ import {
   SynoAuthData,
   SynoNotebook,
   SynoNote,
-  SynoTag
+  SynoTag,
+  NoteVersion,
+  SharePrivItem,
+  SharedMember,
+  NoteShareInfo
 } from '@/types/synology';
 import { markdownToNoteHtml, noteHtmlToMarkdown } from '@/utils/markdown';
 
@@ -258,18 +262,23 @@ export class SynologyApiClient {
   }
 
   /**
-   * Retrieve full details of a specific note, including Markdown translation
+   * Retrieve full details of a specific note, including Markdown translation.
+   * If `ver` is specified, retrieves the note content at that specific historical version.
    */
-  async getNote(objectId: string): Promise<SynoNote> {
+  async getNote(objectId: string, ver?: string): Promise<SynoNote> {
     const sid = this.requireSid();
+    const params: Record<string, string> = {
+      api: 'SYNO.NoteStation.Note',
+      version: ver ? '3' : '1',
+      method: 'get',
+      _sid: sid,
+      object_id: objectId
+    };
+    if (ver) {
+      params['ver'] = ver;
+    }
     const res = await this.http.get<SynoApiResponse<SynoNote>>('/webapi/entry.cgi', {
-      params: {
-        api: 'SYNO.NoteStation.Note',
-        version: '1',
-        method: 'get',
-        _sid: sid,
-        object_id: objectId
-      }
+      params
     });
 
     if (!res.data.success || !res.data.data) {
@@ -393,6 +402,233 @@ export class SynologyApiClient {
     }
 
     return res.data.data?.tags || [];
+  }
+
+  /**
+   * List all historical versions for a note
+   */
+  async listNoteVersions(objectId: string): Promise<NoteVersion[]> {
+    const sid = this.requireSid();
+    const res = await this.http.get<SynoApiResponse<{ versions?: NoteVersion[]; total?: number }>>('/webapi/entry.cgi', {
+      params: {
+        api: 'SYNO.NoteStation.Note.Version',
+        version: '2',
+        method: 'list',
+        _sid: sid,
+        object_id: objectId
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    return res.data.data?.versions || [];
+  }
+
+  /**
+   * Restore a note to a specific historical version
+   */
+  async restoreNoteVersion(objectId: string, ver: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const res = await this.http.get<SynoApiResponse<any>>('/webapi/entry.cgi', {
+      params: {
+        api: 'SYNO.NoteStation.Note.Version',
+        version: '2',
+        method: 'restore',
+        _sid: sid,
+        object_id: objectId,
+        ver
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    return true;
+  }
+
+  /**
+   * Get the public share link URL for a note
+   */
+  async getPublicShareLink(objectId: string): Promise<string> {
+    const sid = this.requireSid();
+    try {
+      const res = await this.http.get<SynoApiResponse<{ url?: string; mode?: string }>>('/webapi/entry.cgi', {
+        params: {
+          api: 'SYNO.NoteStation.Shard.Link',
+          version: '1',
+          method: 'get',
+          _sid: sid,
+          object_id: objectId,
+          mode: 'public'
+        }
+      });
+      if (res.data.success && res.data.data?.url) {
+        return res.data.data.url;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch shard link', e);
+    }
+    return '';
+  }
+
+  /**
+   * List DSM users and groups that can be shared with
+   */
+  async listSharePriv(): Promise<SharePrivItem[]> {
+    const sid = this.requireSid();
+    const res = await this.http.get<SynoApiResponse<{ list?: SharePrivItem[]; total?: number }>>('/webapi/entry.cgi', {
+      params: {
+        api: 'SYNO.NoteStation.Share.Priv',
+        version: '2',
+        method: 'list',
+        _sid: sid
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    return res.data.data?.list || [];
+  }
+
+  /**
+   * Get comprehensive share information for a note
+   */
+  async getNoteShareInfo(objectId: string): Promise<NoteShareInfo> {
+    // Concurrently fetch note details (for acl), share link, and share privileges
+    const [note, publicUrl, privList] = await Promise.all([
+      this.getNote(objectId),
+      this.getPublicShareLink(objectId),
+      this.listSharePriv().catch(() => [] as SharePrivItem[])
+    ]);
+
+    const acl = note.acl || {};
+    const isPublicEnabled = !!(acl.public && (acl.public.perm === 'ro' || acl.public.perm === 'rw'));
+    const publicPerm = acl.public?.perm || 'ro';
+
+    const members: SharedMember[] = [];
+    if (acl.dsm_user) {
+      for (const uid of Object.keys(acl.dsm_user)) {
+        const u = acl.dsm_user[uid];
+        members.push({
+          name: u.name,
+          type: 'user',
+          perm: u.perm || 'ro'
+        });
+      }
+    }
+    if (acl.dsm_group) {
+      for (const gid of Object.keys(acl.dsm_group)) {
+        const g = acl.dsm_group[gid];
+        members.push({
+          name: g.name,
+          type: 'group',
+          perm: g.perm || 'ro'
+        });
+      }
+    }
+
+    const availableUsers = privList.filter(p => p.type === 'user').map(p => p.name);
+    const availableGroups = privList.filter(p => p.type === 'group').map(p => p.name);
+
+    return {
+      objectId,
+      publicUrl,
+      isPublicEnabled,
+      publicPerm,
+      members,
+      availableUsers,
+      availableGroups
+    };
+  }
+
+  /**
+   * Update share settings for a note (public link and DSM user/group permissions)
+   */
+  async updateNoteShareSettings(params: {
+    objectId: string;
+    isPublicEnabled: boolean;
+    publicPerm: 'ro' | 'rw';
+    addedOrUpdatedMembers: SharedMember[];
+    removedMembers: SharedMember[];
+  }): Promise<boolean> {
+    const sid = this.requireSid();
+
+    // 1. Handle public share permission
+    if (params.isPublicEnabled) {
+      const res = await this.http.get<SynoApiResponse<any>>('/webapi/entry.cgi', {
+        params: {
+          api: 'SYNO.NoteStation.Permission.Public',
+          version: '1',
+          method: 'set',
+          _sid: sid,
+          object_id: params.objectId,
+          perm: params.publicPerm
+        }
+      });
+      if (!res.data.success) {
+        throw this.formatError(res.data);
+      }
+    } else {
+      const res = await this.http.get<SynoApiResponse<any>>('/webapi/entry.cgi', {
+        params: {
+          api: 'SYNO.NoteStation.Permission.Public',
+          version: '1',
+          method: 'delete',
+          _sid: sid,
+          object_id: params.objectId
+        }
+      });
+      // Deleting public perm might succeed or return not found which is safe
+    }
+
+    // 2. Handle added or updated members
+    for (const member of params.addedOrUpdatedMembers) {
+      const api = member.type === 'group'
+        ? 'SYNO.NoteStation.Permission.Group'
+        : 'SYNO.NoteStation.Permission.User';
+      const key = member.type === 'group' ? 'groupname' : 'username';
+
+      const res = await this.http.get<SynoApiResponse<any>>('/webapi/entry.cgi', {
+        params: {
+          api,
+          version: '1',
+          method: 'set',
+          _sid: sid,
+          object_id: params.objectId,
+          [key]: member.name,
+          perm: member.perm
+        }
+      });
+      if (!res.data.success) {
+        throw this.formatError(res.data);
+      }
+    }
+
+    // 3. Handle removed members
+    for (const member of params.removedMembers) {
+      const api = member.type === 'group'
+        ? 'SYNO.NoteStation.Permission.Group'
+        : 'SYNO.NoteStation.Permission.User';
+      const key = member.type === 'group' ? 'groupname' : 'username';
+
+      await this.http.get('/webapi/entry.cgi', {
+        params: {
+          api,
+          version: '1',
+          method: 'delete',
+          _sid: sid,
+          object_id: params.objectId,
+          [key]: member.name
+        }
+      });
+    }
+
+    return true;
   }
 }
 

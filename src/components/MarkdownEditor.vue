@@ -143,6 +143,30 @@
             导出
           </button>
 
+          <!-- Share Management Button -->
+          <button
+            @click="$emit('open-share', noteStore.activeNoteId!)"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            title="便签分享管理 (公开链接及 DSM 用户权限)"
+          >
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            分享
+          </button>
+
+          <!-- Version History Button -->
+          <button
+            @click="$emit('open-history', noteStore.activeNoteId!)"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            title="查看历史版本记录并可还原"
+          >
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            历史
+          </button>
+
           <!-- Sync to other servers button (REQ-3) -->
           <button
             @click="$emit('open-sync')"
@@ -326,6 +350,8 @@ import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 defineEmits<{
   (e: 'open-sync'): void;
   (e: 'open-import', noteId?: string | null): void;
+  (e: 'open-share', noteId: string): void;
+  (e: 'open-history', noteId: string): void;
 }>();
 
 const noteStore = useNoteStore();
