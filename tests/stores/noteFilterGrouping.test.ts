@@ -160,4 +160,31 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(groups[2].key).toBe('2025-12');
     expect(groups[2].notes.length).toBe(1);
   });
+
+  it('调用 noteStore.reset() 时，所有便签、笔记本及选定状态被彻底清空', () => {
+    const noteStore = useNoteStore();
+
+    noteStore.notebooks = [{ object_id: 'nb_1', title: '笔记本1', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }];
+    noteStore.activeNotebookId = 'nb_1';
+    noteStore.notes = [{ object_id: 'n_1', parent_id: 'nb_1', title: '便签1', brief: '', content: '', ctime: 0, mtime: 0, ver: '1', tag: [] }];
+    noteStore.activeNoteId = 'n_1';
+    noteStore.activeNote = noteStore.notes[0];
+    noteStore.searchQuery = '搜索关键字';
+
+    expect(noteStore.notebooks.length).toBe(1);
+    expect(noteStore.notes.length).toBe(1);
+    expect(noteStore.activeNoteId).toBe('n_1');
+
+    // 执行重置
+    noteStore.reset();
+
+    expect(noteStore.notebooks.length).toBe(0);
+    expect(noteStore.activeNotebookId).toBeNull();
+    expect(noteStore.notes.length).toBe(0);
+    expect(noteStore.activeNoteId).toBeNull();
+    expect(noteStore.activeNote).toBeNull();
+    expect(noteStore.searchQuery).toBe('');
+    expect(noteStore.filteredNotes.length).toBe(0);
+  });
 });
+

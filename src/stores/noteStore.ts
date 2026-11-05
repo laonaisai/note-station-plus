@@ -366,6 +366,11 @@ export const useNoteStore = defineStore('notes', () => {
     notes.value = [];
     activeNoteId.value = null;
     activeNote.value = null;
+    searchQuery.value = '';
+    isLoading.value = false;
+    isCreating.value = false;
+    isSaving.value = false;
+    lastSaveTime.value = null;
   }
 
   return {

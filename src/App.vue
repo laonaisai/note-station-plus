@@ -198,18 +198,36 @@ onMounted(async () => {
 watch(
   () => sessionStore.activeProfileId,
   async (newId, oldId) => {
-    if (newId && newId !== oldId) {
+    if (newId !== oldId) {
       noteStore.reset();
-      // Ensure connected
-      const state = sessionStore.sessionStates[newId];
-      if (state?.isLoggedIn) {
-        await noteStore.fetchNotebooks();
-      } else {
-        const ok = await sessionStore.loginServer(newId);
-        if (ok) {
+      if (newId) {
+        // Ensure connected
+        const state = sessionStore.sessionStates[newId];
+        if (state?.isLoggedIn) {
           await noteStore.fetchNotebooks();
+        } else {
+          const ok = await sessionStore.loginServer(newId);
+          if (ok) {
+            await noteStore.fetchNotebooks();
+          }
         }
+      } else if (sessionStore.profiles.length === 0) {
+        // All profiles cleared: reset form & pop up Add Server modal
+        editingProfile.value = null;
+        isServerModalOpen.value = true;
       }
+    }
+  }
+);
+
+// Watch for total profiles count (specifically when all servers are deleted)
+watch(
+  () => sessionStore.profiles.length,
+  (newCount) => {
+    if (newCount === 0) {
+      noteStore.reset();
+      editingProfile.value = null;
+      isServerModalOpen.value = true;
     }
   }
 );

@@ -180,9 +180,13 @@ async function reconnectActive() {
   }
 }
 
-function confirmRemoveProfile(profile: ServerProfile) {
+async function confirmRemoveProfile(profile: ServerProfile) {
   if (confirm(`确定要移除服务【${profile.alias}】吗？这不会影响 NAS 上的数据。`)) {
-    sessionStore.removeProfile(profile.id);
+    await sessionStore.removeProfile(profile.id);
+    if (sessionStore.profiles.length === 0) {
+      noteStore.reset();
+      emit('add-server');
+    }
   }
 }
 
