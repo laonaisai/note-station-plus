@@ -107,8 +107,13 @@ export const useSessionStore = defineStore('session', () => {
     delete sessionStates.value[profileId];
     profiles.value = ConfigManager.getProfiles();
 
-    if (activeProfileId.value === profileId && profiles.value.length > 0) {
-      await setActiveProfile(profiles.value[0].id);
+    if (activeProfileId.value === profileId) {
+      if (profiles.value.length > 0) {
+        await setActiveProfile(profiles.value[0].id);
+      } else {
+        activeProfileId.value = '';
+        ConfigManager.setActiveProfileId('');
+      }
     }
   }
 

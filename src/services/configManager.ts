@@ -3,28 +3,7 @@ import { ServerProfile } from '@/types/synology';
 const STORAGE_KEY_PROFILES = 'note_station_plus_profiles';
 const STORAGE_KEY_ACTIVE_PROFILE = 'note_station_plus_active_id';
 
-export const DEFAULT_PROFILES: ServerProfile[] = [
-  {
-    id: 'server-180',
-    alias: '服务1 (180)',
-    serverUrl: 'http://172.28.10.180:5000',
-    account: 'notedev',
-    password: 'Ghsy#ds.v24',
-    allowInsecureSSL: true,
-    autoLogin: true,
-    createdAt: Date.now()
-  },
-  {
-    id: 'server-182',
-    alias: '服务2 (182)',
-    serverUrl: 'http://172.28.10.182:5000',
-    account: 'notedev',
-    password: 'Ghsy#ds.v24',
-    allowInsecureSSL: true,
-    autoLogin: true,
-    createdAt: Date.now()
-  }
-];
+export const DEFAULT_PROFILES: ServerProfile[] = [];
 
 export class ConfigManager {
   /**
@@ -34,13 +13,12 @@ export class ConfigManager {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_PROFILES);
       if (!raw) {
-        this.saveProfiles(DEFAULT_PROFILES);
-        return DEFAULT_PROFILES;
+        return [];
       }
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_PROFILES;
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return DEFAULT_PROFILES;
+      return [];
     }
   }
 
@@ -84,7 +62,7 @@ export class ConfigManager {
     const active = localStorage.getItem(STORAGE_KEY_ACTIVE_PROFILE);
     if (active) return active;
     const profiles = this.getProfiles();
-    return profiles[0]?.id || 'server-180';
+    return profiles[0]?.id || '';
   }
 
   /**

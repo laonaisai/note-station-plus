@@ -121,7 +121,10 @@ function handleNoteRestored(noteId: string) {
 
 onMounted(async () => {
   await sessionStore.init();
-  if (sessionStore.activeSessionState?.isLoggedIn) {
+  if (sessionStore.profiles.length === 0) {
+    // 首次启动且未配置任何服务时，自动弹出添加服务向导
+    isServerModalOpen.value = true;
+  } else if (sessionStore.activeSessionState?.isLoggedIn) {
     await noteStore.fetchNotebooks();
   }
 });

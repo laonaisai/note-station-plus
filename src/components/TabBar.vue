@@ -48,9 +48,8 @@
           </svg>
         </button>
 
-        <!-- Close/Remove Tab if > 1 profiles -->
+        <!-- Close/Remove Tab -->
         <button
-          v-if="sessionStore.profiles.length > 1"
           @click.stop="confirmRemoveProfile(profile)"
           class="ml-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
           title="移除此服务器"
@@ -61,10 +60,20 @@
         </button>
       </div>
 
+      <!-- Empty state prompt -->
+      <div v-if="sessionStore.profiles.length === 0" class="text-xs text-slate-400 px-2 py-1 flex items-center">
+        <span>尚未添加任何群晖服务，请点击右侧</span>
+      </div>
+
       <!-- Add Server Button -->
       <button
         @click="$emit('add-server')"
-        class="h-8 px-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-md text-xs flex items-center shrink-0 transition-colors"
+        :class="[
+          'h-8 px-2.5 rounded-md text-xs flex items-center shrink-0 transition-colors',
+          sessionStore.profiles.length === 0
+            ? 'bg-syno-blue text-white hover:bg-blue-600 font-medium shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+        ]"
         title="添加 Note Station 服务"
       >
         <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -88,6 +97,17 @@
       >
         <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isConnecting }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+
+      <!-- Clear data / Reset button -->
+      <button
+        @click="confirmResetApp"
+        class="p-1.5 rounded hover:bg-slate-800 text-slate-500 hover:text-rose-400 transition-colors"
+        title="清除本地配置与缓存"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
     </div>
@@ -138,6 +158,14 @@ async function reconnectActive() {
 function confirmRemoveProfile(profile: ServerProfile) {
   if (confirm(`确定要移除服务【${profile.alias}】吗？这不会影响 NAS 上的数据。`)) {
     sessionStore.removeProfile(profile.id);
+  }
+}
+
+function confirmResetApp() {
+  if (confirm('确定要清除所有本地保存的服务器配置和缓存吗？\n清除后应用将恢复至初始状态。')) {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
   }
 }
 </script>

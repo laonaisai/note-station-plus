@@ -1,7 +1,7 @@
 export interface ServerProfile {
   id: string;               // UUID
-  alias: string;            // User-friendly name e.g. "服务1 (180)", "家庭NAS"
-  serverUrl: string;        // e.g. http://172.28.10.180:5000
+  alias: string;            // User-friendly name e.g. "家庭NAS", "办公室群晖"
+  serverUrl: string;        // e.g. https://nas.example.com:5001 or http://192.168.1.100:5000
   account: string;          // Username
   password?: string;        // Stored password
   allowInsecureSSL?: boolean; // Accept self-signed certificates

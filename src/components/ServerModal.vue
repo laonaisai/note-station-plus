@@ -35,7 +35,7 @@
             v-model="form.serverUrl"
             type="url"
             required
-            placeholder="http://172.28.10.180:5000"
+            placeholder="https://nas.example.com:5001 或 http://192.168.1.100:5000"
             class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition"
           />
         </div>
@@ -47,7 +47,7 @@
             v-model="form.account"
             type="text"
             required
-            placeholder="notedev"
+            placeholder="请输入群晖用户名"
             class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition"
           />
         </div>
