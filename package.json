@@ -7,10 +7,9 @@
   "scripts": {
     "dev": "vite",
     "dev:win": "vite",
-    "version:bump": "node scripts/set-version.cjs",
-    "build": "node scripts/set-version.cjs && vue-tsc && vite build && electron-builder",
-    "build:linux": "node scripts/set-version.cjs && vue-tsc && vite build && electron-builder --linux",
-    "build:win": "node scripts/set-version.cjs && vue-tsc && vite build && electron-builder --win",
+    "build": "vue-tsc && vite build && node scripts/build-electron.cjs",
+    "build:linux": "vue-tsc && vite build && node scripts/build-electron.cjs --linux",
+    "build:win": "vue-tsc && vite build && node scripts/build-electron.cjs --win",
     "test": "vitest run",
     "test:watch": "vitest"
   },
