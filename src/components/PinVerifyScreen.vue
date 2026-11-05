@@ -2,20 +2,11 @@
   <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 text-slate-100 select-none px-4">
     <!-- App Logo & Branding -->
     <div class="flex flex-col items-center mb-6">
-      <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-syno-blue flex items-center justify-center shadow-xl shadow-blue-900/40 border border-blue-400/30 mb-3 overflow-hidden">
-        <img
-          src="/logo.png"
-          alt="Note Station Plus"
-          class="w-full h-full object-cover"
-          @error="(e) => (e.target as HTMLElement).style.display = 'none'"
-        />
-        <svg class="w-8 h-8 text-white absolute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-        </svg>
-      </div>
+      <img
+        src="/logo.png"
+        alt="Note Station Plus"
+        class="w-16 h-16 shadow-2xl shadow-blue-950/60 mb-3 object-contain drop-shadow"
+      />
       <h1 class="text-xl font-bold tracking-tight text-white">Note Station Plus</h1>
       <p class="text-xs text-slate-400 mt-1">
         {{ isLocked ? '应用已被安全锁定' : '请输入 6 位启动 PIN 码解锁' }}
