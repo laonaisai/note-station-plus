@@ -186,5 +186,131 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.searchQuery).toBe('');
     expect(noteStore.filteredNotes.length).toBe(0);
   });
+
+  it('笔记本拥有400+篇便签时，filteredNotes 能完整过滤并显示全部400+篇便签', () => {
+    const noteStore = useNoteStore();
+
+    // 构造笔记本 A (420 篇便签) 和 笔记本 B (150 篇便签)
+    const largeNotesList: SynoNote[] = [];
+
+    // 笔记本 A: 420 篇
+    for (let i = 0; i < 420; i++) {
+      largeNotesList.push({
+        object_id: `note_a_${i}`,
+        parent_id: 'nb_large_a',
+        notebook_id: 'nb_large_a',
+        title: `笔记本A便签 ${i}`,
+        brief: '',
+        content: `<p>便签 ${i}</p>`,
+        ctime: 1730790000 + i * 10,
+        mtime: 1730790000 + i * 10,
+        ver: '1',
+        tag: i % 2 === 0 ? ['工作'] : ['日常']
+      });
+    }
+
+    // 笔记本 B: 150 篇
+    for (let i = 0; i < 150; i++) {
+      largeNotesList.push({
+        object_id: `note_b_${i}`,
+        parent_id: 'nb_large_b',
+        notebook_id: 'nb_large_b',
+        title: `笔记本B便签 ${i}`,
+        brief: '',
+        content: `<p>便签B ${i}</p>`,
+        ctime: 1730790000 + i * 10,
+        mtime: 1730790000 + i * 10,
+        ver: '1',
+        tag: ['B组']
+      });
+    }
+
+    noteStore.notebooks = [
+      { object_id: 'nb_large_a', title: '大体量笔记本 A', category: 'notebook', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' },
+      { object_id: 'nb_large_b', title: '笔记本 B', category: 'notebook', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }
+    ];
+
+    noteStore.notes = largeNotesList;
+
+    // 1. 切换到笔记本 A
+    noteStore.activeNotebookId = 'nb_large_a';
+    expect(noteStore.filteredNotes.length).toBe(420);
+    expect(noteStore.filteredNotes[0].parent_id).toBe('nb_large_a');
+    expect(noteStore.filteredNotes[419].parent_id).toBe('nb_large_a');
+
+    // 2. 切换到笔记本 B
+    noteStore.activeNotebookId = 'nb_large_b';
+    expect(noteStore.filteredNotes.length).toBe(150);
+    expect(noteStore.filteredNotes[0].parent_id).toBe('nb_large_b');
+
+    // 3. 在 420 篇便签中过滤标签
+    noteStore.activeNotebookId = 'nb_large_a';
+    noteStore.searchQuery = '日常';
+    expect(noteStore.filteredNotes.length).toBe(210);
+  });
+
+  it('支持通过 notebook.items 包含关系匹配便签 (兼容群晖不同数据格式)', () => {
+    const noteStore = useNoteStore();
+
+    // 某些便签可能 parent_id 格式不同，但 notebook.items 显式包含该便签 ID
+    noteStore.notebooks = [
+      {
+        object_id: 'nb_with_items',
+        title: '包含 items 的笔记本',
+        category: 'notebook',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        preset: false,
+        stack: '',
+        items: ['note_special_1', 'note_special_2']
+      }
+    ];
+
+    noteStore.notes = [
+      {
+        object_id: 'note_special_1',
+        parent_id: '',
+        title: '特殊便签 1',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'note_special_2',
+        parent_id: 'other_id',
+        title: '特殊便签 2',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'note_other',
+        parent_id: 'other_id',
+        title: '外部便签',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      }
+    ];
+
+    noteStore.activeNotebookId = 'nb_with_items';
+    expect(noteStore.filteredNotes.length).toBe(2);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['note_special_1', 'note_special_2']);
+
+    // 选中“全部笔记”节点时，列出全部便签
+    noteStore.activeNotebookId = '__all_notes__';
+    expect(noteStore.filteredNotes.length).toBe(3);
+    expect(noteStore.activeNotebook?.title).toBe('全部笔记');
+  });
 });
 

@@ -144,7 +144,7 @@ export class SynologyApiClient {
    */
   async listNotebooks(): Promise<SynoNotebook[]> {
     const sid = this.requireSid();
-    const res = await this.http.get<SynoApiResponse<{ notebooks?: SynoNotebook[]; total: number }>>('/webapi/entry.cgi', {
+    const res = await this.http.get<SynoApiResponse<{ notebooks?: any[]; total: number }>>('/webapi/entry.cgi', {
       params: {
         api: 'SYNO.NoteStation.Notebook',
         version: '1',
@@ -157,7 +157,28 @@ export class SynologyApiClient {
       throw this.formatError(res.data);
     }
 
-    return res.data.data?.notebooks || [];
+    const rawNotebooks: any[] = res.data.data?.notebooks || [];
+    return rawNotebooks.map(nb => {
+      const id = String(nb.object_id || nb.notebook_id || '');
+      const title = nb.title || nb.name || (nb.preset ? '我的便签' : '默认笔记本');
+      const ctime = Number(nb.ctime || nb.created_time || 0);
+      const mtime = Number(nb.mtime || nb.updated_time || ctime);
+      const items = Array.isArray(nb.items) ? nb.items.map((i: any) => String(i)) : [];
+
+      return {
+        ...nb,
+        object_id: id,
+        notebook_id: id,
+        title,
+        ctime,
+        mtime,
+        category: nb.category || 'notebook',
+        ver: nb.ver || nb.version || '',
+        preset: Boolean(nb.preset),
+        stack: nb.stack || '',
+        items
+      };
+    });
   }
 
   /**
@@ -213,7 +234,12 @@ export class SynologyApiClient {
   /**
    * List notes inside a specific notebook (single page)
    */
-  async listNotes(parentId?: string, offset = 0, limit = 100): Promise<{ notes: SynoNote[]; total: number }> {
+  async listNotes(
+    parentId?: string,
+    offset = 0,
+    limit = 500,
+    precomputedTagMap?: Map<string, string[]>
+  ): Promise<{ notes: SynoNote[]; total: number }> {
     const sid = this.requireSid();
 
     const queryParams: Record<string, any> = {
@@ -227,22 +253,82 @@ export class SynologyApiClient {
 
     if (parentId && parentId.trim()) {
       queryParams.notebook_id = parentId.trim();
-      queryParams.parent_id = parentId.trim();
     }
 
-    // Fetch notes and tag mappings concurrently
-    const [res, tagList] = await Promise.all([
-      this.http.get<SynoApiResponse<{ notes?: SynoNote[]; total: number }>>('/webapi/entry.cgi', {
+    let noteTagMap: Map<string, string[]>;
+    let res: any;
+
+    if (precomputedTagMap) {
+      noteTagMap = precomputedTagMap;
+      res = await this.http.get<SynoApiResponse<{ notes?: any[]; total: number; offset: number }>>('/webapi/entry.cgi', {
         params: queryParams
-      }),
-      this.listTags().catch(() => [])
-    ]);
+      });
+    } else {
+      const [apiRes, tagList] = await Promise.all([
+        this.http.get<SynoApiResponse<{ notes?: any[]; total: number; offset: number }>>('/webapi/entry.cgi', {
+          params: queryParams
+        }),
+        this.listTags().catch(() => [])
+      ]);
+      res = apiRes;
+
+      noteTagMap = new Map<string, string[]>();
+      for (const tagObj of tagList) {
+        const tagName = tagObj.title || tagObj.name || '';
+        if (!tagName) continue;
+        for (const noteId of tagObj.items || []) {
+          if (!noteTagMap.has(noteId)) {
+            noteTagMap.set(noteId, []);
+          }
+          noteTagMap.get(noteId)!.push(tagName);
+        }
+      }
+    }
 
     if (!res.data.success) {
       throw this.formatError(res.data);
     }
 
-    // Build mapping from note object_id to tags
+    const rawNotes: any[] = res.data.data?.notes || [];
+    const notes: SynoNote[] = rawNotes.map(n => {
+      const noteId = String(n.object_id || n.note_id || '');
+      const nbId = String(n.parent_id || n.notebook_id || parentId || '');
+      const ctime = Number(n.ctime || n.created_time || 0);
+      const mtime = Number(n.mtime || n.updated_time || ctime);
+      const tags = noteTagMap.get(noteId) || n.tag || n.tags || [];
+
+      return {
+        ...n,
+        object_id: noteId,
+        parent_id: nbId,
+        notebook_id: nbId,
+        ctime,
+        mtime,
+        tag: Array.isArray(tags) ? tags : [],
+        markdownContent: n.content ? noteHtmlToMarkdown(n.content) : ''
+      };
+    });
+
+    return {
+      notes,
+      total: res.data.data?.total ?? notes.length
+    };
+  }
+
+  /**
+   * List all notes inside a notebook (or all notes) with auto-pagination.
+   * Continues until server returns 0 notes or fewer notes than pageSize.
+   */
+  async listAllNotes(parentId?: string): Promise<{ notes: SynoNote[]; total: number }> {
+    let offset = 0;
+    const pageSize = 500;
+    let allNotes: SynoNote[] = [];
+    const seenIds = new Set<string>();
+    const maxPages = 100; // safety ceiling: up to 50,000 notes
+    let pageCount = 0;
+
+    // Fetch tags once up-front to avoid redundant requests across pages
+    const tagList = await this.listTags().catch(() => []);
     const noteTagMap = new Map<string, string[]>();
     for (const tagObj of tagList) {
       const tagName = tagObj.title || tagObj.name || '';
@@ -255,46 +341,43 @@ export class SynologyApiClient {
       }
     }
 
-    const notes = (res.data.data?.notes || []).map(n => {
-      const nbId = (n as any).notebook_id || (n as any).parent_id || parentId || '';
-      return {
-        ...n,
-        parent_id: nbId,
-        notebook_id: nbId,
-        tag: noteTagMap.get(n.object_id) || n.tag || [],
-        markdownContent: n.content ? noteHtmlToMarkdown(n.content) : ''
-      };
-    });
-
-    return {
-      notes,
-      total: res.data.data?.total ?? notes.length
-    };
-  }
-
-  /**
-   * List all notes inside a notebook (or all notes) with auto-pagination
-   */
-  async listAllNotes(parentId?: string): Promise<{ notes: SynoNote[]; total: number }> {
-    let offset = 0;
-    const pageSize = 100;
-    let allNotes: SynoNote[] = [];
-    let totalCount = 0;
-
-    while (true) {
-      const res = await this.listNotes(parentId, offset, pageSize);
-      allNotes = allNotes.concat(res.notes);
-      totalCount = res.total;
-
-      if (res.notes.length === 0 || allNotes.length >= totalCount) {
+    while (pageCount < maxPages) {
+      pageCount++;
+      const res = await this.listNotes(parentId, offset, pageSize, noteTagMap);
+      if (!res.notes || res.notes.length === 0) {
         break;
       }
+
+      let newCount = 0;
+      for (const note of res.notes) {
+        if (!seenIds.has(note.object_id)) {
+          seenIds.add(note.object_id);
+          allNotes.push(note);
+          newCount++;
+        }
+      }
+
+      // If server returned fewer notes than pageSize, we have reached the end of the note list
+      if (res.notes.length < pageSize) {
+        break;
+      }
+
+      // If no new notes were found in this batch, prevent infinite loop and exit
+      if (newCount === 0) {
+        break;
+      }
+
       offset += res.notes.length;
     }
 
+    // Filter notes if parentId was requested
+    const filteredNotes = parentId && parentId.trim()
+      ? allNotes.filter(n => n.parent_id === parentId.trim() || (n as any).notebook_id === parentId.trim())
+      : allNotes;
+
     return {
-      notes: allNotes,
-      total: totalCount
+      notes: filteredNotes,
+      total: filteredNotes.length
     };
   }
 

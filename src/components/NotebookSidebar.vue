@@ -16,6 +16,18 @@
 
       <!-- Action Buttons -->
       <div class="flex items-center space-x-1 shrink-0">
+        <!-- Refresh Notebooks & Notes Button -->
+        <button
+          @click="handleRefreshAll"
+          :disabled="noteStore.isLoading"
+          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition disabled:opacity-40"
+          title="刷新目录与便签"
+        >
+          <svg :class="['w-3.5 h-3.5', noteStore.isLoading ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+
         <!-- New Notebook Button -->
         <button
           @click="promptNewNotebook"
@@ -45,6 +57,43 @@
       <div v-if="noteStore.notebooks.length === 0" class="text-center py-8 text-xs text-slate-400">
         {{ sessionStore.activeSessionState?.isLoggedIn ? '暂无笔记本' : '未连接服务' }}
       </div>
+
+      <!-- "全部笔记" Root Node -->
+      <div
+        v-if="noteStore.notebooks.length > 0"
+        @click="noteStore.selectNotebook('__all_notes__')"
+        :class="[
+          'group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition',
+          noteStore.activeNotebookId === '__all_notes__'
+            ? 'bg-syno-blue text-white font-medium shadow-sm'
+            : 'text-slate-700 hover:bg-slate-200/70'
+        ]"
+      >
+        <div class="flex items-center space-x-2 truncate">
+          <svg
+            class="w-3.5 h-3.5 shrink-0"
+            :class="noteStore.activeNotebookId === '__all_notes__' ? 'text-white' : 'text-slate-400'"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span class="truncate font-medium">全部笔记</span>
+        </div>
+
+        <span
+          :class="[
+            'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
+            noteStore.activeNotebookId === '__all_notes__' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-500'
+          ]"
+        >
+          {{ noteStore.notes.length }}
+        </span>
+      </div>
+
+      <!-- Divider between All Notes and Notebooks -->
+      <div v-if="noteStore.notebooks.length > 0" class="my-1 border-t border-slate-200/80"></div>
 
       <div
         v-for="nb in noteStore.notebooks"
@@ -117,12 +166,17 @@ const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
 const layoutStore = useLayoutStore();
 
+async function handleRefreshAll() {
+  await noteStore.fetchNotebooks();
+  await noteStore.fetchNotes(undefined, true);
+}
+
 async function handleExportNotebook(nb: SynoNotebook) {
   const client = sessionStore.activeClient;
   if (!client) return;
 
   try {
-    const res = await client.listNotes(nb.object_id, 0, 1000);
+    const res = await client.listAllNotes(nb.object_id);
     if (!res.notes || res.notes.length === 0) {
       alert(`笔记本【${nb.title || '默认笔记本'}】暂无便签可导出`);
       return;

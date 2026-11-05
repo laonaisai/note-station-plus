@@ -34,6 +34,7 @@ export interface SynoAuthData {
 
 export interface SynoNotebook {
   object_id: string;
+  notebook_id?: string;
   title: string;
   category: string;
   ctime: number;
@@ -41,6 +42,7 @@ export interface SynoNotebook {
   ver: string;
   preset: boolean;
   stack: string;
+  items?: string[];
   owner?: {
     display_name: string;
     uid: number;
@@ -50,6 +52,7 @@ export interface SynoNotebook {
 export interface SynoNote {
   object_id: string;
   parent_id: string; // notebook object_id
+  notebook_id?: string;
   title: string;
   brief: string;
   content: string; // HTML string

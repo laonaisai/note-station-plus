@@ -28,12 +28,23 @@ export const useNoteStore = defineStore('notes', () => {
   const filteredNotes = computed(() => {
     let list = notes.value;
 
-    // Filter by active notebook
-    if (activeNotebookId.value) {
-      list = list.filter(n =>
-        n.parent_id === activeNotebookId.value ||
-        (n as any).notebook_id === activeNotebookId.value
-      );
+    // Filter by active notebook (if '__all_notes__' is selected, display all notes)
+    if (activeNotebookId.value && activeNotebookId.value !== '__all_notes__') {
+      const targetId = String(activeNotebookId.value);
+      const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
+      const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
+
+      list = list.filter(n => {
+        const noteParentId = String(n.parent_id || '');
+        const noteNbId = String((n as any).notebook_id || '');
+        const noteId = String(n.object_id || '');
+
+        return (
+          noteParentId === targetId ||
+          noteNbId === targetId ||
+          targetNbItems.has(noteId)
+        );
+      });
     }
 
     if (!searchQuery.value.trim()) return list;
@@ -45,6 +56,18 @@ export const useNoteStore = defineStore('notes', () => {
   });
 
   const activeNotebook = computed(() => {
+    if (activeNotebookId.value === '__all_notes__') {
+      return {
+        object_id: '__all_notes__',
+        title: '全部笔记',
+        category: 'all',
+        ctime: 0,
+        mtime: 0,
+        ver: '',
+        preset: true,
+        stack: ''
+      };
+    }
     return notebooks.value.find(nb => nb.object_id === activeNotebookId.value) || null;
   });
 
@@ -91,23 +114,42 @@ export const useNoteStore = defineStore('notes', () => {
     activeNotebookId.value = notebookId;
     activeNoteId.value = null;
     activeNote.value = null;
-    await fetchNotes(notebookId);
+
+    if (notes.value.length === 0) {
+      await fetchNotes(notebookId);
+    } else {
+      // Notes already cached in memory: instantly auto-select first note in this notebook
+      const currentNotebookNotes = filteredNotes.value;
+      if (currentNotebookNotes.length > 0) {
+        await selectNote(currentNotebookNotes[0].object_id);
+      }
+    }
   }
 
-  async function fetchNotes(notebookId: string) {
+  async function fetchNotes(targetNotebookId?: string | null, forceRefresh = true) {
     const client = sessionStore.activeClient;
-    if (!client || !notebookId || !sessionStore.activeSessionState?.isLoggedIn) return;
+    if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
+
+    if (targetNotebookId) {
+      activeNotebookId.value = targetNotebookId;
+    }
+
+    if (notes.value.length > 0 && !forceRefresh) {
+      const currentNotebookNotes = filteredNotes.value;
+      if (currentNotebookNotes.length > 0 && (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value))) {
+        await selectNote(currentNotebookNotes[0].object_id);
+      }
+      return;
+    }
 
     isLoading.value = true;
     try {
-      // Use listAllNotes with pagination loop so that all notes are completely loaded
-      const res = await client.listAllNotes(notebookId);
+      // Use listAllNotes with pagination loop so that all notes across the account are completely loaded
+      const res = await client.listAllNotes();
       notes.value = res.notes;
 
       // Filter notes for the active notebook
-      const currentNotebookNotes = notes.value.filter(n =>
-        n.parent_id === notebookId || (n as any).notebook_id === notebookId
-      );
+      const currentNotebookNotes = filteredNotes.value;
 
       // Auto-select first note if available
       if (currentNotebookNotes.length > 0) {
@@ -175,11 +217,15 @@ export const useNoteStore = defineStore('notes', () => {
 
   async function createNote(title = '无标题便签', initialMarkdown = '', tags: string[] = []): Promise<SynoNote | null> {
     const client = sessionStore.activeClient;
-    if (!client || !activeNotebookId.value) return null;
+    const targetNbId = (activeNotebookId.value && activeNotebookId.value !== '__all_notes__')
+      ? activeNotebookId.value
+      : notebooks.value[0]?.object_id;
+
+    if (!client || !targetNbId) return null;
 
     isCreating.value = true;
     try {
-      const newNote = await client.createNote(activeNotebookId.value, title, initialMarkdown, tags);
+      const newNote = await client.createNote(targetNbId, title, initialMarkdown, tags);
       // Immediately set as active note and prepend to note list for instant responsiveness
       activeNoteId.value = newNote.object_id;
       activeNote.value = newNote;
