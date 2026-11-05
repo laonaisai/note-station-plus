@@ -86,15 +86,22 @@ describe('2. 服务1 (172.28.10.180) 真实环境 API 联调测试', () => {
     expect(parentNotebookId).toBeDefined();
   });
 
-  it('能在笔记本中创建 Markdown 便签', async () => {
+  it('能在笔记本中创建 Markdown 便签 (含标签测试)', async () => {
     const testTitle = `Vitest 便签 180 - ${Date.now()}`;
     const testMarkdown = `# 自动化测试\n\n来自 Vitest 自动化单元测试的便签内容。\n\n- 时间戳: ${Date.now()}`;
+    const testTags = ['自动化', 'Vitest'];
 
-    const note = await client.createNote(parentNotebookId, testTitle, testMarkdown);
+    const note = await client.createNote(parentNotebookId, testTitle, testMarkdown, testTags);
     expect(note).toBeDefined();
     expect(note.object_id).toBeDefined();
     expect(note.title).toBe(testTitle);
     createdNoteId = note.object_id;
+
+    // 验证 listNotes 能够将便签标签正确关联输出
+    const listRes = await client.listNotes(parentNotebookId);
+    const found = listRes.notes.find(n => n.object_id === createdNoteId);
+    expect(found).toBeDefined();
+    expect(found?.tag).toEqual(expect.arrayContaining(['自动化', 'Vitest']));
   });
 
   it('能获取刚刚创建的便签并验证无损还原的 Markdown 内容', async () => {

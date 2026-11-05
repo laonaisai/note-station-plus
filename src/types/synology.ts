@@ -69,8 +69,10 @@ export interface SynoNote {
 }
 
 export interface SynoTag {
-  tag_id: string;
-  name: string;
+  tag_id?: string;
+  name?: string;
+  title?: string;
+  items?: string[];
   note_count?: number;
 }
 

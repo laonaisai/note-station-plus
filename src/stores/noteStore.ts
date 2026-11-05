@@ -22,7 +22,10 @@ export const useNoteStore = defineStore('notes', () => {
   const filteredNotes = computed(() => {
     if (!searchQuery.value.trim()) return notes.value;
     const q = searchQuery.value.toLowerCase().trim();
-    return notes.value.filter(n => n.title.toLowerCase().includes(q));
+    return notes.value.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      (n.tag || []).some(t => t.toLowerCase().includes(q))
+    );
   });
 
   const activeNotebook = computed(() => {
@@ -108,6 +111,12 @@ export const useNoteStore = defineStore('notes', () => {
     try {
       const fullNote = await client.getNote(noteId);
       activeNote.value = fullNote;
+
+      // Ensure tags in notes list are up to date
+      const item = notes.value.find(n => n.object_id === noteId);
+      if (item && fullNote.tag) {
+        item.tag = [...fullNote.tag];
+      }
     } catch (e) {
       console.error('Failed to get note details', e);
     }

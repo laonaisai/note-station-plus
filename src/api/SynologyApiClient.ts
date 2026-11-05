@@ -211,24 +211,43 @@ export class SynologyApiClient {
    */
   async listNotes(parentId: string, offset = 0, limit = 100): Promise<{ notes: SynoNote[]; total: number }> {
     const sid = this.requireSid();
-    const res = await this.http.get<SynoApiResponse<{ notes?: SynoNote[]; total: number }>>('/webapi/entry.cgi', {
-      params: {
-        api: 'SYNO.NoteStation.Note',
-        version: '1',
-        method: 'list',
-        _sid: sid,
-        parent_id: parentId,
-        offset,
-        limit
-      }
-    });
+
+    // Fetch notes and tag mappings concurrently
+    const [res, tagList] = await Promise.all([
+      this.http.get<SynoApiResponse<{ notes?: SynoNote[]; total: number }>>('/webapi/entry.cgi', {
+        params: {
+          api: 'SYNO.NoteStation.Note',
+          version: '1',
+          method: 'list',
+          _sid: sid,
+          parent_id: parentId,
+          offset,
+          limit
+        }
+      }),
+      this.listTags().catch(() => [])
+    ]);
 
     if (!res.data.success) {
       throw this.formatError(res.data);
     }
 
+    // Build mapping from note object_id to tags
+    const noteTagMap = new Map<string, string[]>();
+    for (const tagObj of tagList) {
+      const tagName = tagObj.title || tagObj.name || '';
+      if (!tagName) continue;
+      for (const noteId of tagObj.items || []) {
+        if (!noteTagMap.has(noteId)) {
+          noteTagMap.set(noteId, []);
+        }
+        noteTagMap.get(noteId)!.push(tagName);
+      }
+    }
+
     const notes = (res.data.data?.notes || []).map(n => ({
       ...n,
+      tag: noteTagMap.get(n.object_id) || n.tag || [],
       markdownContent: n.content ? noteHtmlToMarkdown(n.content) : ''
     }));
 
@@ -292,6 +311,15 @@ export class SynologyApiClient {
 
     const note = res.data.data;
     note.markdownContent = markdownContent;
+
+    // Synology Note Station requires method: 'set' to persist tags onto a note
+    if (tags && tags.length > 0) {
+      await this.updateNote(note.object_id, title, markdownContent, tags);
+      note.tag = [...tags];
+    } else {
+      note.tag = [];
+    }
+
     return note;
   }
 

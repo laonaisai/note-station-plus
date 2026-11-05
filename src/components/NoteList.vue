@@ -124,10 +124,26 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+        <!-- Tags List on Note Item Card -->
+        <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1.5">
+          <span
+            v-for="t in note.tag"
+            :key="t"
+            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none bg-blue-50 text-syno-blue border border-blue-100 max-w-[120px] truncate"
+            :title="t"
+          >
+            <svg class="w-2.5 h-2.5 mr-0.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span class="truncate">{{ t }}</span>
+          </span>
+        </div>
+
+        <!-- Time & Meta -->
+        <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-400">
           <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-          <span v-if="note.tag && note.tag.length > 0" class="truncate max-w-[80px] bg-slate-100 px-1 py-0.5 rounded text-[10px] text-slate-500">
-            {{ note.tag.join(', ') }}
+          <span v-if="note.tag && note.tag.length > 0" class="text-[10px] text-slate-400">
+            {{ note.tag.length }} 个标签
           </span>
         </div>
       </div>
