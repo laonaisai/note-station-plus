@@ -6,7 +6,7 @@
     ]"
   >
     <!-- Search & New / Import Note Bar -->
-    <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5 shrink-0">
+    <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5 shrink-0 bg-white/50 backdrop-blur-xs">
       <div class="relative flex-1">
         <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -14,8 +14,8 @@
         <input
           v-model="noteStore.searchQuery"
           type="text"
-          placeholder="搜索便签..."
-          class="w-full pl-8 pr-2 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue"
+          :placeholder="noteStore.filteredNotes.length > 0 ? `搜索便签 (共 ${noteStore.filteredNotes.length} 篇)...` : '搜索便签...'"
+          class="w-full pl-8 pr-2 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400"
         />
       </div>
 
@@ -61,8 +61,8 @@
       </button>
     </div>
 
-    <!-- Notes List -->
-    <div class="flex-1 overflow-y-auto p-2 space-y-1">
+    <!-- Notes List with Year-Month Grouping -->
+    <div class="flex-1 overflow-y-auto p-2 space-y-3">
       <!-- Loading indicator during note creation -->
       <div
         v-if="noteStore.isCreating"
@@ -75,98 +75,133 @@
         <span class="font-medium">正在向服务器创建新便签...</span>
       </div>
 
-      <div v-if="noteStore.filteredNotes.length === 0 && !noteStore.isCreating" class="text-center py-12 text-xs text-slate-400">
+      <!-- Loading indicator when fetching notes -->
+      <div
+        v-if="noteStore.isLoading && noteStore.notes.length === 0"
+        class="p-8 text-center text-xs text-slate-400 flex flex-col items-center justify-center space-y-2"
+      >
+        <svg class="animate-spin h-5 w-5 text-syno-blue" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>正在加载便签列表...</span>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-else-if="groupedNotes.length === 0 && !noteStore.isCreating"
+        class="text-center py-12 text-xs text-slate-400"
+      >
         {{ noteStore.searchQuery ? '没有找到匹配的便签' : '当前笔记本暂无便签' }}
       </div>
 
+      <!-- Month Groups -->
       <div
-        v-for="note in noteStore.filteredNotes"
-        :key="note.object_id"
-        @click="noteStore.selectNote(note.object_id)"
-        :class="[
-          'group relative p-2.5 rounded-lg cursor-pointer transition border',
-          noteStore.activeNoteId === note.object_id
-            ? 'bg-white border-syno-blue/40 shadow-sm ring-1 ring-syno-blue/30'
-            : 'bg-white/60 border-slate-200/80 hover:bg-white hover:border-slate-300'
-        ]"
+        v-for="group in groupedNotes"
+        :key="group.key"
+        class="space-y-1.5"
       >
-        <div class="flex items-start justify-between">
-          <h4
-            class="text-xs font-semibold truncate flex-1 pr-2"
-            :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue' : 'text-slate-800'"
-          >
-            {{ note.title || '无标题便签' }}
-          </h4>
-
-          <!-- Actions: Share, History, Export & Delete -->
-          <div class="flex items-center space-x-1 shrink-0">
-            <!-- Share Management -->
-            <button
-              @click.stop="$emit('open-share', note.object_id, note.title)"
-              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
-              title="便签分享管理"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-
-            <!-- History Versions -->
-            <button
-              @click.stop="$emit('open-history', note.object_id, note.title)"
-              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
-              title="查看历史版本"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-
-            <!-- Quick Export Note to .md -->
-            <button
-              @click.stop="quickExportNote(note)"
-              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
-              title="导出此便签为 .md 文件"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-
-            <!-- Delete Note Action -->
-            <button
-              @click.stop="confirmDeleteNote(note)"
-              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-0.5 transition"
-              title="删除便签"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Tags List on Note Item Card -->
-        <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1.5">
-          <span
-            v-for="t in note.tag"
-            :key="t"
-            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none bg-blue-50 text-syno-blue border border-blue-100 max-w-[120px] truncate"
-            :title="t"
-          >
-            <svg class="w-2.5 h-2.5 mr-0.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        <!-- Group Header: Year-Month Separator -->
+        <div class="sticky top-0 z-10 px-2 py-1 bg-slate-100/95 backdrop-blur-xs rounded flex items-center justify-between border-b border-slate-200/80 text-[11px] font-semibold text-slate-600 shadow-2xs">
+          <div class="flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span class="truncate">{{ t }}</span>
-          </span>
+            <span>{{ group.label }}</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-normal">{{ group.notes.length }} 篇</span>
         </div>
 
-        <!-- Time & Meta -->
-        <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-400">
-          <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-          <span v-if="note.tag && note.tag.length > 0" class="text-[10px] text-slate-400">
-            {{ note.tag.length }} 个标签
-          </span>
+        <!-- Note Cards in this Month -->
+        <div
+          v-for="note in group.notes"
+          :key="note.object_id"
+          @click="noteStore.selectNote(note.object_id)"
+          :class="[
+            'group relative p-2.5 rounded-lg cursor-pointer transition border',
+            noteStore.activeNoteId === note.object_id
+              ? 'bg-white border-syno-blue/40 shadow-sm ring-1 ring-syno-blue/30'
+              : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+          ]"
+        >
+          <div class="flex items-start justify-between">
+            <h4
+              class="text-xs font-semibold truncate flex-1 pr-2"
+              :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue' : 'text-slate-800'"
+            >
+              {{ note.title || '无标题便签' }}
+            </h4>
+
+            <!-- Actions: Share, History, Export & Delete -->
+            <div class="flex items-center space-x-1 shrink-0">
+              <!-- Share Management -->
+              <button
+                @click.stop="$emit('open-share', note.object_id, note.title)"
+                class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
+                title="便签分享管理"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+
+              <!-- History Versions -->
+              <button
+                @click.stop="$emit('open-history', note.object_id, note.title)"
+                class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
+                title="查看历史版本"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+
+              <!-- Quick Export Note to .md -->
+              <button
+                @click.stop="quickExportNote(note)"
+                class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition"
+                title="导出此便签为 .md 文件"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+
+              <!-- Delete Note Action -->
+              <button
+                @click.stop="confirmDeleteNote(note)"
+                class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-0.5 transition"
+                title="删除便签"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tags List on Note Item Card -->
+          <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1.5">
+            <span
+              v-for="t in note.tag"
+              :key="t"
+              class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none bg-blue-50 text-syno-blue border border-blue-100 max-w-[120px] truncate"
+              :title="t"
+            >
+              <svg class="w-2.5 h-2.5 mr-0.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              <span class="truncate">{{ t }}</span>
+            </span>
+          </div>
+
+          <!-- Time & Meta -->
+          <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-400">
+            <span>{{ formatTime(note.mtime || note.ctime) }}</span>
+            <span v-if="note.tag && note.tag.length > 0" class="text-[10px] text-slate-400">
+              {{ note.tag.length }} 个标签
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -174,6 +209,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useLayoutStore } from '@/stores/layoutStore';
@@ -189,6 +225,51 @@ defineEmits<{
 const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
 const layoutStore = useLayoutStore();
+
+interface NoteMonthGroup {
+  key: string;
+  label: string;
+  notes: SynoNote[];
+}
+
+/**
+ * Group filtered notes by Year-Month, sorted newest first
+ */
+const groupedNotes = computed<NoteMonthGroup[]>(() => {
+  const sorted = [...noteStore.filteredNotes].sort((a, b) => {
+    const timeA = a.mtime || a.ctime || 0;
+    const timeB = b.mtime || b.ctime || 0;
+    return timeB - timeA;
+  });
+
+  const groupMap = new Map<string, { label: string; notes: SynoNote[] }>();
+
+  for (const note of sorted) {
+    const rawTime = note.mtime || note.ctime || 0;
+    let label = '更早或未记录时间';
+    let key = 'earlier';
+
+    if (rawTime > 0) {
+      const ms = rawTime > 10000000000 ? rawTime : rawTime * 1000;
+      const d = new Date(ms);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      key = `${y}-${m.toString().padStart(2, '0')}`;
+      label = `${y}年${m.toString().padStart(2, '0')}月`;
+    }
+
+    if (!groupMap.has(key)) {
+      groupMap.set(key, { label, notes: [] });
+    }
+    groupMap.get(key)!.notes.push(note);
+  }
+
+  return Array.from(groupMap.entries()).map(([key, data]) => ({
+    key,
+    label: data.label,
+    notes: data.notes
+  }));
+});
 
 async function quickExportNote(note: SynoNote) {
   let noteToExport = note;
@@ -207,7 +288,8 @@ async function quickExportNote(note: SynoNote) {
 
 function formatTime(timestamp?: number): string {
   if (!timestamp) return '';
-  const date = new Date(timestamp * 1000);
+  const ms = timestamp > 10000000000 ? timestamp : timestamp * 1000;
+  const date = new Date(ms);
   const now = new Date();
   if (date.toDateString() === now.toDateString()) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -227,7 +309,7 @@ async function createNewNote() {
 async function confirmDeleteNote(note: SynoNote) {
   if (confirm(`确定要将便签【${note.title || '无标题便签'}】移至废纸篓吗？`)) {
     try {
-      await noteStore.deleteActiveNote();
+      await noteStore.deleteNote(note.object_id);
     } catch (e: any) {
       alert(`删除便签失败: ${e?.message || e}`);
     }

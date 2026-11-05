@@ -26,9 +26,19 @@ export const useNoteStore = defineStore('notes', () => {
   const lastSaveTime = ref<number | null>(null);
 
   const filteredNotes = computed(() => {
-    if (!searchQuery.value.trim()) return notes.value;
+    let list = notes.value;
+
+    // Filter by active notebook
+    if (activeNotebookId.value) {
+      list = list.filter(n =>
+        n.parent_id === activeNotebookId.value ||
+        (n as any).notebook_id === activeNotebookId.value
+      );
+    }
+
+    if (!searchQuery.value.trim()) return list;
     const q = searchQuery.value.toLowerCase().trim();
-    return notes.value.filter(n =>
+    return list.filter(n =>
       n.title.toLowerCase().includes(q) ||
       (n.tag || []).some(t => t.toLowerCase().includes(q))
     );
@@ -90,13 +100,19 @@ export const useNoteStore = defineStore('notes', () => {
 
     isLoading.value = true;
     try {
-      const res = await client.listNotes(notebookId);
+      // Use listAllNotes with pagination loop so that all notes are completely loaded
+      const res = await client.listAllNotes(notebookId);
       notes.value = res.notes;
 
+      // Filter notes for the active notebook
+      const currentNotebookNotes = notes.value.filter(n =>
+        n.parent_id === notebookId || (n as any).notebook_id === notebookId
+      );
+
       // Auto-select first note if available
-      if (res.notes.length > 0) {
-        if (!activeNoteId.value || !res.notes.some(n => n.object_id === activeNoteId.value)) {
-          await selectNote(res.notes[0].object_id);
+      if (currentNotebookNotes.length > 0) {
+        if (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value)) {
+          await selectNote(currentNotebookNotes[0].object_id);
         }
       } else {
         activeNoteId.value = null;
@@ -273,6 +289,24 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function deleteNote(noteId: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId || !activeNotebookId.value) return false;
+
+    try {
+      await client.deleteNote(noteId);
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = null;
+        activeNote.value = null;
+      }
+      await fetchNotes(activeNotebookId.value);
+      return true;
+    } catch (e) {
+      console.error('Failed to delete note', e);
+      throw e;
+    }
+  }
+
   async function listNoteVersions(noteId: string): Promise<NoteVersion[]> {
     const client = sessionStore.activeClient;
     if (!client) return [];
@@ -358,6 +392,7 @@ export const useNoteStore = defineStore('notes', () => {
     importNote,
     updateActiveNote,
     deleteActiveNote,
+    deleteNote,
     listNoteVersions,
     getNoteVersionContent,
     restoreNoteVersion,

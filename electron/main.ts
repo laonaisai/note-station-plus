@@ -63,6 +63,11 @@ ipcMain.handle('safeStorage:decryptString', (_event, cipherBase64: string) => {
 });
 
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
+
+app.on('before-quit', () => {
+  isQuitting = true;
+});
 
 const createWindow = () => {
   // Determine preload script location (prefer .cjs, fallback to .js)
@@ -127,6 +132,31 @@ const createWindow = () => {
       shell.openExternal(url);
     }
     return { action: 'deny' };
+  });
+
+  mainWindow.on('close', (e) => {
+    if (isQuitting) {
+      return;
+    }
+
+    e.preventDefault();
+
+    const choice = dialog.showMessageBoxSync(mainWindow!, {
+      type: 'question',
+      buttons: ['确认退出', '取消'],
+      defaultId: 0,
+      cancelId: 1,
+      title: '退出应用确认',
+      message: '确定要关闭并退出 Note Station Plus 吗？',
+      detail: '退出前请确保已完成当前便签编辑。',
+      noLink: true
+    });
+
+    if (choice === 0) {
+      isQuitting = true;
+      mainWindow?.destroy();
+      app.quit();
+    }
   });
 
   mainWindow.on('closed', () => {

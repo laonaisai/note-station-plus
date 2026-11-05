@@ -177,6 +177,14 @@ function handlePinUpdated() {
 }
 
 onMounted(async () => {
+  // Confirmation before closing when running in plain browser mode
+  window.addEventListener('beforeunload', (e) => {
+    if (!window.electronAPI) {
+      e.preventDefault();
+      e.returnValue = '确定要离开或关闭 Note Station Plus 吗？';
+    }
+  });
+
   if (isPinSet.value) {
     // If PIN is enabled, wait until user enters PIN
     isUnlocked.value = false;
