@@ -35,14 +35,24 @@ export class SynologyApiClient {
     this.profile = profile;
     const cleanBaseUrl = profile.serverUrl.replace(/\/+$/, '');
 
+    // Detect browser environment (running in Web browser where CORS applies)
+    const isBrowser = typeof window !== 'undefined' && !(window as any).electronAPI;
+
     this.http = axios.create({
-      baseURL: cleanBaseUrl,
+      baseURL: isBrowser ? '/syno-proxy' : cleanBaseUrl,
       timeout: 15000,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       }
     });
+
+    if (isBrowser) {
+      this.http.interceptors.request.use((config) => {
+        config.headers['X-Syno-Target'] = this.profile.serverUrl.replace(/\/+$/, '');
+        return config;
+      });
+    }
 
     // Handle self-signed certificates in Node / Electron environment
     if (typeof process !== 'undefined' && process.env) {
