@@ -138,15 +138,19 @@
         :key="group.key"
         class="space-y-1.5"
       >
-        <!-- Group Header: Year-Month Separator -->
-        <div class="sticky top-0 z-10 px-2 py-1 bg-slate-100/95 backdrop-blur-xs rounded flex items-center justify-between border-b border-slate-200/80 text-[11px] font-semibold text-slate-600 shadow-2xs">
-          <div class="flex items-center space-x-1.5">
-            <svg class="w-3.5 h-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>{{ group.label }}</span>
+        <!-- Group Header: Year-Month Separator (高对比度显眼样式) -->
+        <div class="sticky top-0 z-10 px-2.5 py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded-lg flex items-center justify-between border-l-[3.5px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-xs mb-1">
+          <div class="flex items-center space-x-2">
+            <div class="p-1 rounded-md bg-blue-100/80 text-syno-blue flex items-center justify-center shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span class="text-xs font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
           </div>
-          <span class="text-[10px] text-slate-400 font-normal">{{ group.notes.length }} 篇</span>
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
+            {{ group.notes.length }} 篇
+          </span>
         </div>
 
         <!-- Note Cards in this Month -->
