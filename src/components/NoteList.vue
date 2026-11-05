@@ -1,7 +1,12 @@
 <template>
-  <div class="w-64 h-full bg-slate-50 border-r border-slate-200 flex flex-col select-none shrink-0">
+  <div
+    :class="[
+      'h-full bg-slate-50 flex flex-col select-none shrink-0 transition-all duration-200 ease-in-out',
+      layoutStore.isNoteListCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-64 border-r border-slate-200'
+    ]"
+  >
     <!-- Search & New / Import Note Bar -->
-    <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5">
+    <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5 shrink-0">
       <div class="relative flex-1">
         <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -18,7 +23,7 @@
       <button
         @click="$emit('open-import')"
         :disabled="!noteStore.activeNotebookId"
-        class="h-7 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs flex items-center shadow-xs shrink-0 transition disabled:opacity-40"
+        class="h-7 px-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs flex items-center shadow-xs shrink-0 transition disabled:opacity-40"
         title="导入 Markdown (.md) 文件"
       >
         <svg class="w-3.5 h-3.5 mr-0.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -31,7 +36,7 @@
       <button
         @click="createNewNote"
         :disabled="noteStore.isCreating || !noteStore.activeNotebookId"
-        class="h-7 px-2.5 bg-syno-blue hover:bg-blue-600 text-white rounded-md text-xs flex items-center shadow-sm shrink-0 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        class="h-7 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded-md text-xs flex items-center shadow-sm shrink-0 transition disabled:opacity-50 disabled:cursor-not-allowed"
         title="新建便签"
       >
         <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
@@ -42,6 +47,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         <span>{{ noteStore.isCreating ? '创建中' : '新建' }}</span>
+      </button>
+
+      <!-- Collapse NoteList Button -->
+      <button
+        @click="layoutStore.toggleNoteList"
+        class="h-7 p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition shrink-0"
+        title="折叠便签列表"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+        </svg>
       </button>
     </div>
 
@@ -122,6 +138,7 @@
 <script setup lang="ts">
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useLayoutStore } from '@/stores/layoutStore';
 import { SynoNote } from '@/types/synology';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
@@ -131,6 +148,7 @@ defineEmits<{
 
 const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
+const layoutStore = useLayoutStore();
 
 async function quickExportNote(note: SynoNote) {
   let noteToExport = note;

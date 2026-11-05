@@ -29,6 +29,16 @@ export const useNoteStore = defineStore('notes', () => {
     return notebooks.value.find(nb => nb.object_id === activeNotebookId.value) || null;
   });
 
+  const allTags = computed(() => {
+    const tagSet = new Set<string>();
+    notes.value.forEach(n => {
+      (n.tag || []).forEach(t => {
+        if (t && t.trim()) tagSet.add(t.trim());
+      });
+    });
+    return Array.from(tagSet).sort();
+  });
+
   async function fetchNotebooks() {
     const client = sessionStore.activeClient;
     if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
@@ -198,21 +208,27 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
-  async function updateActiveNote(title: string, markdownContent: string): Promise<boolean> {
+  async function updateActiveNote(title: string, markdownContent: string, tags?: string[]): Promise<boolean> {
     const client = sessionStore.activeClient;
     if (!client || !activeNote.value || !activeNoteId.value) return false;
 
     isSaving.value = true;
     try {
-      await client.updateNote(activeNoteId.value, title, markdownContent);
+      await client.updateNote(activeNoteId.value, title, markdownContent, tags);
       activeNote.value.title = title;
       activeNote.value.markdownContent = markdownContent;
+      if (tags !== undefined) {
+        activeNote.value.tag = [...tags];
+      }
 
       // Update in note list cache
       const item = notes.value.find(n => n.object_id === activeNoteId.value);
       if (item) {
         item.title = title;
         item.mtime = Math.floor(Date.now() / 1000);
+        if (tags !== undefined) {
+          item.tag = [...tags];
+        }
       }
 
       lastSaveTime.value = Date.now();
@@ -254,6 +270,7 @@ export const useNoteStore = defineStore('notes', () => {
     notebooks,
     activeNotebookId,
     activeNotebook,
+    allTags,
     notes,
     filteredNotes,
     activeNoteId,

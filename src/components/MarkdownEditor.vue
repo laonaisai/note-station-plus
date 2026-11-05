@@ -2,6 +2,24 @@
   <div class="flex-1 h-full bg-white flex flex-col overflow-hidden">
     <!-- Note Empty State -->
     <div v-if="!noteStore.activeNote" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
+      <!-- Distraction-free recovery bar if sidebars are collapsed while empty -->
+      <div v-if="layoutStore.isSidebarCollapsed || layoutStore.isNoteListCollapsed" class="mb-4 flex items-center space-x-2">
+        <button
+          v-if="layoutStore.isSidebarCollapsed"
+          @click="layoutStore.toggleSidebar"
+          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition"
+        >
+          » 展开目录
+        </button>
+        <button
+          v-if="layoutStore.isNoteListCollapsed"
+          @click="layoutStore.toggleNoteList"
+          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition"
+        >
+          » 展开便签列表
+        </button>
+      </div>
+
       <svg class="w-16 h-16 mb-3 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
@@ -11,18 +29,63 @@
     <!-- Active Note Editor -->
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
       <!-- Top Note Bar -->
-      <div class="h-14 px-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-        <!-- Title Input -->
-        <input
-          v-model="editTitle"
-          @input="onContentChanged"
-          type="text"
-          placeholder="便签标题..."
-          class="text-lg font-bold text-slate-800 placeholder-slate-300 border-none outline-none flex-1 mr-4 bg-transparent"
-        />
+      <div class="h-14 px-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+        <!-- Left Side: Sidebar Toggle Icons & Note Title Input -->
+        <div class="flex items-center flex-1 mr-4 min-w-0">
+          <!-- Sidebar Toggle Buttons (Collapse / Expand controls) -->
+          <div class="flex items-center space-x-1 mr-3 shrink-0">
+            <button
+              @click="layoutStore.toggleSidebar"
+              :class="[
+                'p-1.5 rounded-md transition text-xs flex items-center',
+                layoutStore.isSidebarCollapsed ? 'bg-blue-50 text-syno-blue' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              ]"
+              :title="layoutStore.isSidebarCollapsed ? '展开笔记本目录' : '折叠笔记本目录'"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </button>
+
+            <button
+              @click="layoutStore.toggleNoteList"
+              :class="[
+                'p-1.5 rounded-md transition text-xs flex items-center',
+                layoutStore.isNoteListCollapsed ? 'bg-blue-50 text-syno-blue' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              ]"
+              :title="layoutStore.isNoteListCollapsed ? '展开便签列表' : '折叠便签列表'"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+            </button>
+
+            <button
+              @click="layoutStore.toggleFocusMode"
+              :class="[
+                'p-1.5 rounded-md transition text-xs flex items-center',
+                layoutStore.isSidebarCollapsed && layoutStore.isNoteListCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              ]"
+              :title="layoutStore.isSidebarCollapsed && layoutStore.isNoteListCollapsed ? '退出专注模式 (恢复侧边栏)' : '开启专注全屏模式 (最大化编辑空间)'"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Note Title Input -->
+          <input
+            v-model="editTitle"
+            @input="onContentChanged"
+            type="text"
+            placeholder="便签标题..."
+            class="text-base font-bold text-slate-800 placeholder-slate-300 border-none outline-none flex-1 bg-transparent truncate"
+          />
+        </div>
 
         <!-- Right Action Tools -->
-        <div class="flex items-center space-x-3 text-xs select-none shrink-0">
+        <div class="flex items-center space-x-2.5 text-xs select-none shrink-0">
           <!-- Save status indicator -->
           <span class="text-slate-400 text-xs flex items-center">
             <span v-if="noteStore.isSaving" class="flex items-center text-amber-500">
@@ -33,7 +96,7 @@
               保存中...
             </span>
             <span v-else-if="isModified" class="text-slate-400">
-              未保存更改
+              未保存
             </span>
             <span v-else class="text-emerald-500 flex items-center">
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,7 +110,7 @@
           <button
             @click="saveNote"
             :disabled="noteStore.isSaving"
-            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
             title="保存便签 (Ctrl+S)"
           >
             <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,37 +122,37 @@
           <!-- Import as Markdown Button -->
           <button
             @click="$emit('open-import', noteStore.activeNoteId)"
-            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
             title="导入 Markdown (.md) 文件更新或新建便签"
           >
             <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            导入 .md
+            导入
           </button>
 
           <!-- Export as Markdown Button -->
           <button
             @click="exportCurrentNote"
-            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
             title="导出为 Markdown (.md) 文件"
           >
             <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            导出 .md
+            导出
           </button>
 
           <!-- Sync to other servers button (REQ-3) -->
           <button
             @click="$emit('open-sync')"
-            class="px-3 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-sm transition flex items-center"
+            class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-sm transition flex items-center"
             title="将此便签同步到其他 Note Station 服务"
           >
-            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
-            便签同步
+            同步
           </button>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
@@ -116,8 +179,90 @@
         </div>
       </div>
 
+      <!-- Tag Editing Strip (Requirement 2: 便签标签编辑) -->
+      <div class="px-5 py-1.5 bg-slate-50/70 border-b border-slate-100 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs">
+        <span class="flex items-center text-slate-400 text-[11px] mr-1">
+          <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          标签:
+        </span>
+
+        <!-- Existing Tag Pills -->
+        <span
+          v-for="tag in editTags"
+          :key="tag"
+          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-100 text-slate-700 border border-slate-200 group transition hover:border-slate-300"
+        >
+          <span>{{ tag }}</span>
+          <button
+            @click="removeTag(tag)"
+            class="ml-1 text-slate-400 hover:text-rose-500 rounded transition"
+            title="移除此标签"
+          >
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </span>
+
+        <!-- Add Tag Input / Action -->
+        <div class="relative inline-flex items-center">
+          <button
+            v-if="!isAddingTag"
+            @click="startAddTag"
+            class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] text-slate-500 hover:text-syno-blue border border-dashed border-slate-300 hover:border-syno-blue bg-white hover:bg-blue-50/40 transition"
+            title="添加便签标签"
+          >
+            <svg class="w-3 h-3 mr-0.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            添加标签
+          </button>
+
+          <div v-else class="flex items-center space-x-1">
+            <input
+              ref="tagInputRef"
+              v-model="newTagText"
+              @keydown.enter.prevent="confirmAddTag"
+              @keydown.esc="cancelAddTag"
+              @blur="onTagInputBlur"
+              placeholder="输入标签按回车..."
+              class="w-32 px-2 py-0.5 text-[11px] bg-white border border-syno-blue rounded-md outline-none focus:ring-1 focus:ring-syno-blue text-slate-800"
+            />
+            <button
+              @mousedown.prevent="confirmAddTag"
+              class="px-1.5 py-0.5 bg-syno-blue hover:bg-blue-600 text-white rounded text-[10px] transition"
+            >
+              添加
+            </button>
+            <button
+              @mousedown.prevent="cancelAddTag"
+              class="px-1 py-0.5 text-slate-400 hover:text-slate-600 rounded text-[10px] transition"
+            >
+              取消
+            </button>
+
+            <!-- Autocomplete suggestions dropdown -->
+            <div
+              v-if="suggestedTags.length > 0"
+              class="absolute left-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-30 min-w-[120px] max-h-36 overflow-y-auto"
+            >
+              <div
+                v-for="sTag in suggestedTags"
+                :key="sTag"
+                @mousedown.prevent="selectSuggestedTag(sTag)"
+                class="px-2.5 py-1 text-[11px] text-slate-700 hover:bg-blue-50 hover:text-syno-blue cursor-pointer truncate"
+              >
+                {{ sTag }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick Markdown Toolbar -->
-      <div class="h-9 px-6 bg-slate-50/80 border-b border-slate-100 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
+      <div class="h-9 px-5 bg-slate-50/50 border-b border-slate-100 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
         <button @click="insertMarkdown('**', '**')" class="p-1 rounded hover:bg-slate-200 text-slate-600 font-bold text-xs" title="粗体 (Ctrl+B)">B</button>
         <button @click="insertMarkdown('*', '*')" class="p-1 rounded hover:bg-slate-200 text-slate-600 italic text-xs" title="斜体">I</button>
         <button @click="insertMarkdown('# ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs font-semibold" title="一级标题">H1</button>
@@ -172,9 +317,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
+import { useLayoutStore } from '@/stores/layoutStore';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
 defineEmits<{
@@ -183,6 +329,8 @@ defineEmits<{
 }>();
 
 const noteStore = useNoteStore();
+const layoutStore = useLayoutStore();
+
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -193,8 +341,14 @@ const md = new MarkdownIt({
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
 const editTitle = ref('');
 const editMarkdown = ref('');
+const editTags = ref<string[]>([]);
 const isModified = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+
+// Tag editing state
+const isAddingTag = ref(false);
+const newTagText = ref('');
+const tagInputRef = ref<HTMLInputElement | null>(null);
 
 let saveTimer: any = null;
 
@@ -205,15 +359,28 @@ watch(
     if (note) {
       editTitle.value = note.title || '';
       editMarkdown.value = note.markdownContent || '';
+      editTags.value = [...(note.tag || [])];
       isModified.value = false;
     } else {
       editTitle.value = '';
       editMarkdown.value = '';
+      editTags.value = [];
       isModified.value = false;
     }
+    isAddingTag.value = false;
+    newTagText.value = '';
   },
   { immediate: true }
 );
+
+// Autocomplete suggestions based on known note tags
+const suggestedTags = computed(() => {
+  if (!isAddingTag.value) return [];
+  const text = newTagText.value.trim().toLowerCase();
+  return noteStore.allTags.filter(
+    t => !editTags.value.includes(t) && (!text || t.toLowerCase().includes(text))
+  );
+});
 
 const renderedPreviewHtml = computed(() => {
   return md.render(editMarkdown.value || '');
@@ -235,9 +402,61 @@ async function saveNote() {
   if (!noteStore.activeNoteId) return;
 
   const title = editTitle.value.trim() || '无标题便签';
-  const success = await noteStore.updateActiveNote(title, editMarkdown.value);
+  const success = await noteStore.updateActiveNote(title, editMarkdown.value, editTags.value);
   if (success) {
     isModified.value = false;
+  }
+}
+
+function startAddTag() {
+  isAddingTag.value = true;
+  newTagText.value = '';
+  nextTick(() => {
+    tagInputRef.value?.focus();
+  });
+}
+
+function cancelAddTag() {
+  isAddingTag.value = false;
+  newTagText.value = '';
+}
+
+function onTagInputBlur() {
+  setTimeout(() => {
+    if (isAddingTag.value) {
+      if (newTagText.value.trim()) {
+        confirmAddTag();
+      } else {
+        cancelAddTag();
+      }
+    }
+  }, 150);
+}
+
+function confirmAddTag() {
+  const tag = newTagText.value.trim();
+  if (tag && !editTags.value.includes(tag)) {
+    editTags.value.push(tag);
+    onContentChanged();
+  }
+  isAddingTag.value = false;
+  newTagText.value = '';
+}
+
+function selectSuggestedTag(tag: string) {
+  if (tag && !editTags.value.includes(tag)) {
+    editTags.value.push(tag);
+    onContentChanged();
+  }
+  isAddingTag.value = false;
+  newTagText.value = '';
+}
+
+function removeTag(tag: string) {
+  const index = editTags.value.indexOf(tag);
+  if (index !== -1) {
+    editTags.value.splice(index, 1);
+    onContentChanged();
   }
 }
 
@@ -246,7 +465,8 @@ function exportCurrentNote() {
   const currentNote = {
     ...noteStore.activeNote,
     title: editTitle.value.trim() || noteStore.activeNote.title || '无标题便签',
-    markdownContent: editMarkdown.value
+    markdownContent: editMarkdown.value,
+    tag: [...editTags.value]
   };
   exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
 }
@@ -293,4 +513,3 @@ onBeforeUnmount(() => {
   clearTimeout(saveTimer);
 });
 </script>
-

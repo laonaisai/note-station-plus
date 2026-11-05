@@ -1,24 +1,43 @@
 <template>
-  <div class="w-56 h-full bg-slate-100/90 border-r border-slate-200/90 flex flex-col select-none shrink-0">
+  <div
+    :class="[
+      'h-full bg-slate-100/90 flex flex-col select-none shrink-0 transition-all duration-200 ease-in-out',
+      layoutStore.isSidebarCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-56 border-r border-slate-200/90'
+    ]"
+  >
     <!-- Header -->
-    <div class="h-10 px-3 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-700">
-      <span class="flex items-center text-slate-600">
-        <svg class="w-4 h-4 mr-1.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="h-10 px-3 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-700 shrink-0">
+      <span class="flex items-center text-slate-600 truncate mr-2">
+        <svg class="w-4 h-4 mr-1.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        笔记本目录
+        <span class="truncate">笔记本目录</span>
       </span>
 
-      <!-- New Notebook Button -->
-      <button
-        @click="promptNewNotebook"
-        class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
-        title="新建笔记本"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-1 shrink-0">
+        <!-- New Notebook Button -->
+        <button
+          @click="promptNewNotebook"
+          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
+          title="新建笔记本"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+
+        <!-- Collapse Sidebar Button -->
+        <button
+          @click="layoutStore.toggleSidebar"
+          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
+          title="折叠笔记目录"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Notebook List -->
@@ -90,11 +109,13 @@
 <script setup lang="ts">
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useLayoutStore } from '@/stores/layoutStore';
 import { SynoNotebook } from '@/types/synology';
 import { exportNotebookAsZip } from '@/utils/exportMarkdown';
 
 const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
+const layoutStore = useLayoutStore();
 
 async function handleExportNotebook(nb: SynoNotebook) {
   const client = sessionStore.activeClient;
@@ -146,4 +167,3 @@ async function confirmDeleteNotebook(nb: SynoNotebook) {
   }
 }
 </script>
-
