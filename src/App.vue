@@ -1,13 +1,23 @@
 <template>
+  <!-- Fullscreen Startup PIN Lock Guard -->
+  <PinVerifyScreen
+    v-if="isPinSet && !isUnlocked"
+    @unlocked="handlePinUnlocked"
+  />
+
   <div
+    v-else
     class="h-screen w-screen flex flex-col bg-white overflow-hidden select-none font-sans"
     @dragover.prevent
     @drop.prevent="handleWindowDrop"
   >
     <!-- Top Multi-Server Tabs Bar -->
     <TabBar
+      :is-pin-set="isPinSet"
       @add-server="openAddServerModal"
       @edit-server="openEditServerModal"
+      @open-pin-settings="isPinSettingsModalOpen = true"
+      @lock-screen="handleLockScreen"
     />
 
     <!-- Main 3-Column Content Layout -->
@@ -32,6 +42,13 @@
     </div>
 
     <!-- Modals -->
+    <PinSettingsModal
+      :is-open="isPinSettingsModalOpen"
+      @close="isPinSettingsModalOpen = false"
+      @pin-updated="handlePinUpdated"
+      @lock-now="handleLockScreen"
+    />
+
     <ServerModal
       :is-open="isServerModalOpen"
       :profile="editingProfile"
@@ -73,6 +90,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { ServerProfile } from '@/types/synology';
+import { PinManager } from '@/services/pinManager';
 
 import TabBar from '@/components/TabBar.vue';
 import NotebookSidebar from '@/components/NotebookSidebar.vue';
@@ -83,9 +101,17 @@ import SyncModal from '@/components/SyncModal.vue';
 import ImportModal from '@/components/ImportModal.vue';
 import ShareModal from '@/components/ShareModal.vue';
 import HistoryModal from '@/components/HistoryModal.vue';
+import PinVerifyScreen from '@/components/PinVerifyScreen.vue';
+import PinSettingsModal from '@/components/PinSettingsModal.vue';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
+
+// PIN Protection states
+const isPinSet = ref(PinManager.isPinConfigured());
+const isUnlocked = ref(!isPinSet.value);
+const isPinSettingsModalOpen = ref(false);
+let hasInitializedSession = false;
 
 const isServerModalOpen = ref(false);
 const editingProfile = ref<ServerProfile | null>(null);
@@ -119,13 +145,44 @@ function handleNoteRestored(noteId: string) {
   console.log('Note restored to previous version:', noteId);
 }
 
-onMounted(async () => {
+async function initSession() {
+  if (hasInitializedSession) return;
+  hasInitializedSession = true;
+
   await sessionStore.init();
   if (sessionStore.profiles.length === 0) {
     // 首次启动且未配置任何服务时，自动弹出添加服务向导
     isServerModalOpen.value = true;
   } else if (sessionStore.activeSessionState?.isLoggedIn) {
     await noteStore.fetchNotebooks();
+  }
+}
+
+async function handlePinUnlocked() {
+  isUnlocked.value = true;
+  await initSession();
+}
+
+function handleLockScreen() {
+  PinManager.lockSession();
+  isUnlocked.value = false;
+  isPinSettingsModalOpen.value = false;
+}
+
+function handlePinUpdated() {
+  isPinSet.value = PinManager.isPinConfigured();
+  if (!isPinSet.value) {
+    isUnlocked.value = true;
+  }
+}
+
+onMounted(async () => {
+  if (isPinSet.value) {
+    // If PIN is enabled, wait until user enters PIN
+    isUnlocked.value = false;
+  } else {
+    isUnlocked.value = true;
+    await initSession();
   }
 });
 

@@ -31,3 +31,4 @@ if (child.error) {
 }
 
 process.exit(child.status ?? 0);
+

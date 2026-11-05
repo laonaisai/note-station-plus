@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
@@ -29,6 +29,38 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 }
+
+// IPC handlers for local safeStorage DPAPI encryption
+ipcMain.handle('safeStorage:isAvailable', () => {
+  try {
+    return safeStorage.isEncryptionAvailable();
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('safeStorage:encryptString', (_event, plainText: string) => {
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      return safeStorage.encryptString(plainText).toString('base64');
+    }
+  } catch (err) {
+    console.error('[safeStorage] encrypt failed:', err);
+  }
+  return null;
+});
+
+ipcMain.handle('safeStorage:decryptString', (_event, cipherBase64: string) => {
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      const buf = Buffer.from(cipherBase64, 'base64');
+      return safeStorage.decryptString(buf);
+    }
+  } catch (err) {
+    console.error('[safeStorage] decrypt failed:', err);
+  }
+  return null;
+});
 
 let mainWindow: BrowserWindow | null = null;
 

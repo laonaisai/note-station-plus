@@ -41,3 +41,15 @@ html, body, #app {
   padding: 4px 12px !important;
 }
 
+/* PIN error shake animation */
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+.animate-pin-shake {
+  animation: pin-shake 0.4s ease-in-out;
+}
+
+
