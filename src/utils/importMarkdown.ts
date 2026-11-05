@@ -6,6 +6,95 @@ export interface ParsedMarkdownImport {
   rawContent: string;
 }
 
+export interface DecodeResult {
+  text: string;
+  encoding: 'utf-8' | 'gb18030' | 'utf-16le' | 'utf-16be';
+  hasBom: boolean;
+}
+
+/**
+ * Automatically detect encoding (UTF-8, GB2312/GBK/GB18030, UTF-16) and decode byte buffer.
+ * If forceEncoding is provided, uses that encoding instead.
+ */
+export function detectAndDecodeText(
+  buffer: ArrayBuffer | Uint8Array,
+  forceEncoding?: string
+): DecodeResult {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+
+  // 1. Check Byte Order Marks (BOM)
+  if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    const raw = bytes.slice(3);
+    const enc = (forceEncoding || 'utf-8') as 'utf-8';
+    return {
+      text: new TextDecoder(enc).decode(raw),
+      encoding: 'utf-8',
+      hasBom: true
+    };
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+    const raw = bytes.slice(2);
+    const enc = (forceEncoding || 'utf-16le') as 'utf-16le';
+    return {
+      text: new TextDecoder(enc).decode(raw),
+      encoding: 'utf-16le',
+      hasBom: true
+    };
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+    const raw = bytes.slice(2);
+    const enc = (forceEncoding || 'utf-16be') as 'utf-16be';
+    return {
+      text: new TextDecoder(enc).decode(raw),
+      encoding: 'utf-16be',
+      hasBom: true
+    };
+  }
+
+  // If user explicitly forced an encoding, decode directly
+  if (forceEncoding) {
+    try {
+      const decoder = new TextDecoder(forceEncoding);
+      return {
+        text: decoder.decode(bytes),
+        encoding: forceEncoding as any,
+        hasBom: false
+      };
+    } catch {
+      // Fallback if unsupported encoding
+    }
+  }
+
+  // 2. Strict UTF-8 validation
+  try {
+    const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+    const text = utf8Decoder.decode(bytes);
+    return {
+      text,
+      encoding: 'utf-8',
+      hasBom: false
+    };
+  } catch {
+    // 3. Fallback to GB18030 (which encompasses GB2312 and GBK)
+    try {
+      const gbkDecoder = new TextDecoder('gb18030');
+      const text = gbkDecoder.decode(bytes);
+      return {
+        text,
+        encoding: 'gb18030',
+        hasBom: false
+      };
+    } catch {
+      // Ultimate fallback to standard UTF-8 (with replacement characters if any)
+      return {
+        text: new TextDecoder('utf-8').decode(bytes),
+        encoding: 'utf-8',
+        hasBom: false
+      };
+    }
+  }
+}
+
 /**
  * Parse Markdown string, extracting YAML frontmatter (title, tags, notebook) if present,
  * or extracting first H1 heading, or fallback to default filename.
@@ -106,10 +195,18 @@ export function parseImportMarkdown(rawContent: string, defaultFilename?: string
 }
 
 /**
- * Read text content from a File object and parse as Markdown import
+ * Read text content from a File object and parse as Markdown import with smart encoding detection.
  */
-export async function readMarkdownFile(file: File): Promise<ParsedMarkdownImport> {
-  const text = await file.text();
-  return parseImportMarkdown(text, file.name);
+export async function readMarkdownFile(
+  file: File,
+  forceEncoding?: string
+): Promise<ParsedMarkdownImport & { encoding: string; hasBom: boolean }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const { text, encoding, hasBom } = detectAndDecodeText(arrayBuffer, forceEncoding);
+  const parsed = parseImportMarkdown(text, file.name);
+  return {
+    ...parsed,
+    encoding,
+    hasBom
+  };
 }
-

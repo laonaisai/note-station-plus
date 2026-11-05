@@ -49,10 +49,11 @@
             </svg>
           </div>
           <div class="text-xs font-semibold text-slate-700">点击选择或拖拽 Markdown 文件到此处</div>
-          <div class="text-[11px] text-slate-400">支持 .md、.markdown 格式（自动解析 Frontmatter 与标签）</div>
+          <div class="text-[11px] text-slate-400">支持 UTF-8、GB2312/GBK 等全格式中文编码（自动识别防乱码）</div>
         </div>
 
-        <div v-else class="bg-slate-50 rounded-lg p-3.5 border border-slate-200 space-y-2 text-xs">
+        <div v-else class="bg-slate-50 rounded-lg p-3.5 border border-slate-200 space-y-2.5 text-xs">
+          <!-- File Name & Change Button -->
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2 truncate">
               <svg class="w-4 h-4 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,19 +70,49 @@
             </button>
           </div>
 
-          <div class="flex items-center space-x-3 text-[11px] text-slate-500">
-            <span>字数: <b>{{ importedData.content.length }}</b> 字符</span>
-            <span v-if="importedData.tags.length > 0">•</span>
-            <span v-if="importedData.tags.length > 0" class="flex items-center space-x-1">
-              <span>标签:</span>
-              <span
-                v-for="tag in importedData.tags"
-                :key="tag"
-                class="bg-slate-200/80 text-slate-700 px-1 py-0.2 rounded text-[10px]"
+          <!-- Encoding Selector & File Stats -->
+          <div class="flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/70">
+            <!-- Encoding selector -->
+            <div class="flex items-center space-x-1.5">
+              <span class="text-slate-600 font-medium">文件编码:</span>
+              <select
+                v-model="selectedEncoding"
+                @change="reDecodeFile"
+                class="px-1.5 py-0.5 text-[11px] bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-syno-blue text-slate-700"
               >
-                {{ tag }}
+                <option value="utf-8">UTF-8</option>
+                <option value="gb18030">GB2312 / GBK / GB18030</option>
+                <option value="utf-16le">UTF-16 LE</option>
+              </select>
+              <span
+                v-if="selectedEncoding === autoDetectedEncoding"
+                class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-medium"
+              >
+                自动识别
               </span>
-            </span>
+              <span
+                v-else
+                class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 font-medium"
+              >
+                已手动切换
+              </span>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex items-center space-x-2 text-slate-500">
+              <span>字数: <b>{{ importedData.content.length }}</b> 字符</span>
+              <span v-if="importedData.tags.length > 0">•</span>
+              <span v-if="importedData.tags.length > 0" class="flex items-center space-x-1">
+                <span>标签:</span>
+                <span
+                  v-for="tag in importedData.tags"
+                  :key="tag"
+                  class="bg-slate-200/80 text-slate-700 px-1 py-0.2 rounded text-[10px]"
+                >
+                  {{ tag }}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -249,7 +280,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useNoteStore } from '@/stores/noteStore';
-import { parseImportMarkdown, readMarkdownFile, ParsedMarkdownImport } from '@/utils/importMarkdown';
+import {
+  parseImportMarkdown,
+  detectAndDecodeText,
+  ParsedMarkdownImport
+} from '@/utils/importMarkdown';
 import { SynoNote } from '@/types/synology';
 
 const props = defineProps<{
@@ -271,6 +306,10 @@ const isImporting = ref(false);
 const showPreview = ref(false);
 
 const currentFileName = ref<string>('');
+const rawFileBuffer = ref<ArrayBuffer | null>(null);
+const autoDetectedEncoding = ref<string>('utf-8');
+const selectedEncoding = ref<string>('utf-8');
+
 const importedData = ref<ParsedMarkdownImport | null>(null);
 const editTitle = ref<string>('');
 const selectedNotebookId = ref<string>('');
@@ -311,7 +350,14 @@ async function handleDrop(e: DragEvent) {
 async function processFile(file: File) {
   try {
     currentFileName.value = file.name;
-    const parsed = await readMarkdownFile(file);
+    const arrayBuffer = await file.arrayBuffer();
+    rawFileBuffer.value = arrayBuffer;
+
+    const { text, encoding } = detectAndDecodeText(arrayBuffer);
+    autoDetectedEncoding.value = encoding;
+    selectedEncoding.value = encoding;
+
+    const parsed = parseImportMarkdown(text, file.name);
     importedData.value = parsed;
     editTitle.value = parsed.title;
 
@@ -330,6 +376,15 @@ async function processFile(file: File) {
   } catch (err: any) {
     alert(`解析 Markdown 文件失败: ${err?.message || err}`);
   }
+}
+
+function reDecodeFile() {
+  if (!rawFileBuffer.value) return;
+  const { text } = detectAndDecodeText(rawFileBuffer.value, selectedEncoding.value);
+  const parsed = parseImportMarkdown(text, currentFileName.value);
+  importedData.value = parsed;
+  editTitle.value = parsed.title;
+  decideInitialMode();
 }
 
 function decideInitialMode() {
@@ -364,11 +419,13 @@ watch(
         await processFile(props.initialFile);
       } else {
         importedData.value = null;
+        rawFileBuffer.value = null;
         currentFileName.value = '';
         editTitle.value = '';
       }
     } else {
       importedData.value = null;
+      rawFileBuffer.value = null;
     }
   },
   { immediate: true }
@@ -433,4 +490,3 @@ async function executeImport() {
   }
 }
 </script>
-
