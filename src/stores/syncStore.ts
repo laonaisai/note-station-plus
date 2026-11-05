@@ -82,12 +82,17 @@ export const useSyncStore = defineStore('sync', () => {
       const matchedNote = notes.find(n => n.title.trim() === sourceNote.title.trim());
 
       const contentToSync = sourceNote.markdownContent || '';
+      const tagsToSync = Array.isArray(sourceNote.tag) ? [...sourceNote.tag] : [];
+
+      if (tagsToSync.length > 0) {
+        addLog(`提取源便签标签 (${tagsToSync.length}个): ${tagsToSync.map(t => '#' + t).join(' ')}`, 'info');
+      }
 
       if (matchedNote) {
         // Match found -> Update existing note
-        addLog(`匹配到同名便签【${sourceNote.title}】，执行覆盖更新...`, 'info');
-        await client.updateNote(matchedNote.object_id, sourceNote.title, contentToSync);
-        addLog(`便签【${sourceNote.title}】成功更新至【${targetProfile.alias}】`, 'success');
+        addLog(`匹配到同名便签【${sourceNote.title}】，执行覆盖更新 (含标签同步)...`, 'info');
+        await client.updateNote(matchedNote.object_id, sourceNote.title, contentToSync, tagsToSync);
+        addLog(`便签【${sourceNote.title}】及标签已成功更新至【${targetProfile.alias}】`, 'success');
 
         const res: SyncTargetResult = {
           targetServerId,
@@ -99,9 +104,9 @@ export const useSyncStore = defineStore('sync', () => {
         return res;
       } else {
         // No match -> Create new note in target notebook
-        addLog(`目标服务未发现同名便签，正在创建新便签【${sourceNote.title}】...`, 'info');
-        const created = await client.createNote(notebook.object_id, sourceNote.title, contentToSync);
-        addLog(`便签【${sourceNote.title}】成功新建至【${targetProfile.alias}】`, 'success');
+        addLog(`目标服务未发现同名便签，正在创建新便签【${sourceNote.title}】(含标签同步)...`, 'info');
+        const created = await client.createNote(notebook.object_id, sourceNote.title, contentToSync, tagsToSync);
+        addLog(`便签【${sourceNote.title}】及标签已成功新建至【${targetProfile.alias}】`, 'success');
 
         const res: SyncTargetResult = {
           targetServerId,

@@ -15,8 +15,7 @@ export const useSessionStore = defineStore('session', () => {
   });
 
   const activeClient = computed(() => {
-    if (!activeProfile.value) return null;
-    return getOrCreateClient(activeProfile.value);
+    return getClient();
   });
 
   const activeSessionState = computed(() => {

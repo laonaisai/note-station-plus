@@ -274,13 +274,48 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function renameNotebook(notebookId: string, newTitle: string): Promise<boolean> {
+    const client = sessionStore.getClient() || sessionStore.activeClient;
+    const trimmed = newTitle.trim();
+    if (!client || !trimmed) return false;
+
+    try {
+      await client.renameNotebook(notebookId, trimmed);
+      // Immediately update local title in state for snappy UI
+      const target = notebooks.value.find(nb => nb.object_id === notebookId || (nb as any).notebook_id === notebookId);
+      if (target) {
+        target.title = trimmed;
+      }
+      return true;
+    } catch (e) {
+      console.error('Failed to rename notebook', e);
+      throw e;
+    }
+  }
+
   async function deleteNotebook(notebookId: string): Promise<boolean> {
-    const client = sessionStore.activeClient;
+    const client = sessionStore.getClient() || sessionStore.activeClient;
     if (!client) return false;
 
     try {
       await client.deleteNotebook(notebookId);
+
+      // Clean up notes in memory that belonged to this notebook
+      notes.value = notes.value.filter(n => {
+        const pId = String(n.parent_id || '');
+        const nbId = String((n as any).notebook_id || '');
+        return pId !== notebookId && nbId !== notebookId;
+      });
+
+      // If active notebook was deleted, reset selection
+      if (activeNotebookId.value === notebookId) {
+        activeNotebookId.value = null;
+        activeNoteId.value = null;
+        activeNote.value = null;
+      }
+
       await fetchNotebooks();
+      await fetchNotes(undefined, true);
       return true;
     } catch (e) {
       console.error('Failed to delete notebook', e);
@@ -516,6 +551,7 @@ export const useNoteStore = defineStore('notes', () => {
     fetchNotes,
     selectNote,
     createNotebook,
+    renameNotebook,
     deleteNotebook,
     createNote,
     importNote,

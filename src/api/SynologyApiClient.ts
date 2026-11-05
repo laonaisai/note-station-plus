@@ -212,6 +212,37 @@ export class SynologyApiClient {
   }
 
   /**
+   * Rename an existing notebook
+   */
+  async renameNotebook(objectId: string, newTitle: string): Promise<SynoNotebook> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Notebook',
+      version: '1',
+      method: 'set',
+      _sid: sid,
+      object_id: objectId,
+      title: newTitle.trim()
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    return {
+      object_id: objectId,
+      title: newTitle.trim(),
+      category: 'notebook',
+      ctime: res.data.data?.ctime || Math.floor(Date.now() / 1000),
+      mtime: res.data.data?.mtime || Math.floor(Date.now() / 1000),
+      ver: res.data.data?.version || '',
+      preset: false,
+      stack: ''
+    };
+  }
+
+  /**
    * Delete a notebook by object_id
    */
   async deleteNotebook(objectId: string): Promise<boolean> {

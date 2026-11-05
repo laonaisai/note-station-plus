@@ -121,7 +121,7 @@
 
           <!-- Sync to other servers button (REQ-3) -->
           <button
-            @click="$emit('open-sync')"
+            @click="handleOpenSync"
             class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
             title="将此便签同步到其他 Note Station 服务"
           >
@@ -522,6 +522,13 @@ function exportCurrentNote() {
     tag: [...editTags.value]
   };
   exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
+}
+
+async function handleOpenSync() {
+  if (isModified.value) {
+    await saveNote();
+  }
+  emit('open-sync');
 }
 
 function triggerImport() {

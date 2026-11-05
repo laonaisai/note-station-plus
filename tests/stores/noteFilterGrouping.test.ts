@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useNoteStore } from '@/stores/noteStore';
+import { useSessionStore } from '@/stores/sessionStore';
 import { SynoNote } from '@/types/synology';
 
 describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', () => {
@@ -494,6 +495,70 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.selectedTag).toBe('美食');
     noteStore.reset();
     expect(noteStore.selectedTag).toBeNull();
+  });
+
+  it('需求1: 支持笔记本重命名与删除，重命名实时更新标题，删除自动清理便签与状态', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+
+    const mockNb = {
+      object_id: 'nb_to_rename',
+      title: '旧笔记本名',
+      category: 'notebook',
+      ctime: 0,
+      mtime: 0,
+      ver: '1',
+      preset: false,
+      stack: ''
+    };
+    noteStore.notebooks = [mockNb];
+    noteStore.notes = [
+      {
+        object_id: 'n_in_nb',
+        parent_id: 'nb_to_rename',
+        title: '便签X',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'n_keep',
+        parent_id: 'nb_other',
+        title: '便签Y',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: []
+      }
+    ];
+    noteStore.activeNotebookId = 'nb_to_rename';
+
+    // Mock client on sessionStore
+    const mockClient = {
+      renameNotebook: async (id: string, title: string) => ({ object_id: id, title }),
+      deleteNotebook: async (id: string) => true,
+      listNotebooks: async () => [],
+      listAllNotes: async () => ({ notes: [], total: 0 }),
+      listNotes: async () => ({ notes: [], total: 0 })
+    };
+    vi.spyOn(sessionStore, 'getClient').mockReturnValue(mockClient as any);
+
+    // 1. 重命名
+    await noteStore.renameNotebook('nb_to_rename', '新笔记本名');
+    expect(noteStore.notebooks[0].title).toBe('新笔记本名');
+
+    // 2. 删除笔记本
+    await noteStore.deleteNotebook('nb_to_rename');
+    // nb_to_rename 下的便签被清除，其他笔记本便签保留
+    expect(noteStore.notes.find(n => n.parent_id === 'nb_to_rename')).toBeUndefined();
+    expect(noteStore.notes.find(n => n.parent_id === 'nb_other')).toBeDefined();
+    // activeNotebookId 被重置
+    expect(noteStore.activeNotebookId).toBeNull();
   });
 });
 

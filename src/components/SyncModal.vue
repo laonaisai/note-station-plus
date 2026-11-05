@@ -30,6 +30,17 @@
             <span>•</span>
             <span>字数: {{ (noteStore.activeNote?.markdownContent || '').length }} 字符</span>
           </div>
+          <!-- Tags list -->
+          <div v-if="noteStore.activeNote?.tag && noteStore.activeNote.tag.length > 0" class="mt-2 flex items-center flex-wrap gap-1 border-t border-slate-200/60 pt-1.5">
+            <span class="text-slate-400 text-[11px] mr-1">附带标签:</span>
+            <span
+              v-for="t in noteStore.activeNote.tag"
+              :key="t"
+              class="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200/80 text-syno-blue text-[11px] font-medium"
+            >
+              #{{ t }}
+            </span>
+          </div>
         </div>
 
         <!-- Target Server Selection -->
