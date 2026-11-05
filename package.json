@@ -1,6 +1,6 @@
 {
   "name": "note-station-plus",
-  "version": "20261105.19.02",
+  "version": "20261105.19.35",
   "description": "Cross-platform enhanced Synology Note Station desktop client with Markdown, multi-session tabs, and sync",
   "main": "dist-electron/main.cjs",
   "type": "module",

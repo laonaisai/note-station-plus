@@ -29,3 +29,4 @@ try {
   console.error('❌ Failed to update package.json version:', error);
   process.exit(1);
 }
+
