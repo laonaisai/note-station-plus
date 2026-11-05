@@ -7,9 +7,15 @@ export const useSyncStore = defineStore('sync', () => {
   const sessionStore = useSessionStore();
   const isSyncing = ref<boolean>(false);
   const syncLogs = ref<Array<{ time: number; message: string; type: 'info' | 'success' | 'error' }>>([]);
+  const lastSyncResult = ref<SyncTargetResult | null>(null);
+
+  function clearLogs() {
+    syncLogs.value = [];
+    lastSyncResult.value = null;
+  }
 
   function addLog(message: string, type: 'info' | 'success' | 'error' = 'info') {
-    syncLogs.value.unshift({ time: Date.now(), message, type });
+    syncLogs.value.push({ time: Date.now(), message, type });
   }
 
   /**
@@ -83,42 +89,50 @@ export const useSyncStore = defineStore('sync', () => {
         await client.updateNote(matchedNote.object_id, sourceNote.title, contentToSync);
         addLog(`便签【${sourceNote.title}】成功更新至【${targetProfile.alias}】`, 'success');
 
-        return {
+        const res: SyncTargetResult = {
           targetServerId,
           targetNotebookId: notebook.object_id,
           targetNoteId: matchedNote.object_id,
           action: 'updated'
         };
+        lastSyncResult.value = res;
+        return res;
       } else {
         // No match -> Create new note in target notebook
         addLog(`目标服务未发现同名便签，正在创建新便签【${sourceNote.title}】...`, 'info');
         const created = await client.createNote(notebook.object_id, sourceNote.title, contentToSync);
         addLog(`便签【${sourceNote.title}】成功新建至【${targetProfile.alias}】`, 'success');
 
-        return {
+        const res: SyncTargetResult = {
           targetServerId,
           targetNotebookId: notebook.object_id,
           targetNoteId: created.object_id,
           action: 'created'
         };
+        lastSyncResult.value = res;
+        return res;
       }
     } catch (err: any) {
       const errMsg = err?.message || '同步操作发生未知错误';
       addLog(`同步失败: ${errMsg}`, 'error');
-      return {
+      const res: SyncTargetResult = {
         targetServerId,
         targetNotebookId: '',
         action: 'failed',
         error: errMsg
       };
+      lastSyncResult.value = res;
+      return res;
     }
   }
 
   return {
     isSyncing,
     syncLogs,
+    lastSyncResult,
     syncNoteToTarget,
-    addLog
+    addLog,
+    clearLogs
   };
 });
 

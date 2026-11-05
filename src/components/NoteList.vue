@@ -1,6 +1,6 @@
 <template>
   <div class="w-64 h-full bg-slate-50 border-r border-slate-200 flex flex-col select-none shrink-0">
-    <!-- Search & New Note Bar -->
+    <!-- Search & New / Import Note Bar -->
     <div class="p-2 border-b border-slate-200 flex items-center space-x-1.5">
       <div class="relative flex-1">
         <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -14,21 +14,52 @@
         />
       </div>
 
+      <!-- Import Markdown Button -->
+      <button
+        @click="$emit('open-import')"
+        :disabled="!noteStore.activeNotebookId"
+        class="h-7 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs flex items-center shadow-xs shrink-0 transition disabled:opacity-40"
+        title="导入 Markdown (.md) 文件"
+      >
+        <svg class="w-3.5 h-3.5 mr-0.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        导入
+      </button>
+
+      <!-- New Note Button with Spinner -->
       <button
         @click="createNewNote"
-        class="h-7 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded-md text-xs flex items-center shadow-sm shrink-0 transition"
+        :disabled="noteStore.isCreating || !noteStore.activeNotebookId"
+        class="h-7 px-2.5 bg-syno-blue hover:bg-blue-600 text-white rounded-md text-xs flex items-center shadow-sm shrink-0 transition disabled:opacity-50 disabled:cursor-not-allowed"
         title="新建便签"
       >
-        <svg class="w-3.5 h-3.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <svg v-else class="w-3.5 h-3.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        新建
+        <span>{{ noteStore.isCreating ? '创建中' : '新建' }}</span>
       </button>
     </div>
 
     <!-- Notes List -->
     <div class="flex-1 overflow-y-auto p-2 space-y-1">
-      <div v-if="noteStore.filteredNotes.length === 0" class="text-center py-12 text-xs text-slate-400">
+      <!-- Loading indicator during note creation -->
+      <div
+        v-if="noteStore.isCreating"
+        class="p-2.5 rounded-lg border border-syno-blue/40 bg-blue-50/50 animate-pulse flex items-center space-x-2 text-xs text-syno-blue"
+      >
+        <svg class="animate-spin h-3.5 w-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <span class="font-medium">正在向服务器创建新便签...</span>
+      </div>
+
+      <div v-if="noteStore.filteredNotes.length === 0 && !noteStore.isCreating" class="text-center py-12 text-xs text-slate-400">
         {{ noteStore.searchQuery ? '没有找到匹配的便签' : '当前笔记本暂无便签' }}
       </div>
 
@@ -94,6 +125,10 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { SynoNote } from '@/types/synology';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
+defineEmits<{
+  (e: 'open-import'): void;
+}>();
+
 const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
 
@@ -123,6 +158,7 @@ function formatTime(timestamp?: number): string {
 }
 
 async function createNewNote() {
+  if (noteStore.isCreating || !noteStore.activeNotebookId) return;
   try {
     await noteStore.createNote('新便签', '# 新便签\n\n在此开始编写 Markdown...');
   } catch (e: any) {
@@ -140,4 +176,3 @@ async function confirmDeleteNote(note: SynoNote) {
   }
 }
 </script>
-

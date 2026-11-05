@@ -1,5 +1,9 @@
 <template>
-  <div class="h-screen w-screen flex flex-col bg-white overflow-hidden select-none font-sans">
+  <div
+    class="h-screen w-screen flex flex-col bg-white overflow-hidden select-none font-sans"
+    @dragover.prevent
+    @drop.prevent="handleWindowDrop"
+  >
     <!-- Top Multi-Server Tabs Bar -->
     <TabBar
       @add-server="openAddServerModal"
@@ -12,10 +16,13 @@
       <NotebookSidebar />
 
       <!-- Middle Column: Notes List -->
-      <NoteList />
+      <NoteList @open-import="openImportModal(null)" />
 
       <!-- Right Column: Markdown Editor / Preview -->
-      <MarkdownEditor @open-sync="isSyncModalOpen = true" />
+      <MarkdownEditor
+        @open-sync="isSyncModalOpen = true"
+        @open-import="openImportModal"
+      />
     </div>
 
     <!-- Modals -->
@@ -29,6 +36,13 @@
     <SyncModal
       :is-open="isSyncModalOpen"
       @close="isSyncModalOpen = false"
+    />
+
+    <ImportModal
+      :is-open="isImportModalOpen"
+      :initial-file="droppedFile"
+      :target-object-id="importTargetObjectId"
+      @close="isImportModalOpen = false"
     />
   </div>
 </template>
@@ -45,6 +59,7 @@ import NoteList from '@/components/NoteList.vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import ServerModal from '@/components/ServerModal.vue';
 import SyncModal from '@/components/SyncModal.vue';
+import ImportModal from '@/components/ImportModal.vue';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
@@ -52,6 +67,10 @@ const noteStore = useNoteStore();
 const isServerModalOpen = ref(false);
 const editingProfile = ref<ServerProfile | null>(null);
 const isSyncModalOpen = ref(false);
+
+const isImportModalOpen = ref(false);
+const importTargetObjectId = ref<string | null>(null);
+const droppedFile = ref<File | null>(null);
 
 onMounted(async () => {
   await sessionStore.init();
@@ -98,5 +117,21 @@ async function handleSaveServer(profile: ServerProfile) {
   }
   await noteStore.fetchNotebooks();
 }
-</script>
 
+function openImportModal(targetObjectId?: string | null) {
+  importTargetObjectId.value = targetObjectId || null;
+  droppedFile.value = null;
+  isImportModalOpen.value = true;
+}
+
+function handleWindowDrop(e: DragEvent) {
+  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    if (file.name.match(/\.(md|markdown|txt)$/i)) {
+      droppedFile.value = file;
+      importTargetObjectId.value = noteStore.activeNoteId;
+      isImportModalOpen.value = true;
+    }
+  }
+}
+</script>

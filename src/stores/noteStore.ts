@@ -15,6 +15,7 @@ export const useNoteStore = defineStore('notes', () => {
 
   const searchQuery = ref<string>('');
   const isLoading = ref<boolean>(false);
+  const isCreating = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
   const lastSaveTime = ref<number | null>(null);
 
@@ -131,18 +132,69 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
-  async function createNote(title = '无标题便签', initialMarkdown = ''): Promise<SynoNote | null> {
+  async function createNote(title = '无标题便签', initialMarkdown = '', tags: string[] = []): Promise<SynoNote | null> {
     const client = sessionStore.activeClient;
     if (!client || !activeNotebookId.value) return null;
 
+    isCreating.value = true;
     try {
-      const newNote = await client.createNote(activeNotebookId.value, title, initialMarkdown);
-      await fetchNotes(activeNotebookId.value);
-      await selectNote(newNote.object_id);
+      const newNote = await client.createNote(activeNotebookId.value, title, initialMarkdown, tags);
+      // Immediately set as active note and prepend to note list for instant responsiveness
+      activeNoteId.value = newNote.object_id;
+      activeNote.value = newNote;
+      notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
+
+      // Background refresh to synchronize all metadata
+      fetchNotes(activeNotebookId.value).catch(console.error);
+
       return newNote;
     } catch (e) {
       console.error('Failed to create note', e);
       throw e;
+    } finally {
+      isCreating.value = false;
+    }
+  }
+
+  async function importNote(options: {
+    targetNotebookId: string;
+    title: string;
+    markdownContent: string;
+    tags?: string[];
+    updateObjectId?: string;
+  }): Promise<SynoNote> {
+    const client = sessionStore.activeClient;
+    if (!client) throw new Error('未连接服务器');
+
+    if (options.updateObjectId) {
+      // Update existing note
+      await client.updateNote(options.updateObjectId, options.title, options.markdownContent, options.tags);
+      if (activeNoteId.value === options.updateObjectId && activeNote.value) {
+        activeNote.value.title = options.title;
+        activeNote.value.markdownContent = options.markdownContent;
+        if (options.tags) activeNote.value.tag = options.tags;
+      }
+      const item = notes.value.find(n => n.object_id === options.updateObjectId);
+      if (item) {
+        item.title = options.title;
+        item.mtime = Math.floor(Date.now() / 1000);
+        if (options.tags) item.tag = options.tags;
+      }
+      await selectNote(options.updateObjectId);
+      return activeNote.value || (await client.getNote(options.updateObjectId));
+    } else {
+      // Create new note
+      isCreating.value = true;
+      try {
+        const newNote = await client.createNote(options.targetNotebookId, options.title, options.markdownContent, options.tags || []);
+        activeNoteId.value = newNote.object_id;
+        activeNote.value = newNote;
+        notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
+        fetchNotes(options.targetNotebookId).catch(console.error);
+        return newNote;
+      } finally {
+        isCreating.value = false;
+      }
     }
   }
 
@@ -208,6 +260,7 @@ export const useNoteStore = defineStore('notes', () => {
     activeNote,
     searchQuery,
     isLoading,
+    isCreating,
     isSaving,
     lastSaveTime,
     fetchNotebooks,
@@ -217,6 +270,7 @@ export const useNoteStore = defineStore('notes', () => {
     createNotebook,
     deleteNotebook,
     createNote,
+    importNote,
     updateActiveNote,
     deleteActiveNote,
     reset

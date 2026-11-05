@@ -56,6 +56,18 @@
             保存
           </button>
 
+          <!-- Import as Markdown Button -->
+          <button
+            @click="$emit('open-import', noteStore.activeNoteId)"
+            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center"
+            title="导入 Markdown (.md) 文件更新或新建便签"
+          >
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            导入 .md
+          </button>
+
           <!-- Export as Markdown Button -->
           <button
             @click="exportCurrentNote"
@@ -165,7 +177,10 @@ import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
-defineEmits(['open-sync']);
+defineEmits<{
+  (e: 'open-sync'): void;
+  (e: 'open-import', noteId?: string | null): void;
+}>();
 
 const noteStore = useNoteStore();
 const md = new MarkdownIt({
