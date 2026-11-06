@@ -375,16 +375,6 @@
           </div>
 
           <div class="flex items-center space-x-1 shrink-0">
-            <!-- Note count badge -->
-            <span
-              :class="[
-                'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
-                expandedNotebookId === nb.object_id ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
-              ]"
-            >
-              {{ noteStore.getNotebookNoteCount(nb) }}
-            </span>
-
             <!-- Action Buttons (Hover) -->
             <!-- Rename notebook button -->
             <button
@@ -419,6 +409,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
+
+            <!-- Note count badge (放在操作按钮后面，统一靠右整齐对齐) -->
+            <span
+              :class="[
+                'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0 ml-0.5',
+                expandedNotebookId === nb.object_id ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+              ]"
+            >
+              {{ noteStore.getNotebookNoteCount(nb) }}
+            </span>
           </div>
         </div>
 
