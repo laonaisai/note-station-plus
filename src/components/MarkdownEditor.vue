@@ -69,6 +69,7 @@
             <input
               v-model="editTitle"
               @input="onContentChanged"
+              :readonly="isRecycledNote"
               type="text"
               placeholder="便签标题..."
               class="text-base font-bold text-slate-800 placeholder-slate-300 border-none outline-none flex-1 bg-transparent truncate"
@@ -78,69 +79,96 @@
 
         <!-- Right Action Tools -->
         <div class="flex items-center space-x-2.5 text-xs select-none shrink-0">
-          <!-- Save status indicator -->
-          <span class="text-slate-400 text-xs flex items-center">
-            <span v-if="noteStore.isSaving" class="flex items-center text-amber-500">
-              <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-amber-500" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              保存中...
-            </span>
-            <span v-else-if="isModified" class="text-slate-400">
-              未保存
-            </span>
-            <span v-else class="text-emerald-500 flex items-center">
-              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              已保存
-            </span>
-          </span>
-
-          <!-- Manual Save Button -->
-          <button
-            @click="saveNote"
-            :disabled="noteStore.isSaving"
-            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
-            title="保存便签 (Ctrl+S)"
-          >
-            <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            保存
-          </button>
-
-          <!-- Sync to other servers button (REQ-3) -->
-          <button
-            @click="handleOpenSync"
-            class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
-            title="将此便签同步到其他 Note Station 服务"
-          >
-            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            同步
-          </button>
-
-          <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
-          <div class="relative inline-flex items-center">
+          <!-- 回收站便签专用操作栏 (便签操作仅有“恢复”与“彻底删除”) -->
+          <template v-if="isRecycledNote">
             <button
-              @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
-              :class="[
-                'px-2 py-1 rounded-md font-medium transition flex items-center border cursor-pointer text-xs',
-                isMoreMenuOpen ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80'
-              ]"
-              title="更多便签操作 (导入/导出/分享/历史)"
+              @click="handleRestoreRecycledNote"
+              class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              title="将便签恢复至原笔记本"
+            >
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              恢复
+            </button>
+
+            <button
+              @click="handlePermanentDeleteRecycledNote"
+              class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              title="彻底删除此便签 (不可撤销)"
+            >
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              彻底删除
+            </button>
+          </template>
+
+          <!-- 普通便签操作栏 -->
+          <template v-else>
+            <!-- Save status indicator -->
+            <span class="text-slate-400 text-xs flex items-center">
+              <span v-if="noteStore.isSaving" class="flex items-center text-amber-500">
+                <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-amber-500" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                保存中...
+              </span>
+              <span v-else-if="isModified" class="text-slate-400">
+                未保存
+              </span>
+              <span v-else class="text-emerald-500 flex items-center">
+                <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                已保存
+              </span>
+            </span>
+
+            <!-- Manual Save Button -->
+            <button
+              @click="saveNote"
+              :disabled="noteStore.isSaving"
+              class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
+              title="保存便签 (Ctrl+S)"
             >
               <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
-              <span>更多</span>
-              <svg class="w-3 h-3 ml-1 text-slate-400 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
+              保存
             </button>
+
+            <!-- Sync to other servers button (REQ-3) -->
+            <button
+              @click="handleOpenSync"
+              class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              title="将此便签同步到其他 Note Station 服务"
+            >
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              同步
+            </button>
+
+            <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
+            <div class="relative inline-flex items-center">
+              <button
+                @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
+                :class="[
+                  'px-2 py-1 rounded-md font-medium transition flex items-center border cursor-pointer text-xs',
+                  isMoreMenuOpen ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80'
+                ]"
+                title="更多便签操作 (导入/导出/分享/历史)"
+              >
+                <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+                <span>更多</span>
+                <svg class="w-3 h-3 ml-1 text-slate-400 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
             <!-- Dropdown Menu -->
             <div
@@ -195,6 +223,7 @@
               </button>
             </div>
           </div>
+        </template>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
           <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
@@ -237,6 +266,7 @@
         >
           <span>{{ tag }}</span>
           <button
+            v-if="!isRecycledNote"
             @click="removeTag(tag)"
             class="ml-1 text-slate-400 hover:text-rose-500 rounded transition"
             title="移除此标签"
@@ -248,7 +278,7 @@
         </span>
 
         <!-- Add Tag Input / Action -->
-        <div class="relative inline-flex items-center">
+        <div v-if="!isRecycledNote" class="relative inline-flex items-center">
           <button
             v-if="!isAddingTag"
             @click="startAddTag"
@@ -302,8 +332,32 @@
         </div>
       </div>
 
-      <!-- Quick Markdown Toolbar -->
-      <div class="h-9 px-5 bg-slate-50/50 border-b border-slate-100 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
+      <!-- Recycle Bin Warning Banner -->
+      <div v-if="isRecycledNote" class="px-5 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>此便签当前位于回收站中，处于只读模式。如需编辑，请先恢复便签。</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button
+            @click="handleRestoreRecycledNote"
+            class="px-2.5 py-0.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-800 rounded font-medium transition cursor-pointer"
+          >
+            恢复便签
+          </button>
+          <button
+            @click="handlePermanentDeleteRecycledNote"
+            class="px-2.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-medium transition cursor-pointer"
+          >
+            彻底删除
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Markdown Toolbar (普通编辑模式下显示) -->
+      <div v-if="!isRecycledNote" class="h-9 px-5 bg-slate-50/50 border-b border-slate-100 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
         <button @click="insertMarkdown('**', '**')" class="p-1 rounded hover:bg-slate-200 text-slate-600 font-bold text-xs" title="粗体 (Ctrl+B)">B</button>
         <button @click="insertMarkdown('*', '*')" class="p-1 rounded hover:bg-slate-200 text-slate-600 italic text-xs" title="斜体">I</button>
         <button @click="insertMarkdown('# ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs font-semibold" title="一级标题">H1</button>
@@ -334,6 +388,7 @@
             v-model="editMarkdown"
             @input="onContentChanged"
             @keydown="handleKeydown"
+            :readonly="isRecycledNote"
             placeholder="使用 Markdown 编写便签内容..."
             class="w-full h-full p-6 text-sm font-mono text-slate-800 bg-white resize-none outline-none leading-relaxed"
           ></textarea>
@@ -351,6 +406,57 @@
             class="markdown-preview prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue"
             v-html="renderedPreviewHtml"
           ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permanent Delete Confirmation Modal in Editor -->
+    <div
+      v-if="isPermanentDeleteModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      @click.self="isPermanentDeleteModalOpen = false"
+    >
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5">
+          <div class="flex items-start space-x-3">
+            <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-slate-800">彻底删除便签</h3>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                确定要彻底删除便签【<b class="text-slate-800">{{ noteStore.activeNote?.title || '无标题便签' }}</b>】吗？
+              </p>
+              <p class="text-xs text-rose-500 mt-1 font-medium">
+                ⚠️ 彻底删除后此便签将无法找回，不可撤销！
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              @click="isPermanentDeleteModalOpen = false"
+              :disabled="isPermanentDeleting"
+              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              @click="confirmPermanentDelete"
+              :disabled="isPermanentDeleting"
+              class="px-4 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium shadow-2xs transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <svg v-if="isPermanentDeleting" class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>{{ isPermanentDeleting ? '正在彻底删除...' : '确认彻底删除' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -433,7 +539,47 @@ const renderedPreviewHtml = computed(() => {
   return md.render(editMarkdown.value || '');
 });
 
+const isRecycledNote = computed(() => {
+  return noteStore.activeNotebookId === '__recycle_bin__' || Boolean(noteStore.activeNote?.recycle);
+});
+
+const isPermanentDeleteModalOpen = ref(false);
+const isPermanentDeleting = ref(false);
+
+async function handleRestoreRecycledNote() {
+  const note = noteStore.activeNote;
+  if (!note) return;
+  try {
+    await noteStore.restoreNote(note.object_id);
+    showToast(`便签【${note.title || '无标题便签'}】已成功恢复至原笔记本！`, 'success');
+  } catch (e: any) {
+    showToast(`恢复便签失败: ${e?.message || e}`, 'error');
+  }
+}
+
+function handlePermanentDeleteRecycledNote() {
+  if (noteStore.activeNote) {
+    isPermanentDeleteModalOpen.value = true;
+  }
+}
+
+async function confirmPermanentDelete() {
+  const note = noteStore.activeNote;
+  if (!note) return;
+  isPermanentDeleting.value = true;
+  try {
+    await noteStore.permanentlyDeleteNote(note.object_id);
+    isPermanentDeleteModalOpen.value = false;
+    showToast('便签已彻底删除', 'success');
+  } catch (e: any) {
+    showToast(`彻底删除便签失败: ${e?.message || e}`, 'error');
+  } finally {
+    isPermanentDeleting.value = false;
+  }
+}
+
 function onContentChanged() {
+  if (isRecycledNote.value) return;
   isModified.value = true;
   clearTimeout(saveTimer);
   // Auto-save debounced after 2.5 seconds of inactivity
@@ -445,6 +591,7 @@ function onContentChanged() {
 }
 
 async function saveNote() {
+  if (isRecycledNote.value) return;
   clearTimeout(saveTimer);
   if (!noteStore.activeNoteId) return;
 

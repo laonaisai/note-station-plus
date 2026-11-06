@@ -17,6 +17,7 @@ export const useNoteStore = defineStore('notes', () => {
   const activeNotebookId = ref<string | null>(null);
 
   const notes = ref<SynoNote[]>([]);
+  const recycledNotes = ref<SynoNote[]>([]);
   const activeNoteId = ref<string | null>(null);
   const activeNote = ref<SynoNote | null>(null);
 
@@ -94,6 +95,9 @@ export const useNoteStore = defineStore('notes', () => {
     if (targetId === '__shared_notes__') {
       return notes.value.filter(n => isNoteShared(n)).length;
     }
+    if (targetId === '__recycle_bin__') {
+      return recycledNotes.value.length;
+    }
     const itemSet = new Set(nb.items?.map(i => String(i)) || []);
 
     if (notes.value.length > 0) {
@@ -111,9 +115,11 @@ export const useNoteStore = defineStore('notes', () => {
   const filteredNotes = computed(() => {
     let list = notes.value;
 
-    // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes)
+    // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes; if '__recycle_bin__', display recycled notes)
     if (activeNotebookId.value && activeNotebookId.value !== '__all_notes__') {
-      if (activeNotebookId.value === '__shared_notes__') {
+      if (activeNotebookId.value === '__recycle_bin__') {
+        list = recycledNotes.value;
+      } else if (activeNotebookId.value === '__shared_notes__') {
         list = list.filter(n => isNoteShared(n));
       } else {
         const targetId = String(activeNotebookId.value);
@@ -205,12 +211,25 @@ export const useNoteStore = defineStore('notes', () => {
         stack: ''
       };
     }
+    if (activeNotebookId.value === '__recycle_bin__') {
+      return {
+        object_id: '__recycle_bin__',
+        title: '回收站',
+        category: 'recycle',
+        ctime: 0,
+        mtime: 0,
+        ver: '',
+        preset: true,
+        stack: ''
+      };
+    }
     return notebooks.value.find(nb => nb.object_id === activeNotebookId.value) || null;
   });
 
   const allTags = computed(() => {
     const tagSet = new Set<string>();
-    notes.value.forEach(n => {
+    const sourceNotes = activeNotebookId.value === '__recycle_bin__' ? recycledNotes.value : notes.value;
+    sourceNotes.forEach(n => {
       (n.tag || []).forEach(t => {
         if (t && t.trim()) tagSet.add(t.trim());
       });
@@ -223,14 +242,16 @@ export const useNoteStore = defineStore('notes', () => {
 
     // Calculate tag counts for notes in current notebook (or all notes if no notebook selected)
     const targetNotes = (activeNotebookId.value && activeNotebookId.value !== '__all_notes__')
-      ? (activeNotebookId.value === '__shared_notes__'
-          ? notes.value.filter(n => isNoteShared(n))
-          : notes.value.filter(n => {
-              const targetId = String(activeNotebookId.value);
-              const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
-              const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
-              return String(n.parent_id || '') === targetId || String((n as any).notebook_id || '') === targetId || targetNbItems.has(String(n.object_id));
-            }))
+      ? (activeNotebookId.value === '__recycle_bin__'
+          ? recycledNotes.value
+          : activeNotebookId.value === '__shared_notes__'
+            ? notes.value.filter(n => isNoteShared(n))
+            : notes.value.filter(n => {
+                const targetId = String(activeNotebookId.value);
+                const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
+                const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
+                return String(n.parent_id || '') === targetId || String((n as any).notebook_id || '') === targetId || targetNbItems.has(String(n.object_id));
+              }))
       : notes.value;
 
     for (const note of targetNotes) {
@@ -309,10 +330,31 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function fetchRecycledNotes() {
+    const client = sessionStore.activeClient;
+    if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
+
+    try {
+      const res = await client.listAllRecycleNotes();
+      recycledNotes.value = res.notes;
+    } catch (e) {
+      console.error('Failed to fetch recycled notes', e);
+    }
+  }
+
   async function selectNotebook(notebookId: string) {
     activeNotebookId.value = notebookId;
     activeNoteId.value = null;
     activeNote.value = null;
+
+    if (notebookId === '__recycle_bin__') {
+      await fetchRecycledNotes();
+      const currentNotes = filteredNotes.value;
+      if (currentNotes.length > 0) {
+        await selectNote(currentNotes[0].object_id);
+      }
+      return;
+    }
 
     if (notes.value.length === 0) {
       await fetchNotes(notebookId);
@@ -347,6 +389,9 @@ export const useNoteStore = defineStore('notes', () => {
       const res = await client.listAllNotes();
       notes.value = res.notes;
 
+      // Also refresh recycle notes in background to keep count badge updated
+      fetchRecycledNotes().catch(console.error);
+
       // Filter notes for the active notebook
       const currentNotebookNotes = filteredNotes.value;
 
@@ -376,12 +421,17 @@ export const useNoteStore = defineStore('notes', () => {
       activeNote.value = fullNote;
 
       // Ensure tags in notes list are up to date
-      const item = notes.value.find(n => n.object_id === noteId);
+      const item = notes.value.find(n => n.object_id === noteId) || recycledNotes.value.find(n => n.object_id === noteId);
       if (item && fullNote.tag) {
         item.tag = [...fullNote.tag];
       }
     } catch (e) {
       console.error('Failed to get note details', e);
+      // Fallback: If getNote fails on recycled note, check recycledNotes cache
+      const cached = recycledNotes.value.find(n => n.object_id === noteId);
+      if (cached) {
+        activeNote.value = { ...cached };
+      }
     }
   }
 
@@ -562,6 +612,7 @@ export const useNoteStore = defineStore('notes', () => {
       activeNoteId.value = null;
       activeNote.value = null;
       await fetchNotes(nbId);
+      fetchRecycledNotes().catch(console.error);
       return true;
     } catch (e) {
       console.error('Failed to delete note', e);
@@ -580,9 +631,49 @@ export const useNoteStore = defineStore('notes', () => {
         activeNote.value = null;
       }
       await fetchNotes(activeNotebookId.value);
+      fetchRecycledNotes().catch(console.error);
       return true;
     } catch (e) {
       console.error('Failed to delete note', e);
+      throw e;
+    }
+  }
+
+  async function restoreNote(noteId: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) return false;
+
+    try {
+      await client.restoreNote(noteId);
+      recycledNotes.value = recycledNotes.value.filter(n => n.object_id !== noteId);
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = null;
+        activeNote.value = null;
+      }
+      // Re-fetch notes and notebooks to reflect restored note in its notebook
+      await fetchNotes(undefined, true);
+      await fetchNotebooks();
+      return true;
+    } catch (e) {
+      console.error('Failed to restore note', e);
+      throw e;
+    }
+  }
+
+  async function permanentlyDeleteNote(noteId: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) return false;
+
+    try {
+      await client.permanentlyDeleteNote(noteId);
+      recycledNotes.value = recycledNotes.value.filter(n => n.object_id !== noteId);
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = null;
+        activeNote.value = null;
+      }
+      return true;
+    } catch (e) {
+      console.error('Failed to permanently delete note', e);
       throw e;
     }
   }
@@ -687,6 +778,7 @@ export const useNoteStore = defineStore('notes', () => {
     notebooks.value = [];
     activeNotebookId.value = null;
     notes.value = [];
+    recycledNotes.value = [];
     activeNoteId.value = null;
     activeNote.value = null;
     searchQuery.value = '';
@@ -716,6 +808,7 @@ export const useNoteStore = defineStore('notes', () => {
     clearTags,
     getNotebookNoteCount,
     notes,
+    recycledNotes,
     filteredNotes,
     activeNoteId,
     activeNote,
@@ -728,6 +821,7 @@ export const useNoteStore = defineStore('notes', () => {
     fetchNotebooks,
     selectNotebook,
     fetchNotes,
+    fetchRecycledNotes,
     selectNote,
     createNotebook,
     renameNotebook,
@@ -737,6 +831,8 @@ export const useNoteStore = defineStore('notes', () => {
     updateActiveNote,
     deleteActiveNote,
     deleteNote,
+    restoreNote,
+    permanentlyDeleteNote,
     moveNote,
     listNoteVersions,
     getNoteVersionContent,

@@ -861,5 +861,136 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.filteredNotes.length).toBe(1);
     expect(noteStore.filteredNotes[0].object_id).toBe('n_shared_user');
   });
+
+  it('点击切换至回收站折叠面板 (__recycle_bin__) 时，filteredNotes 正确展示回收站便签，并支持标签与搜索', async () => {
+    const noteStore = useNoteStore();
+
+    const mockRecycledNotes: SynoNote[] = [
+      {
+        object_id: 'recycled_1',
+        parent_id: 'nb1',
+        title: '已废弃的旧架构图',
+        brief: '旧技术栈描述',
+        content: '<p>旧架构</p>',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['废弃', '技术'],
+        recycle: true
+      },
+      {
+        object_id: 'recycled_2',
+        parent_id: 'nb2',
+        title: '过期的会议记录',
+        brief: '2023年季度总结',
+        content: '<p>会议记录</p>',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['会议'],
+        recycle: true
+      }
+    ];
+
+    noteStore.recycledNotes = mockRecycledNotes;
+
+    // 1. 切换至回收站面板 (__recycle_bin__)
+    noteStore.activeNotebookId = '__recycle_bin__';
+    expect(noteStore.filteredNotes.length).toBe(2);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['recycled_1', 'recycled_2']);
+    expect(noteStore.activeNotebook?.title).toBe('回收站');
+    expect(noteStore.activeNotebook?.category).toBe('recycle');
+
+    // 2. 验证 getNotebookNoteCount 对 '__recycle_bin__' 的计数
+    expect(noteStore.getNotebookNoteCount({ object_id: '__recycle_bin__', title: '回收站' } as any)).toBe(2);
+
+    // 3. 在回收站面板中结合标签筛选
+    noteStore.toggleTag('会议');
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('recycled_2');
+
+    // 4. 在回收站面板中搜索关键词
+    noteStore.clearTags();
+    noteStore.searchQuery = '旧架构图';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('recycled_1');
+  });
+
+  it('回收站便签操作：恢复与彻底删除正确调用客户端接口并更新状态', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+
+    const mockRecNotes = [
+      {
+        object_id: 'rec_note_1',
+        parent_id: 'nb1',
+        title: '测试回收便签1',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: [],
+        recycle: true
+      },
+      {
+        object_id: 'rec_note_2',
+        parent_id: 'nb1',
+        title: '测试回收便签2',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: [],
+        recycle: true
+      }
+    ];
+
+    // 模拟 sessionStore 中的 activeClient
+    let currentRecNotes = [...mockRecNotes];
+    const mockRestore = vi.fn().mockImplementation(async (id: string) => {
+      currentRecNotes = currentRecNotes.filter(n => n.object_id !== id);
+      return true;
+    });
+    const mockPermanentDelete = vi.fn().mockImplementation(async (id: string) => {
+      currentRecNotes = currentRecNotes.filter(n => n.object_id !== id);
+      return true;
+    });
+    const mockListAllNotes = vi.fn().mockResolvedValue({ notes: [], total: 0 });
+    const mockListNotebooks = vi.fn().mockResolvedValue([]);
+    const mockListAllRecycleNotes = vi.fn().mockImplementation(async () => ({
+      notes: [...currentRecNotes],
+      total: currentRecNotes.length
+    }));
+
+    const mockClient = {
+      restoreNote: mockRestore,
+      permanentlyDeleteNote: mockPermanentDelete,
+      listAllNotes: mockListAllNotes,
+      listNotebooks: mockListNotebooks,
+      listAllRecycleNotes: mockListAllRecycleNotes
+    };
+    vi.spyOn(sessionStore, 'activeClient', 'get').mockReturnValue(mockClient as any);
+    vi.spyOn(sessionStore, 'getClient').mockReturnValue(mockClient as any);
+    vi.spyOn(sessionStore, 'activeSessionState', 'get').mockReturnValue({ serverId: 'test', isLoggedIn: true, isConnecting: false });
+
+    noteStore.recycledNotes = [...mockRecNotes];
+    noteStore.activeNotebookId = '__recycle_bin__';
+    noteStore.activeNoteId = 'rec_note_1';
+
+    // 1. 恢复便签 rec_note_1 (恢复后会自动聚焦当前面板中的下一个可用便签 rec_note_2)
+    await noteStore.restoreNote('rec_note_1');
+    expect(mockRestore).toHaveBeenCalledWith('rec_note_1');
+    expect(noteStore.recycledNotes.some(n => n.object_id === 'rec_note_1')).toBe(false);
+    expect(noteStore.recycledNotes.length).toBe(1);
+    expect(noteStore.activeNoteId).toBe('rec_note_2');
+
+    // 2. 彻底删除便签 rec_note_2 (删除后回收站为空，activeNoteId 清空为 null)
+    await noteStore.permanentlyDeleteNote('rec_note_2');
+    expect(mockPermanentDelete).toHaveBeenCalledWith('rec_note_2');
+    expect(noteStore.recycledNotes.length).toBe(0);
+    expect(noteStore.activeNoteId).toBeNull();
+  });
 });
 

@@ -413,6 +413,67 @@ export class SynologyApiClient {
   }
 
   /**
+   * List all deleted notes in the recycle bin with auto-pagination.
+   */
+  async listAllRecycleNotes(): Promise<{ notes: SynoNote[]; total: number }> {
+    const sid = this.requireSid();
+    let offset = 0;
+    const pageSize = 500;
+    let allNotes: SynoNote[] = [];
+    const seenIds = new Set<string>();
+    const maxPages = 100;
+    let pageCount = 0;
+
+    while (pageCount < maxPages) {
+      pageCount++;
+      const res = await this.http.get<SynoApiResponse<{ notes?: any[]; total: number; offset: number }>>('/webapi/entry.cgi', {
+        params: {
+          api: 'SYNO.NoteStation.Note',
+          version: '1',
+          method: 'list',
+          _sid: sid,
+          is_recycle: true,
+          offset,
+          limit: pageSize
+        }
+      });
+
+      if (!res.data.success) {
+        throw this.formatError(res.data);
+      }
+
+      const rawNotes: any[] = res.data.data?.notes || [];
+      if (rawNotes.length === 0) break;
+
+      let newNotesCount = 0;
+      for (const n of rawNotes) {
+        const noteId = String(n.object_id || n.note_id || '');
+        if (seenIds.has(noteId)) continue;
+        seenIds.add(noteId);
+        newNotesCount++;
+        allNotes.push({
+          ...n,
+          object_id: noteId,
+          parent_id: String(n.parent_id || n.notebook_id || ''),
+          notebook_id: String(n.parent_id || n.notebook_id || ''),
+          ctime: Number(n.ctime || n.created_time || 0),
+          mtime: Number(n.mtime || n.updated_time || 0),
+          tag: Array.isArray(n.tag) ? n.tag : [],
+          markdownContent: n.content ? noteHtmlToMarkdown(n.content) : ''
+        });
+      }
+
+      if (newNotesCount === 0 || rawNotes.length < pageSize) break;
+      offset += rawNotes.length;
+    }
+
+    return {
+      notes: allNotes,
+      total: allNotes.length
+    };
+  }
+
+  /**
    * Search notes by keyword using Synology Full-Text Search (SYNO.NoteStation.FTS).
    * Searches note title, content body, and tags across the account.
    */
@@ -578,6 +639,33 @@ export class SynologyApiClient {
       throw this.formatError(res.data);
     }
     return true;
+  }
+
+  /**
+   * Restore a deleted note from recycle bin back to its notebook
+   */
+  async restoreNote(objectId: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note',
+      version: '1',
+      method: 'restore',
+      _sid: sid,
+      object_id: objectId
+    });
+
+    const res = await this.http.post<SynoApiResponse>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
+   * Permanently delete a note from the recycle bin
+   */
+  async permanentlyDeleteNote(objectId: string): Promise<boolean> {
+    return this.deleteNote(objectId);
   }
 
   /**

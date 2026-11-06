@@ -707,7 +707,296 @@
         </div>
       </div>
 
-      <!-- 3. Notebooks Accordion Panels (展开时独占显示，隐藏其他笔记本；收起时全部恢复显示) -->
+      <!-- 3. "回收站" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
+      <div
+        v-if="noteStore.notebooks.length > 0"
+        v-show="!expandedNotebookId || expandedNotebookId === '__recycle_bin__'"
+        :class="[
+          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          expandedNotebookId === '__recycle_bin__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
+        ]"
+      >
+        <!-- "回收站" Accordion Header -->
+        <div
+          @click="toggleAccordion('__recycle_bin__')"
+          :class="[
+            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
+            expandedNotebookId === '__recycle_bin__'
+              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
+              : 'text-slate-700 hover:bg-slate-200/60'
+          ]"
+        >
+          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
+            <!-- Chevron arrow indicator -->
+            <svg
+              :class="[
+                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
+                expandedNotebookId === '__recycle_bin__' ? 'transform rotate-90 text-syno-blue' : ''
+              ]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+
+            <!-- Trash Can Icon -->
+            <svg
+              class="w-3.5 h-3.5 shrink-0"
+              :class="expandedNotebookId === '__recycle_bin__' ? 'text-syno-blue' : 'text-slate-400'"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+
+            <span class="truncate">回收站</span>
+          </div>
+
+          <span
+            :class="[
+              'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
+              expandedNotebookId === '__recycle_bin__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+            ]"
+          >
+            {{ noteStore.recycledNotes.length }}
+          </span>
+        </div>
+
+        <!-- "回收站" Accordion Content -->
+        <div v-if="expandedNotebookId === '__recycle_bin__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+          <!-- Dedicated Search Bar Row inside Accordion -->
+          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+            <div class="relative w-full flex items-center">
+              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <input
+                v-model="noteStore.searchQuery"
+                type="text"
+                placeholder="在回收站中搜索标题及内容..."
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+              />
+              <button
+                v-if="noteStore.searchQuery"
+                @click="noteStore.searchQuery = ''"
+                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
+                title="清空搜索"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tag Dropdown Multi-Select Row inside Accordion -->
+          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
+            <div class="flex items-center justify-between">
+              <!-- Dropdown Trigger Button -->
+              <button
+                type="button"
+                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
+                :class="[
+                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
+                  noteStore.selectedTags.length > 0
+                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                ]"
+              >
+                <div class="flex items-center space-x-1.5 truncate mr-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <span class="truncate">
+                    <template v-if="noteStore.selectedTags.length === 0">
+                      按标签筛选 (共 {{ panelTags.length }} 个)
+                    </template>
+                    <template v-else>
+                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                    </template>
+                  </span>
+                </div>
+
+                <div class="flex items-center space-x-1 shrink-0">
+                  <span
+                    v-if="noteStore.selectedTags.length > 0"
+                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
+                  >
+                    {{ noteStore.selectedTags.length }}
+                  </span>
+                  <svg
+                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Clear Tags Button -->
+              <button
+                v-if="noteStore.selectedTags.length > 0"
+                @click.stop="noteStore.clearTags()"
+                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
+                title="清空已选标签"
+              >
+                清空
+              </button>
+            </div>
+
+            <!-- Dropdown Floating Panel -->
+            <div
+              v-if="isTagDropdownOpen"
+              @click.stop
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+            >
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
+                <span>选择标签 (多选组合筛选)</span>
+                <button
+                  v-if="noteStore.selectedTags.length > 0"
+                  @click="noteStore.clearTags()"
+                  class="text-syno-blue hover:underline cursor-pointer"
+                >
+                  清空选择
+                </button>
+              </div>
+
+              <label
+                v-for="tagItem in panelTags"
+                :key="tagItem.name"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+              >
+                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
+                  <input
+                    type="checkbox"
+                    :checked="noteStore.selectedTags.includes(tagItem.name)"
+                    @change="noteStore.toggleTag(tagItem.name)"
+                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                  />
+                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                  {{ tagItem.count }}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Panel Action Bar: Note Count Only (No New Note button in Recycle Bin) -->
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
+            <span class="font-medium text-slate-700">便签 ({{ noteStore.filteredNotes.length }})</span>
+            <span class="text-[11px] text-slate-400">回收站中的便签</span>
+          </div>
+
+          <!-- Notes Scrollable List inside Accordion Panel -->
+          <div class="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-0 bg-white">
+            <div v-if="noteStore.isLoading" class="p-6 text-center text-xs text-slate-400">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-syno-blue inline-block" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              正在加载便签...
+            </div>
+            <div v-else-if="noteStore.filteredNotes.length === 0" class="p-8 text-center text-xs text-slate-400">
+              <svg class="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span>回收站为空</span>
+            </div>
+            <div v-else>
+              <div
+                v-for="note in noteStore.filteredNotes"
+                :key="note.object_id"
+                @click="noteStore.selectNote(note.object_id)"
+                @contextmenu.prevent="openNoteContextMenu($event, note)"
+                :class="[
+                  'group p-2.5 transition cursor-pointer select-none border-l-2',
+                  noteStore.activeNoteId === note.object_id
+                    ? 'bg-slate-800 text-white border-syno-blue shadow-xs'
+                    : 'border-transparent hover:bg-slate-50 text-slate-800'
+                ]"
+              >
+                <!-- Title Row & Menu Button -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-1.5 flex-1 min-w-0 pr-1">
+                    <svg
+                      v-if="isNoteShared(note)"
+                      class="w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      title="已共享便签"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+
+                    <h4
+                      :class="[
+                        'text-xs font-semibold truncate',
+                        noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'
+                      ]"
+                    >
+                      {{ note.title || '无标题便签' }}
+                    </h4>
+                  </div>
+
+                  <!-- Note Actions Menu Trigger Button -->
+                  <button
+                    @click.stop="openNoteMenuFromButton($event, note)"
+                    :class="[
+                      'p-1 rounded transition cursor-pointer shrink-0 opacity-0 group-hover:opacity-100',
+                      noteStore.activeNoteId === note.object_id
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
+                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                        : ''
+                    ]"
+                    title="便签操作菜单"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Tags List on Note Item Card -->
+                <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
+                  <span
+                    v-for="t in note.tag"
+                    :key="t"
+                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium leading-none max-w-[100px] truncate"
+                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
+                    :title="t"
+                  >
+                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
+                    <span class="truncate">{{ t }}</span>
+                  </span>
+                </div>
+
+                <!-- Time & Meta -->
+                <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
+                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
+                  <span v-if="note.tag && note.tag.length > 0">
+                    {{ note.tag.length }} 标签
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Notebooks Accordion Panels (展开时独占显示，隐藏其他笔记本；收起时全部恢复显示) -->
       <div
         v-for="nb in noteStore.notebooks"
         :key="nb.object_id"
@@ -1129,73 +1418,103 @@
         {{ noteContextMenu.targetNote?.title || '无标题便签' }}
       </div>
 
-      <!-- 1. 同步 (跨服务便签同步) -->
-      <button
-        @click="triggerNoteSync"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <span>同步</span>
-      </button>
+      <!-- 回收站中的便签操作：仅有“恢复”和“彻底删除” -->
+      <template v-if="expandedNotebookId === '__recycle_bin__' || noteContextMenu.targetNote?.recycle">
+        <!-- 1. 恢复 -->
+        <button
+          @click="triggerNoteRestore"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          <span>恢复</span>
+        </button>
 
-      <!-- 2. 分享 -->
-      <button
-        @click="triggerNoteShare"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-        </svg>
-        <span>分享</span>
-      </button>
+        <div class="h-px bg-slate-100 my-1"></div>
 
-      <!-- 2. 历史版本 -->
-      <button
-        @click="triggerNoteHistory"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>历史版本</span>
-      </button>
+        <!-- 2. 彻底删除 -->
+        <button
+          @click="triggerNotePermanentDelete"
+          class="w-full px-3 py-1.5 text-left hover:bg-rose-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>彻底删除</span>
+        </button>
+      </template>
 
-      <!-- 3. 导出.md文件 -->
-      <button
-        @click="triggerNoteExport"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        <span>导出.md文件</span>
-      </button>
+      <!-- 普通便签操作：同步, 分享, 历史版本, 导出.md文件, 移动至其他笔记本, 删除 -->
+      <template v-else>
+        <!-- 1. 同步 (跨服务便签同步) -->
+        <button
+          @click="triggerNoteSync"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>同步</span>
+        </button>
 
-      <!-- 4. 移动至其他笔记本 -->
-      <button
-        @click="triggerNoteMove"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
-        <span>移动至其他笔记本</span>
-      </button>
+        <!-- 2. 分享 -->
+        <button
+          @click="triggerNoteShare"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          <span>分享</span>
+        </button>
 
-      <div class="h-px bg-slate-100 my-1"></div>
+        <!-- 3. 历史版本 -->
+        <button
+          @click="triggerNoteHistory"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>历史版本</span>
+        </button>
 
-      <!-- 5. 删除 -->
-      <button
-        @click="triggerNoteDelete"
-        class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
-      >
-        <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-        <span>删除</span>
-      </button>
+        <!-- 4. 导出.md文件 -->
+        <button
+          @click="triggerNoteExport"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>导出.md文件</span>
+        </button>
+
+        <!-- 5. 移动至其他笔记本 -->
+        <button
+          @click="triggerNoteMove"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span>移动至其他笔记本</span>
+        </button>
+
+        <div class="h-px bg-slate-100 my-1"></div>
+
+        <!-- 6. 删除 -->
+        <button
+          @click="triggerNoteDelete"
+          class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>删除</span>
+        </button>
+      </template>
     </div>
 
     <!-- Create / Rename Notebook Custom Modal -->
@@ -1449,6 +1768,61 @@
         </div>
       </div>
     </div>
+
+    <!-- Permanent Delete Note Custom Confirmation Modal -->
+    <div
+      v-if="permanentDeleteNoteModal.isOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      @click.self="closePermanentDeleteModal"
+    >
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5">
+          <div class="flex items-start space-x-3">
+            <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-slate-800">彻底删除便签</h3>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                确定要彻底删除便签【<b class="text-slate-800">{{ permanentDeleteNoteModal.targetNote?.title || '无标题便签' }}</b>】吗？
+              </p>
+              <p class="text-xs text-rose-500 mt-1 font-medium">
+                ⚠️ 彻底删除后此便签将无法找回，不可撤销！
+              </p>
+            </div>
+          </div>
+
+          <div v-if="permanentDeleteNoteModal.error" class="mt-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            {{ permanentDeleteNoteModal.error }}
+          </div>
+
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              @click="closePermanentDeleteModal"
+              :disabled="permanentDeleteNoteModal.loading"
+              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              @click="confirmPermanentDeleteNote"
+              :disabled="permanentDeleteNoteModal.loading"
+              class="px-4 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium shadow-2xs transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <svg v-if="permanentDeleteNoteModal.loading" class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>{{ permanentDeleteNoteModal.loading ? '正在彻底删除...' : '确认彻底删除' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1516,7 +1890,9 @@ const panelTags = computed<{ name: string; count: number }[]>(() => {
   let targetNotes = noteStore.notes;
 
   if (currentNbId && currentNbId !== '__all_notes__') {
-    if (currentNbId === '__shared_notes__') {
+    if (currentNbId === '__recycle_bin__') {
+      targetNotes = noteStore.recycledNotes;
+    } else if (currentNbId === '__shared_notes__') {
       targetNotes = targetNotes.filter(n => isNoteShared(n));
     } else {
       const targetNb = noteStore.notebooks.find(
@@ -1677,6 +2053,14 @@ const deleteNoteModal = reactive({
   error: ''
 });
 
+// Permanent Delete Note Confirmation Modal State (彻底删除便签对话框)
+const permanentDeleteNoteModal = reactive({
+  isOpen: false,
+  targetNote: null as SynoNote | null,
+  loading: false,
+  error: ''
+});
+
 // Move Note Modal State (新增“移动至其他笔记本”对话框)
 const moveNoteModal = reactive({
   isOpen: false,
@@ -1820,6 +2204,26 @@ function triggerNoteDelete() {
   closeNoteContextMenu();
   if (note) {
     openDeleteNoteModal(note);
+  }
+}
+
+async function triggerNoteRestore() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  try {
+    await noteStore.restoreNote(note.object_id);
+    showToast(`便签【${note.title || '无标题便签'}】已成功恢复至原笔记本！`, 'success');
+  } catch (e: any) {
+    showToast(`恢复便签失败: ${e?.message || e}`, 'error');
+  }
+}
+
+function triggerNotePermanentDelete() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    openPermanentDeleteModal(note);
   }
 }
 
@@ -1975,6 +2379,40 @@ async function confirmDeleteNote() {
     deleteNoteModal.error = `删除便签失败: ${e?.message || e}`;
   } finally {
     deleteNoteModal.loading = false;
+  }
+}
+
+function openPermanentDeleteModal(note: SynoNote) {
+  closeContextMenu();
+  closeNoteContextMenu();
+  permanentDeleteNoteModal.isOpen = true;
+  permanentDeleteNoteModal.targetNote = note;
+  permanentDeleteNoteModal.loading = false;
+  permanentDeleteNoteModal.error = '';
+}
+
+function closePermanentDeleteModal() {
+  if (permanentDeleteNoteModal.loading) return;
+  permanentDeleteNoteModal.isOpen = false;
+  permanentDeleteNoteModal.targetNote = null;
+  permanentDeleteNoteModal.error = '';
+}
+
+async function confirmPermanentDeleteNote() {
+  if (!permanentDeleteNoteModal.targetNote) return;
+
+  permanentDeleteNoteModal.loading = true;
+  permanentDeleteNoteModal.error = '';
+
+  try {
+    await noteStore.permanentlyDeleteNote(permanentDeleteNoteModal.targetNote.object_id);
+    permanentDeleteNoteModal.isOpen = false;
+    permanentDeleteNoteModal.targetNote = null;
+    showToast('便签已彻底删除', 'success');
+  } catch (e: any) {
+    permanentDeleteNoteModal.error = `彻底删除便签失败: ${e?.message || e}`;
+  } finally {
+    permanentDeleteNoteModal.loading = false;
   }
 }
 
