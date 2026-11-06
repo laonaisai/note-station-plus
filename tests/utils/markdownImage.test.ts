@@ -68,3 +68,4 @@ describe('Markdown Image Conversion & Legacy Healing', () => {
     expect(roundTrip).toBe(mdText);
   });
 });
+
