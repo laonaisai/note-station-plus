@@ -145,3 +145,4 @@ export function printNote(note: SynoNote, notebookTitle?: string): void {
     }
   }, 250);
 }
+
