@@ -13,7 +13,7 @@ import {
   SharedMember,
   NoteShareInfo
 } from '@/types/synology';
-import { markdownToNoteHtml, noteHtmlToMarkdown } from '@/utils/markdown';
+import { markdownToNoteHtml, noteHtmlToMarkdown, toBase64 } from '@/utils/markdown';
 
 export const SYNO_ERROR_MESSAGES: Record<number, string> = {
   100: '未知错误',
@@ -837,6 +837,167 @@ export class SynologyApiClient {
       return `/syno-proxy?target=${encodeURIComponent(cleanBaseUrl + path)}`;
     }
     return `${cleanBaseUrl}${path}`;
+  }
+
+  /**
+   * Upload an attachment or image to a note using SYNO.NoteStation.Note version 3 set multipart upload
+   */
+  async uploadAttachment(
+    objectId: string,
+    file: File | Blob,
+    filename: string,
+    onProgress?: (percent: number) => void
+  ): Promise<{ attachment: SynoAttachment; newVer: string; allAttachments: SynoAttachment[] }> {
+    const sid = this.requireSid();
+
+    // 1. Fetch current note to get current ver
+    const currentNote = await this.getNote(objectId);
+    const ver = currentNote.ver || '1';
+
+    // 2. Prepare FormData
+    const formData = new FormData();
+    formData.append(filename, file, filename);
+
+    const ref = toBase64(`${Date.now()}${filename}`);
+    const attachmentDesc = [
+      {
+        action: 'create',
+        format: 'raw',
+        name: filename,
+        source: filename,
+        ref,
+        rotate: true
+      }
+    ];
+
+    // Synology requires parameter values in FormData to be JSON-encoded
+    formData.append('object_id', JSON.stringify(objectId));
+    formData.append('ver', JSON.stringify(ver));
+    formData.append('commit_msg', JSON.stringify({ device: 'desktop', listable: false }));
+    formData.append('attachment', JSON.stringify(attachmentDesc));
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', formData, {
+      params: {
+        api: 'SYNO.NoteStation.Note',
+        version: '3',
+        method: 'set',
+        _sid: sid
+      },
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percent);
+        }
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    const noteData = Array.isArray(res.data.data?.data)
+      ? res.data.data.data[0]
+      : Array.isArray(res.data.data)
+        ? res.data.data[0]
+        : res.data.data;
+
+    const newVer = noteData?.ver || ver;
+    const rawAttachments = noteData?.attachment;
+
+    // Normalize attachments
+    const allAttachments: SynoAttachment[] = [];
+    let createdAttachment: SynoAttachment | null = null;
+
+    if (rawAttachments && typeof rawAttachments === 'object') {
+      if (Array.isArray(rawAttachments)) {
+        allAttachments.push(...rawAttachments);
+        createdAttachment = rawAttachments.find(a => a.name === filename || a.ref === ref) || rawAttachments[rawAttachments.length - 1];
+      } else {
+        for (const [fId, a] of Object.entries(rawAttachments)) {
+          const item: SynoAttachment = {
+            id: fId,
+            file_id: fId,
+            name: (a as any).name || filename,
+            size: (a as any).size || 0,
+            type: (a as any).type || (file.type || 'application/octet-stream'),
+            ref: (a as any).ref || ref,
+            md5: (a as any).md5
+          };
+          allAttachments.push(item);
+          if (item.name === filename || item.ref === ref) {
+            createdAttachment = item;
+          }
+        }
+      }
+    }
+
+    if (!createdAttachment && allAttachments.length > 0) {
+      createdAttachment = allAttachments[allAttachments.length - 1];
+    }
+
+    if (!createdAttachment) {
+      createdAttachment = {
+        id: filename,
+        file_id: filename,
+        name: filename,
+        size: file.size || 0,
+        type: file.type || 'application/octet-stream',
+        ref
+      };
+      allAttachments.push(createdAttachment);
+    }
+
+    return {
+      attachment: createdAttachment,
+      newVer,
+      allAttachments
+    };
+  }
+
+  /**
+   * Delete an attachment from a note
+   */
+  async deleteAttachment(objectId: string, fileId: string): Promise<{ success: boolean; newVer: string }> {
+    const sid = this.requireSid();
+
+    const currentNote = await this.getNote(objectId);
+    const ver = currentNote.ver || '1';
+
+    const formData = new FormData();
+    formData.append('object_id', JSON.stringify(objectId));
+    formData.append('ver', JSON.stringify(ver));
+    formData.append('commit_msg', JSON.stringify({ device: 'desktop', listable: false }));
+    formData.append('attachment', JSON.stringify([{ action: 'delete', file_id: fileId }]));
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', formData, {
+      params: {
+        api: 'SYNO.NoteStation.Note',
+        version: '3',
+        method: 'set',
+        _sid: sid
+      },
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    const noteData = Array.isArray(res.data.data?.data)
+      ? res.data.data.data[0]
+      : Array.isArray(res.data.data)
+        ? res.data.data[0]
+        : res.data.data;
+
+    return {
+      success: true,
+      newVer: noteData?.ver || ver
+    };
   }
 
   /**

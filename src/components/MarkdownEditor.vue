@@ -413,13 +413,22 @@
             下载
           </a>
           <button
-            v-if="isImageAttachment(att) && !isRecycledNote"
+            v-if="!isRecycledNote"
             type="button"
-            @click="insertImageAttachment(att)"
+            @click="insertAttachmentToBody(att)"
             class="ml-1.5 text-slate-400 hover:text-syno-blue font-medium text-[10px] hover:underline cursor-pointer"
-            title="将此图片插入到便签正文"
+            title="将此附件插入到便签正文光标处"
           >
             插入
+          </button>
+          <button
+            v-if="!isRecycledNote"
+            type="button"
+            @click="handleDeleteAttachment(att)"
+            class="ml-1.5 text-slate-300 hover:text-rose-500 font-medium text-[11px] transition cursor-pointer"
+            title="从便签中删除此附件"
+          >
+            ✕
           </button>
         </div>
       </div>
@@ -463,6 +472,51 @@
         <button @click="insertMarkdown('| 列1 | 列2 |\n| :--- | :--- |\n| 内容1 | 内容2 |\n')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="插入表格">表格</button>
         <button @click="insertMarkdown('> ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="引用">&ldquo; 引用</button>
         <button @click="insertMarkdown('$$ \n', '\n $$')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="LaTeX 数学公式">∑</button>
+        <span class="w-[1px] h-3.5 bg-slate-300 mx-1"></span>
+        <button
+          @click="triggerSelectImage"
+          class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs flex items-center space-x-1 cursor-pointer"
+          title="插入图片 (支持本地文件选择、截图直接粘贴 Ctrl+V、拖拽图片进入编辑器)"
+        >
+          <svg class="w-3.5 h-3.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>图片</span>
+        </button>
+        <button
+          @click="triggerSelectAttachment"
+          class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs flex items-center space-x-1 cursor-pointer"
+          title="添加附件 (支持所有格式文件，拖拽文件进入编辑器也可直接上传)"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          <span>附件</span>
+        </button>
+
+        <!-- Hidden File Inputs -->
+        <input
+          ref="imageInputRef"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="onImageFileSelected"
+        />
+        <input
+          ref="attachmentInputRef"
+          type="file"
+          class="hidden"
+          @change="onAttachmentFileSelected"
+        />
+
+        <!-- Uploading Indicator in Toolbar -->
+        <div v-if="noteStore.isUploadingAttachment" class="ml-auto flex items-center text-xs text-syno-blue font-medium space-x-1 animate-pulse">
+          <svg class="animate-spin h-3.5 w-3.5 text-syno-blue" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span>正在上传附件 ({{ noteStore.uploadProgress }}%)...</span>
+        </div>
       </div>
 
       <!-- Editor Content Area -->
@@ -480,8 +534,11 @@
             v-model="editMarkdown"
             @input="onContentChanged"
             @keydown="handleKeydown"
+            @paste="handlePaste"
+            @dragover.prevent
+            @drop.prevent="handleDrop"
             :readonly="isRecycledNote"
-            placeholder="使用 Markdown 编写便签内容..."
+            placeholder="使用 Markdown 编写便签内容 (支持截图直接粘贴 Ctrl+V、拖拽图片/附件直接上传)..."
             class="w-full h-full p-6 text-sm font-mono text-slate-800 bg-white resize-none outline-none leading-relaxed"
           ></textarea>
         </div>
@@ -620,6 +677,8 @@ const editMarkdown = ref('');
 const editTags = ref<string[]>([]);
 const isModified = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const imageInputRef = ref<HTMLInputElement | null>(null);
+const attachmentInputRef = ref<HTMLInputElement | null>(null);
 
 // Tag editing state
 const isAddingTag = ref(false);
@@ -887,6 +946,125 @@ function triggerInfo() {
   if (!noteStore.activeNote) return;
   isMoreMenuOpen.value = false;
   isInfoModalOpen.value = true;
+}
+
+function triggerSelectImage() {
+  if (isRecycledNote.value) return;
+  imageInputRef.value?.click();
+}
+
+function triggerSelectAttachment() {
+  if (isRecycledNote.value) return;
+  attachmentInputRef.value?.click();
+}
+
+async function onImageFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = input.files;
+  if (!files || files.length === 0) return;
+  for (let i = 0; i < files.length; i++) {
+    await uploadAndInsertFile(files[i]);
+  }
+  input.value = '';
+}
+
+async function onAttachmentFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = input.files;
+  if (!files || files.length === 0) return;
+  for (let i = 0; i < files.length; i++) {
+    await uploadAndInsertFile(files[i]);
+  }
+  input.value = '';
+}
+
+async function handlePaste(e: ClipboardEvent) {
+  if (isRecycledNote.value) return;
+  const items = e.clipboardData?.items;
+  if (!items || items.length === 0) return;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      const ext = file.type.split('/')[1] || 'png';
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `screenshot_${timestamp}.${ext}`;
+      const namedFile = new File([file], filename, { type: file.type });
+
+      await uploadAndInsertFile(namedFile);
+    }
+  }
+}
+
+async function handleDrop(e: DragEvent) {
+  if (isRecycledNote.value) return;
+  const files = e.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  e.preventDefault();
+  for (let i = 0; i < files.length; i++) {
+    await uploadAndInsertFile(files[i]);
+  }
+}
+
+async function uploadAndInsertFile(file: File) {
+  const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(file.name);
+  const placeholder = isImage
+    ? `\n![正在上传图片 ${file.name}...]()\n`
+    : `\n[📎 正在上传附件 ${file.name}...]()\n`;
+
+  insertMarkdown(placeholder);
+
+  try {
+    showToast(`正在上传【${file.name}】至群晖服务器...`, 'info');
+    const result = await noteStore.uploadAttachmentToActiveNote(file, file.name, editMarkdown.value);
+
+    const insertText = result.isImage
+      ? `\n![${file.name}](${result.url})\n`
+      : `\n[📎 ${file.name} (${formatFileSize(file.size)})](${result.url})\n`;
+
+    if (editMarkdown.value.includes(placeholder)) {
+      editMarkdown.value = editMarkdown.value.replace(placeholder, insertText);
+    } else {
+      insertMarkdown(insertText);
+    }
+    onContentChanged();
+    showToast(`【${file.name}】上传成功并已插入便签！`, 'success');
+  } catch (err: any) {
+    console.error('Failed to upload attachment', err);
+    editMarkdown.value = editMarkdown.value.replace(placeholder, '');
+    showToast(`上传【${file.name}】失败: ${err?.message || err}`, 'error');
+  }
+}
+
+function insertAttachmentToBody(att: any) {
+  const fileId = att?.file_id || att?.id;
+  if (!fileId) return;
+  const url = getAttachmentDownloadUrl(fileId, att?.name);
+  const isImage = isImageAttachment(att);
+  const insertText = isImage
+    ? `\n![${att?.name || '图片'}](${url})\n`
+    : `\n[📎 ${att?.name || '附件'} (${formatFileSize(att?.size)})](${url})\n`;
+
+  insertMarkdown(insertText);
+}
+
+async function handleDeleteAttachment(att: any) {
+  const fileId = att?.file_id || att?.id;
+  if (!fileId) return;
+  const confirmed = confirm(`确定要从便签中删除附件【${att.name}】吗？此操作不可撤销。`);
+  if (!confirmed) return;
+
+  try {
+    await noteStore.deleteAttachmentFromActiveNote(fileId);
+    showToast(`附件【${att.name}】已成功从便签中删除`, 'success');
+  } catch (e: any) {
+    showToast(`删除附件失败: ${e?.message || e}`, 'error');
+  }
 }
 
 function getAttachmentDownloadUrl(fileId: string, filename?: string): string {

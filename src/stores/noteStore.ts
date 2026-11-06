@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import {
   SynoNotebook,
   SynoNote,
+  SynoAttachment,
   NoteVersion,
   NoteShareInfo,
   SharedMember
@@ -871,6 +872,99 @@ export const useNoteStore = defineStore('notes', () => {
     return ok;
   }
 
+  const isUploadingAttachment = ref(false);
+  const uploadProgress = ref(0);
+
+  async function uploadAttachmentToActiveNote(
+    file: File | Blob,
+    filename: string,
+    currentEditorMarkdown?: string
+  ): Promise<{ attachment: SynoAttachment; url: string; isImage: boolean }> {
+    const client = sessionStore.activeClient;
+    if (!client) throw new Error('未连接群晖服务器');
+
+    // 1. If currently no activeNote or it's a new unsaved note, ensure it exists on server
+    if (!activeNote.value || !activeNoteId.value) {
+      const parentId = activeNotebookId.value && !activeNotebookId.value.startsWith('__')
+        ? activeNotebookId.value
+        : notebooks.value[0]?.object_id;
+      if (!parentId) throw new Error('未选择有效笔记本');
+
+      const title = '新建便签 ' + new Date().toLocaleDateString();
+      const created = await client.createNote(parentId, title, currentEditorMarkdown || '');
+      notes.value.unshift(created);
+      activeNoteId.value = created.object_id;
+      activeNote.value = created;
+    }
+
+    const targetNoteId = activeNote.value.object_id;
+    isUploadingAttachment.value = true;
+    uploadProgress.value = 0;
+
+    try {
+      const result = await client.uploadAttachment(
+        targetNoteId,
+        file,
+        filename,
+        (percent) => {
+          uploadProgress.value = percent;
+        }
+      );
+
+      // Update active note attachments & version
+      if (activeNote.value && activeNote.value.object_id === targetNoteId) {
+        activeNote.value.attachment = result.allAttachments;
+        activeNote.value.ver = result.newVer;
+      }
+
+      // Also update in notes list
+      const listItem = notes.value.find(n => n.object_id === targetNoteId);
+      if (listItem) {
+        listItem.attachment = result.allAttachments;
+        listItem.ver = result.newVer;
+      }
+
+      const fileId = result.attachment.file_id || result.attachment.id;
+      const downloadUrl = client.getAttachmentDownloadUrl(targetNoteId, fileId, result.attachment.name);
+      const isImage = result.attachment.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(result.attachment.name);
+
+      return {
+        attachment: result.attachment,
+        url: downloadUrl,
+        isImage
+      };
+    } finally {
+      isUploadingAttachment.value = false;
+      uploadProgress.value = 0;
+    }
+  }
+
+  async function deleteAttachmentFromActiveNote(fileId: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !activeNote.value) return false;
+
+    const targetNoteId = activeNote.value.object_id;
+    try {
+      const res = await client.deleteAttachment(targetNoteId, fileId);
+      if (res.success) {
+        if (activeNote.value && activeNote.value.object_id === targetNoteId) {
+          activeNote.value.attachment = (activeNote.value.attachment || []).filter(a => (a.file_id || a.id) !== fileId);
+          activeNote.value.ver = res.newVer;
+        }
+        const listItem = notes.value.find(n => n.object_id === targetNoteId);
+        if (listItem) {
+          listItem.attachment = (listItem.attachment || []).filter(a => (a.file_id || a.id) !== fileId);
+          listItem.ver = res.newVer;
+        }
+        return true;
+      }
+      return false;
+    } catch (e: any) {
+      console.error('Failed to delete attachment', e);
+      throw e;
+    }
+  }
+
   function reset() {
     notebooks.value = [];
     activeNotebookId.value = null;
@@ -918,6 +1012,10 @@ export const useNoteStore = defineStore('notes', () => {
     isCreating,
     isSaving,
     lastSaveTime,
+    isUploadingAttachment,
+    uploadProgress,
+    uploadAttachmentToActiveNote,
+    deleteAttachmentFromActiveNote,
     fetchNotebooks,
     selectNotebook,
     fetchNotes,
