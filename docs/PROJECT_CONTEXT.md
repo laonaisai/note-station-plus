@@ -272,3 +272,4 @@ pnpm build:linux
    - 任何用户交互、文本输入、二次确认操作，一律使用 Vue 自定义模态框，杜绝使用 `window.prompt` 或 `window.confirm`。
 4. **群晖兼容性规范**：
    - 便签内容无论如何修改，都必须经由 [markdown.ts](file:///e:/Sources/note-station-plus/src/utils/markdown.ts) 序列化后存储，严禁向群晖服务端直接提交纯 Markdown 纯文本（否则群晖官方客户端会报错或显示为未排版的单行文本）。
+
