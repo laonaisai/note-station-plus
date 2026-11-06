@@ -30,6 +30,14 @@ if (!gotTheLock) {
   app.quit();
 }
 
+// Allow self-signed SSL certificates for local NAS endpoints
+app.commandLine.appendSwitch('ignore-certificate-errors');
+
+app.on('certificate-error', (event, _webContents, _url, _error, _certificate, callback) => {
+  event.preventDefault();
+  callback(true);
+});
+
 // App version IPC handler
 ipcMain.handle('app:getVersion', () => {
   return app.getVersion();

@@ -70,6 +70,7 @@ function synoProxyPlugin(): Plugin {
         const headers = { ...req.headers };
         delete headers['host'];
         delete headers['x-syno-target'];
+        delete headers['cookie']; // Prevent cross-server cookie pollution across different NAS servers
         headers['host'] = targetUrl.host;
         headers['origin'] = targetUrl.origin;
         headers['referer'] = targetUrl.origin + '/';
@@ -84,7 +85,7 @@ function synoProxyPlugin(): Plugin {
           (proxyRes) => {
             res.statusCode = proxyRes.statusCode || 200;
             for (const [key, value] of Object.entries(proxyRes.headers)) {
-              if (key.toLowerCase() !== 'content-security-policy') {
+              if (key.toLowerCase() !== 'content-security-policy' && key.toLowerCase() !== 'set-cookie') {
                 res.setHeader(key, value as any);
               }
             }

@@ -285,15 +285,14 @@ watch(
     if (newId !== oldId) {
       noteStore.reset();
       if (newId) {
-        // Ensure connected
-        const state = sessionStore.sessionStates[newId];
-        if (state?.isLoggedIn) {
+        // Ensure connected (uses cache if logged in or waits on in-flight login)
+        const ok = await sessionStore.ensureConnected(newId);
+        // Avoid race condition if user rapidly switched to another server during login
+        if (sessionStore.activeProfileId !== newId) {
+          return;
+        }
+        if (ok) {
           await noteStore.fetchNotebooks();
-        } else {
-          const ok = await sessionStore.loginServer(newId);
-          if (ok) {
-            await noteStore.fetchNotebooks();
-          }
         }
       } else if (sessionStore.profiles.length === 0) {
         // All profiles cleared: reset form & pop up Add Server modal

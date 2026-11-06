@@ -82,6 +82,7 @@ export class SynologyApiClient {
    * Login to DSM Note Station
    */
   async login(account?: string, password?: string, otpCode?: string): Promise<string> {
+    this.sid = undefined;
     const user = account || this.profile.account;
     const pass = password || this.profile.password || '';
 

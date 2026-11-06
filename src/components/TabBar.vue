@@ -11,7 +11,7 @@
       <div
         v-for="profile in sessionStore.profiles"
         :key="profile.id"
-        @click="sessionStore.setActiveProfile(profile.id)"
+        @click="handleTabClick(profile.id)"
         :class="[
           'group relative flex items-center h-8 px-3 text-xs rounded-md cursor-pointer transition-all shrink-0',
           sessionStore.activeProfileId === profile.id
@@ -174,6 +174,20 @@ function getStatusColor(profileId: string): string {
 const isConnecting = computed(() => {
   return sessionStore.activeSessionState?.isConnecting || false;
 });
+
+async function handleTabClick(profileId: string) {
+  if (sessionStore.activeProfileId === profileId) {
+    const state = sessionStore.sessionStates[profileId];
+    if (!state?.isLoggedIn && !state?.isConnecting) {
+      const ok = await sessionStore.loginServer(profileId);
+      if (ok) {
+        await noteStore.fetchNotebooks();
+      }
+    }
+    return;
+  }
+  await sessionStore.setActiveProfile(profileId);
+}
 
 const currentStatusText = computed(() => {
   const profile = sessionStore.activeProfile;

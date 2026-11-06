@@ -10,6 +10,9 @@ export const useSessionStore = defineStore('session', () => {
   const clients = new Map<string, SynologyApiClient>();
   const sessionStates = ref<Record<string, SessionState>>({});
 
+  // Concurrency guard to deduplicate concurrent login requests for the same profile
+  const pendingLogins = new Map<string, Promise<boolean>>();
+
   const activeProfile = computed(() => {
     return profiles.value.find(p => p.id === activeProfileId.value) || profiles.value[0];
   });
@@ -43,48 +46,108 @@ export const useSessionStore = defineStore('session', () => {
     return getOrCreateClient(profile);
   }
 
+  /**
+   * Determine if an error is an authentication credential error
+   * Credential errors (wrong password, disabled account, 2FA required) should never be retried
+   */
+  function isCredentialError(err: any): boolean {
+    const msg = String(err?.message || '');
+    return (
+      msg.includes('密码') ||
+      msg.includes('账户') ||
+      msg.includes('双重验证') ||
+      msg.includes('权限') ||
+      msg.includes('400') ||
+      msg.includes('401') ||
+      msg.includes('402') ||
+      msg.includes('403') ||
+      msg.includes('404')
+    );
+  }
+
+  /**
+   * Login to a specific server profile with concurrency deduplication and transient failure retries
+   */
   async function loginServer(profileId: string): Promise<boolean> {
-    const profile = profiles.value.find(p => p.id === profileId);
-    if (!profile) return false;
+    const existing = pendingLogins.get(profileId);
+    if (existing) {
+      return existing;
+    }
 
-    sessionStates.value[profileId] = {
-      serverId: profileId,
-      isLoggedIn: false,
-      isConnecting: true,
-      lastError: undefined
-    };
+    const promise = (async () => {
+      const profile = profiles.value.find(p => p.id === profileId);
+      if (!profile) return false;
 
-    try {
-      const client = getOrCreateClient(profile);
-      const sid = await client.login();
       sessionStates.value[profileId] = {
         serverId: profileId,
-        sid,
-        isLoggedIn: true,
-        isConnecting: false
+        isLoggedIn: false,
+        isConnecting: true,
+        lastError: undefined
       };
-      return true;
-    } catch (err: any) {
+
+      const maxRetries = 2;
+      let attempt = 0;
+      let lastErr: any = null;
+
+      while (attempt <= maxRetries) {
+        try {
+          const client = getOrCreateClient(profile);
+          const sid = await client.login();
+          sessionStates.value[profileId] = {
+            serverId: profileId,
+            sid,
+            isLoggedIn: true,
+            isConnecting: false
+          };
+          return true;
+        } catch (err: any) {
+          lastErr = err;
+          attempt++;
+          if (isCredentialError(err) || attempt > maxRetries) {
+            break;
+          }
+          // Exponential backoff for NAS cold wake-up or transient network glitch
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+      }
+
       sessionStates.value[profileId] = {
         serverId: profileId,
         isLoggedIn: false,
         isConnecting: false,
-        lastError: err?.message || '连接失败'
+        lastError: lastErr?.message || '连接失败'
       };
       return false;
+    })().finally(() => {
+      pendingLogins.delete(profileId);
+    });
+
+    pendingLogins.set(profileId, promise);
+    return promise;
+  }
+
+  /**
+   * Ensure server is connected; if already logged in, returns true immediately without re-login
+   */
+  async function ensureConnected(profileId: string): Promise<boolean> {
+    const state = sessionStates.value[profileId];
+    if (state?.isLoggedIn) {
+      return true;
     }
+    return loginServer(profileId);
   }
 
   async function setActiveProfile(profileId: string) {
-    if (activeProfileId.value === profileId) return;
+    if (activeProfileId.value === profileId) {
+      // If clicking currently active profile tab and it's disconnected or errored, attempt reconnect
+      const state = sessionStates.value[profileId];
+      if (!state?.isLoggedIn && !state?.isConnecting) {
+        await loginServer(profileId);
+      }
+      return;
+    }
     activeProfileId.value = profileId;
     ConfigManager.setActiveProfileId(profileId);
-
-    // Auto connect if not connected
-    const state = sessionStates.value[profileId];
-    if (!state || (!state.isLoggedIn && !state.isConnecting)) {
-      await loginServer(profileId);
-    }
   }
 
   async function addProfile(profile: ServerProfile) {
@@ -97,6 +160,7 @@ export const useSessionStore = defineStore('session', () => {
     ConfigManager.upsertProfile(profile);
     profiles.value = ConfigManager.getProfiles();
     clients.delete(profile.id); // Reset client instance
+    delete sessionStates.value[profile.id];
     await loginServer(profile.id);
   }
 
@@ -121,9 +185,17 @@ export const useSessionStore = defineStore('session', () => {
       ? storedActiveId
       : profiles.value[0]?.id || '';
 
-    // Auto-login active profile
+    // 1. Immediately login active profile (blocking for main startup UI)
     if (activeProfileId.value) {
       await loginServer(activeProfileId.value);
+    }
+
+    // 2. Pre-connect all other configured profiles in the background asynchronously
+    const otherProfiles = profiles.value.filter(p => p.id !== activeProfileId.value);
+    for (const p of otherProfiles) {
+      loginServer(p.id).catch((err) => {
+        console.warn(`[sessionStore] Background pre-connect failed for ${p.alias || p.serverUrl}:`, err);
+      });
     }
   }
 
@@ -137,10 +209,10 @@ export const useSessionStore = defineStore('session', () => {
     init,
     getClient,
     loginServer,
+    ensureConnected,
     setActiveProfile,
     addProfile,
     updateProfile,
     removeProfile
   };
 });
-
