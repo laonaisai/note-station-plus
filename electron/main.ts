@@ -30,6 +30,11 @@ if (!gotTheLock) {
   app.quit();
 }
 
+// App version IPC handler
+ipcMain.handle('app:getVersion', () => {
+  return app.getVersion();
+});
+
 // IPC handlers for local safeStorage DPAPI encryption
 ipcMain.handle('safeStorage:isAvailable', () => {
   try {

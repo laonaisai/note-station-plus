@@ -145,7 +145,7 @@
 
             <!-- Manual Save Button -->
             <button
-              @click="saveNote"
+              @click="saveNote(true)"
               :disabled="noteStore.isSaving"
               class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
               title="保存便签 (Ctrl+S)"
@@ -804,15 +804,28 @@ function onContentChanged() {
   }, 2500);
 }
 
-async function saveNote() {
+async function saveNote(isManual = false) {
   if (isRecycledNote.value) return;
+  if (noteStore.isUploadingAttachment) {
+    if (isManual) {
+      showToast('正在上传附件中，请上传完成后再保存', 'info');
+    }
+    return;
+  }
   clearTimeout(saveTimer);
   if (!noteStore.activeNoteId) return;
 
   const title = editTitle.value.trim() || '无标题便签';
-  const success = await noteStore.updateActiveNote(title, editMarkdown.value, editTags.value);
-  if (success) {
-    isModified.value = false;
+  try {
+    const success = await noteStore.updateActiveNote(title, editMarkdown.value, editTags.value);
+    if (success) {
+      isModified.value = false;
+      if (isManual) {
+        showToast('便签已保存', 'success');
+      }
+    }
+  } catch (err: any) {
+    showToast(`保存便签失败: ${err?.message || err}`, 'error');
   }
 }
 
@@ -1012,6 +1025,9 @@ async function handleDrop(e: DragEvent) {
 }
 
 async function uploadAndInsertFile(file: File) {
+  // Clear any pending auto-save timer while uploading
+  clearTimeout(saveTimer);
+
   const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(file.name);
   const placeholder = isImage
     ? `\n![正在上传图片 ${file.name}...]()\n`
@@ -1027,16 +1043,32 @@ async function uploadAndInsertFile(file: File) {
       ? `\n![${file.name}](${result.url})\n`
       : `\n[📎 ${file.name} (${formatFileSize(file.size)})](${result.url})\n`;
 
+    const cleanPlaceholder = placeholder.trim();
     if (editMarkdown.value.includes(placeholder)) {
       editMarkdown.value = editMarkdown.value.replace(placeholder, insertText);
+    } else if (cleanPlaceholder && editMarkdown.value.includes(cleanPlaceholder)) {
+      editMarkdown.value = editMarkdown.value.replace(cleanPlaceholder, insertText.trim());
     } else {
       insertMarkdown(insertText);
     }
+
+    if (textareaRef.value) {
+      textareaRef.value.value = editMarkdown.value;
+    }
+
     onContentChanged();
     showToast(`【${file.name}】上传成功并已插入便签！`, 'success');
   } catch (err: any) {
     console.error('Failed to upload attachment', err);
-    editMarkdown.value = editMarkdown.value.replace(placeholder, '');
+    const cleanPlaceholder = placeholder.trim();
+    if (editMarkdown.value.includes(placeholder)) {
+      editMarkdown.value = editMarkdown.value.replace(placeholder, '');
+    } else if (cleanPlaceholder && editMarkdown.value.includes(cleanPlaceholder)) {
+      editMarkdown.value = editMarkdown.value.replace(cleanPlaceholder, '');
+    }
+    if (textareaRef.value) {
+      textareaRef.value.value = editMarkdown.value;
+    }
     showToast(`上传【${file.name}】失败: ${err?.message || err}`, 'error');
   }
 }
@@ -1051,6 +1083,7 @@ function insertAttachmentToBody(att: any) {
     : `\n[📎 ${att?.name || '附件'} (${formatFileSize(att?.size)})](${url})\n`;
 
   insertMarkdown(insertText);
+  showToast(`已插入【${att?.name || '附件'}】至便签`, 'info');
 }
 
 async function handleDeleteAttachment(att: any) {
@@ -1142,7 +1175,7 @@ function handleKeydown(e: KeyboardEvent) {
   // Ctrl+S or Cmd+S to save
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
-    saveNote();
+    saveNote(true);
   }
   // Tab key indents by 2 spaces
   if (e.key === 'Tab') {

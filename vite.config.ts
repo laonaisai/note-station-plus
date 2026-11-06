@@ -10,6 +10,16 @@ import { URL } from 'url';
 // Ensure ELECTRON_RUN_AS_NODE is never leaked to child Electron processes
 delete process.env.ELECTRON_RUN_AS_NODE;
 
+function generateVersion() {
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const MM = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const HH = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${yyyy}${MM}${dd}.${HH}.${mm}`;
+}
+
 /**
  * Transparent proxy middleware for Synology API in Web Browser mode
  * Eliminates browser CORS and private network blocks
@@ -32,18 +42,27 @@ function synoProxyPlugin(): Plugin {
 
         const targetHeader = req.headers['x-syno-target'] as string;
         const reqUrl = new URL(req.url || '', 'http://localhost');
-        const targetHost = targetHeader || reqUrl.searchParams.get('target');
+        const targetParam = reqUrl.searchParams.get('target');
 
-        if (!targetHost) {
+        let targetUrl: URL;
+        if (targetParam) {
+          try {
+            targetUrl = new URL(targetParam);
+          } catch {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid target URL parameter' }));
+            return;
+          }
+        } else if (targetHeader) {
+          const forwardPath = reqUrl.pathname + reqUrl.search;
+          targetUrl = new URL(forwardPath, targetHeader);
+        } else {
           res.statusCode = 400;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Missing target in X-Syno-Target header or ?target=' }));
           return;
         }
-
-        reqUrl.searchParams.delete('target');
-        const forwardPath = reqUrl.pathname + reqUrl.search;
-        const targetUrl = new URL(forwardPath, targetHost);
 
         const isHttps = targetUrl.protocol === 'https:';
         const client = isHttps ? https : http;
@@ -147,6 +166,9 @@ export default defineConfig(() => {
   ];
 
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.VITE_APP_VERSION || generateVersion())
+    },
     plugins,
     resolve: {
       alias: {

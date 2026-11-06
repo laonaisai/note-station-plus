@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "vite",
     "dev:win": "vite",
-    "build": "vue-tsc && vite build && node scripts/build-electron.cjs",
-    "build:linux": "vue-tsc && vite build && node scripts/build-electron.cjs --linux",
-    "build:win": "vue-tsc && vite build && node scripts/build-electron.cjs --win",
+    "build": "node scripts/build.cjs",
+    "build:linux": "node scripts/build.cjs --linux",
+    "build:win": "node scripts/build.cjs --win",
     "test": "vitest run",
     "test:watch": "vitest"
   },

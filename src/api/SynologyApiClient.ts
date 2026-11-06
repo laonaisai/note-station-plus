@@ -36,6 +36,7 @@ export class SynologyApiClient {
   private http: AxiosInstance;
   public profile: ServerProfile;
   public sid?: string;
+  public lastUpdatedVer?: string;
 
   constructor(profile: ServerProfile) {
     this.profile = profile;
@@ -46,7 +47,7 @@ export class SynologyApiClient {
 
     this.http = axios.create({
       baseURL: isBrowser ? '/syno-proxy' : cleanBaseUrl,
-      timeout: 15000,
+      timeout: 45000,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -623,13 +624,21 @@ export class SynologyApiClient {
   /**
    * Update an existing note's title and/or Markdown content
    */
-  async updateNote(objectId: string, title: string, markdownContent: string, tags?: string[]): Promise<boolean> {
+  async updateNote(
+    objectId: string,
+    title: string,
+    markdownContent: string,
+    tags?: string[],
+    ver?: string
+  ): Promise<boolean> {
     const sid = this.requireSid();
     const htmlContent = markdownToNoteHtml(markdownContent);
 
+    // If a valid 40-char SHA1 hash is provided for ver, use version: 3 matching DSM official client
+    const useV3 = Boolean(ver && ver.length === 40);
     const payload: Record<string, string> = {
       api: 'SYNO.NoteStation.Note',
-      version: '1',
+      version: useV3 ? '3' : '1',
       method: 'set',
       _sid: sid,
       object_id: objectId,
@@ -637,16 +646,38 @@ export class SynologyApiClient {
       content: htmlContent
     };
 
+    if (useV3 && ver) {
+      payload['ver'] = ver;
+      payload['commit_msg'] = JSON.stringify({ device: 'desktop' });
+    }
+
     if (tags) {
       payload['tag'] = JSON.stringify(tags);
     }
 
     const data = new URLSearchParams(payload);
-    const res = await this.http.post<SynoApiResponse>('/webapi/entry.cgi', data.toString());
+    let res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', data.toString());
+
+    // If version 3 fails for any reason, fallback to version 1
+    if (!res.data.success && useV3) {
+      delete payload['ver'];
+      delete payload['commit_msg'];
+      payload['version'] = '1';
+      const fallbackData = new URLSearchParams(payload);
+      res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', fallbackData.toString());
+    }
 
     if (!res.data.success) {
       throw this.formatError(res.data);
     }
+
+    const noteData = Array.isArray(res.data.data?.data)
+      ? res.data.data.data[0]
+      : Array.isArray(res.data.data)
+        ? res.data.data[0]
+        : res.data.data;
+
+    this.lastUpdatedVer = noteData?.ver;
 
     return true;
   }

@@ -12,7 +12,7 @@ function generateVersion() {
   return `${yyyy}${MM}${dd}.${HH}.${mm}`;
 }
 
-const dynamicVersion = generateVersion();
+const dynamicVersion = process.env.VITE_APP_VERSION || generateVersion();
 console.log(`\n📦 [Build] Injected dynamic version: ${dynamicVersion} (package.json will NOT be modified)\n`);
 
 const extraArgs = process.argv.slice(2);

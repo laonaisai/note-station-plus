@@ -624,11 +624,24 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client || !activeNote.value || !activeNoteId.value) return false;
 
+    if (isUploadingAttachment.value) {
+      throw new Error('正在上传附件中，请稍候保存');
+    }
+
     isSaving.value = true;
     try {
-      await client.updateNote(activeNoteId.value, title, markdownContent, tags);
+      await client.updateNote(
+        activeNoteId.value,
+        title,
+        markdownContent,
+        tags,
+        activeNote.value.ver
+      );
       activeNote.value.title = title;
       activeNote.value.markdownContent = markdownContent;
+      if (client.lastUpdatedVer) {
+        activeNote.value.ver = client.lastUpdatedVer;
+      }
       if (tags !== undefined) {
         activeNote.value.tag = [...tags];
       }
@@ -638,6 +651,9 @@ export const useNoteStore = defineStore('notes', () => {
       if (item) {
         item.title = title;
         item.mtime = Math.floor(Date.now() / 1000);
+        if (client.lastUpdatedVer) {
+          item.ver = client.lastUpdatedVer;
+        }
         if (tags !== undefined) {
           item.tag = [...tags];
         }
@@ -647,7 +663,7 @@ export const useNoteStore = defineStore('notes', () => {
       return true;
     } catch (e) {
       console.error('Failed to save note', e);
-      return false;
+      throw e;
     } finally {
       isSaving.value = false;
     }

@@ -141,7 +141,11 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const appVersion = pkg.version || '20261105.19.35';
+const appVersion = ref(
+  (typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__)
+    ? __APP_VERSION__
+    : (pkg.version || '20261105.19.35')
+);
 const sourceUrl = 'https://github.com/laonaisai/note-station-plus';
 const isCopied = ref(false);
 
@@ -164,8 +168,16 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('keydown', handleKeydown);
+  if (window.electronAPI?.getAppVersion) {
+    try {
+      const ver = await window.electronAPI.getAppVersion();
+      if (ver) {
+        appVersion.value = ver;
+      }
+    } catch {}
+  }
 });
 
 onUnmounted(() => {
