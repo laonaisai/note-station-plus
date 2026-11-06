@@ -678,5 +678,115 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     // activeNotebookId 被重置
     expect(noteStore.activeNotebookId).toBeNull();
   });
+
+  it('需求: 移动便签至其他笔记本 (moveNote) 更新本地便签归属并刷新笔记本状态', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+
+    noteStore.notebooks = [
+      { object_id: 'nb_from', title: '源笔记本', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' },
+      { object_id: 'nb_to', title: '目标笔记本', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }
+    ];
+
+    const noteToMove: SynoNote = {
+      object_id: 'note_mv_1',
+      parent_id: 'nb_from',
+      title: '待移动的便签',
+      brief: '',
+      content: '',
+      ctime: 0,
+      mtime: 0,
+      ver: '1',
+      tag: []
+    };
+    noteStore.notes = [noteToMove];
+    noteStore.activeNoteId = 'note_mv_1';
+    noteStore.activeNote = noteToMove;
+
+    let moveCalled = false;
+    const mockClient = {
+      moveNote: async (oid: string, pid: string) => {
+        expect(oid).toBe('note_mv_1');
+        expect(pid).toBe('nb_to');
+        moveCalled = true;
+        return true;
+      },
+      listNotebooks: async () => [
+        { object_id: 'nb_from', title: '源笔记本', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '', items: [] },
+        { object_id: 'nb_to', title: '目标笔记本', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '', items: ['note_mv_1'] }
+      ]
+    };
+    vi.spyOn(sessionStore, 'getClient').mockReturnValue(mockClient as any);
+
+    const success = await noteStore.moveNote('note_mv_1', 'nb_to');
+    expect(success).toBe(true);
+    expect(moveCalled).toBe(true);
+    expect(noteStore.notes[0].parent_id).toBe('nb_to');
+    expect(noteStore.activeNote?.parent_id).toBe('nb_to');
+    expect(noteStore.notebooks.find(n => n.object_id === 'nb_to')?.items).toContain('note_mv_1');
+  });
+
+  it('需求: 多标签组合筛选 (selectedTags / toggleTag / clearTags)', () => {
+    const noteStore = useNoteStore();
+
+    noteStore.notes = [
+      {
+        object_id: 'n_work_arch',
+        parent_id: 'nb1',
+        title: '架构设计',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['工作', '架构']
+      },
+      {
+        object_id: 'n_work_life',
+        parent_id: 'nb1',
+        title: '工作生活平衡',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['工作', '生活']
+      },
+      {
+        object_id: 'n_arch_only',
+        parent_id: 'nb1',
+        title: '开源架构分析',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['架构']
+      }
+    ];
+
+    // 1. 无标签选中时，显示全部3篇
+    expect(noteStore.filteredNotes.length).toBe(3);
+
+    // 2. 选中标签 '工作'
+    noteStore.toggleTag('工作');
+    expect(noteStore.selectedTags).toEqual(['工作']);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['n_work_arch', 'n_work_life']);
+
+    // 3. 继续多选标签 '架构' (多标签交集筛选)
+    noteStore.toggleTag('架构');
+    expect(noteStore.selectedTags).toEqual(['工作', '架构']);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['n_work_arch']);
+
+    // 4. 取消选择 '工作'
+    noteStore.toggleTag('工作');
+    expect(noteStore.selectedTags).toEqual(['架构']);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['n_work_arch', 'n_arch_only']);
+
+    // 5. 清空所有选中标签
+    noteStore.clearTags();
+    expect(noteStore.selectedTags.length).toBe(0);
+    expect(noteStore.filteredNotes.length).toBe(3);
+  });
 });
 

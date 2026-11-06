@@ -73,7 +73,13 @@ export const useNoteStore = defineStore('notes', () => {
       performServerSearch(trimmed);
     }, 250);
   });
-  const selectedTag = ref<string | null>(null);
+  const selectedTags = ref<string[]>([]);
+  const selectedTag = computed<string | null>({
+    get: () => (selectedTags.value.length > 0 ? selectedTags.value[0] : null),
+    set: (tag: string | null) => {
+      selectedTags.value = tag ? [tag] : [];
+    }
+  });
   const isLoading = ref<boolean>(false);
   const isCreating = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
@@ -120,12 +126,13 @@ export const useNoteStore = defineStore('notes', () => {
       });
     }
 
-    // Filter by selected tag
-    if (selectedTag.value) {
-      const tagFilter = selectedTag.value.toLowerCase().trim();
-      list = list.filter(n =>
-        (n.tag || []).some(t => t.toLowerCase().trim() === tagFilter)
-      );
+    // Filter by selected tags (multi-select intersection)
+    if (selectedTags.value.length > 0) {
+      const lowerTags = selectedTags.value.map(t => t.toLowerCase().trim());
+      list = list.filter(n => {
+        const noteTags = (n.tag || []).map(t => t.toLowerCase().trim());
+        return lowerTags.every(lt => noteTags.includes(lt));
+      });
     }
 
     if (!searchQuery.value.trim()) return list;
@@ -229,11 +236,26 @@ export const useNoteStore = defineStore('notes', () => {
   });
 
   function selectTag(tag: string | null) {
-    if (selectedTag.value === tag) {
-      selectedTag.value = null; // Toggle off if clicked again
+    if (!tag) {
+      selectedTags.value = [];
     } else {
-      selectedTag.value = tag;
+      toggleTag(tag);
     }
+  }
+
+  function toggleTag(tag: string) {
+    const clean = tag.trim();
+    if (!clean) return;
+    const idx = selectedTags.value.indexOf(clean);
+    if (idx >= 0) {
+      selectedTags.value.splice(idx, 1);
+    } else {
+      selectedTags.value.push(clean);
+    }
+  }
+
+  function clearTags() {
+    selectedTags.value = [];
   }
 
   async function fetchNotebooks() {
@@ -543,6 +565,41 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function moveNote(noteId: string, targetNotebookId: string): Promise<boolean> {
+    const client = sessionStore.getClient() || sessionStore.activeClient;
+    if (!client || !noteId || !targetNotebookId) return false;
+
+    try {
+      await client.moveNote(noteId, targetNotebookId);
+
+      // Update local note object
+      const targetNote = notes.value.find(n => n.object_id === noteId);
+      if (targetNote) {
+        targetNote.parent_id = targetNotebookId;
+        (targetNote as any).notebook_id = targetNotebookId;
+      }
+      if (activeNote.value && activeNote.value.object_id === noteId) {
+        activeNote.value.parent_id = targetNotebookId;
+        (activeNote.value as any).notebook_id = targetNotebookId;
+      }
+
+      // Refresh notebooks to update items array & count badges
+      try {
+        const nbs = await client.listNotebooks();
+        if (nbs && nbs.length > 0) {
+          notebooks.value = nbs;
+        }
+      } catch (e) {
+        console.warn('Failed to refresh notebooks after moveNote', e);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Failed to move note', e);
+      throw e;
+    }
+  }
+
   async function listNoteVersions(noteId: string): Promise<NoteVersion[]> {
     const client = sessionStore.activeClient;
     if (!client) return [];
@@ -609,7 +666,7 @@ export const useNoteStore = defineStore('notes', () => {
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = null;
     }
-    selectedTag.value = null;
+    selectedTags.value = [];
     isLoading.value = false;
     isCreating.value = false;
     isSaving.value = false;
@@ -623,7 +680,10 @@ export const useNoteStore = defineStore('notes', () => {
     allTags,
     tagListWithCounts,
     selectedTag,
+    selectedTags,
     selectTag,
+    toggleTag,
+    clearTags,
     getNotebookNoteCount,
     notes,
     filteredNotes,
@@ -647,6 +707,7 @@ export const useNoteStore = defineStore('notes', () => {
     updateActiveNote,
     deleteActiveNote,
     deleteNote,
+    moveNote,
     listNoteVersions,
     getNoteVersionContent,
     restoreNoteVersion,

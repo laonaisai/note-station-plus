@@ -52,22 +52,31 @@
       </div>
     </div>
 
-    <!-- Accordion List Body -->
-    <div class="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-0">
+    <!-- Accordion List Body (无外层多余滚动条，仅内部展开列表滚动) -->
+    <div
+      :class="[
+        'flex-1 p-2 flex flex-col min-h-0 space-y-1.5',
+        expandedNotebookId ? 'overflow-hidden' : 'overflow-y-auto'
+      ]"
+    >
       <div v-if="noteStore.notebooks.length === 0" class="text-center py-8 text-xs text-slate-400">
         {{ sessionStore.activeSessionState?.isLoggedIn ? '暂无笔记本' : '未连接服务' }}
       </div>
 
-      <!-- 1. "全部笔记" Accordion Panel -->
+      <!-- 1. "全部笔记" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
       <div
         v-if="noteStore.notebooks.length > 0"
-        class="border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition"
+        v-show="!expandedNotebookId || expandedNotebookId === '__all_notes__'"
+        :class="[
+          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          expandedNotebookId === '__all_notes__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
+        ]"
       >
         <!-- "全部笔记" Accordion Header -->
         <div
           @click="toggleAccordion('__all_notes__')"
           :class="[
-            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none',
+            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === '__all_notes__'
               ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
               : 'text-slate-700 hover:bg-slate-200/60'
@@ -112,9 +121,9 @@
         </div>
 
         <!-- "全部笔记" Accordion Content -->
-        <div v-if="expandedNotebookId === '__all_notes__'" class="flex flex-col bg-slate-50/50">
+        <div v-if="expandedNotebookId === '__all_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
           <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white">
+          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -142,47 +151,103 @@
             </div>
           </div>
 
-          <!-- Tag Bubbles under Search Box inside Accordion -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/60 flex flex-wrap items-center gap-1">
-            <button
-              @click="noteStore.selectTag(null)"
-              :class="[
-                'px-2 py-0.5 rounded text-[11px] transition flex items-center shrink-0 border cursor-pointer',
-                !noteStore.selectedTag
-                  ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
-                  : 'bg-white hover:bg-slate-200 text-slate-600 border-slate-200/80'
-              ]"
-            >
-              全部
-            </button>
-
-            <button
-              v-for="tagItem in panelTags"
-              :key="tagItem.name"
-              @click="noteStore.selectTag(tagItem.name)"
-              :class="[
-                'px-2 py-0.5 rounded text-[11px] transition flex items-center shrink-0 border cursor-pointer group',
-                noteStore.selectedTag === tagItem.name
-                  ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
-                  : 'bg-white hover:bg-slate-200 text-slate-600 border-slate-200/80 hover:border-slate-300'
-              ]"
-              :title="`筛选 #${tagItem.name} 标签便签 (共 ${tagItem.count} 篇)`"
-            >
-              <span class="mr-0.5" :class="noteStore.selectedTag === tagItem.name ? 'text-blue-100' : 'text-slate-400'">#</span>
-              <span class="truncate max-w-[90px]">{{ tagItem.name }}</span>
-              <span
+          <!-- Tag Dropdown Multi-Select Row inside Accordion -->
+          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
+            <div class="flex items-center justify-between">
+              <!-- Dropdown Trigger Button -->
+              <button
+                type="button"
+                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
                 :class="[
-                  'ml-1 text-[10px] px-1 py-0.2 rounded-full',
-                  noteStore.selectedTag === tagItem.name ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
+                  noteStore.selectedTags.length > 0
+                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 ]"
               >
-                {{ tagItem.count }}
-              </span>
-            </button>
+                <div class="flex items-center space-x-1.5 truncate mr-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <span class="truncate">
+                    <template v-if="noteStore.selectedTags.length === 0">
+                      按标签筛选 (共 {{ panelTags.length }} 个)
+                    </template>
+                    <template v-else>
+                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                    </template>
+                  </span>
+                </div>
+
+                <div class="flex items-center space-x-1 shrink-0">
+                  <span
+                    v-if="noteStore.selectedTags.length > 0"
+                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
+                  >
+                    {{ noteStore.selectedTags.length }}
+                  </span>
+                  <svg
+                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Clear Tags Button -->
+              <button
+                v-if="noteStore.selectedTags.length > 0"
+                @click.stop="noteStore.clearTags()"
+                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
+                title="清空已选标签"
+              >
+                清空
+              </button>
+            </div>
+
+            <!-- Dropdown Floating Panel -->
+            <div
+              v-if="isTagDropdownOpen"
+              @click.stop
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+            >
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
+                <span>选择标签 (多选组合筛选)</span>
+                <button
+                  v-if="noteStore.selectedTags.length > 0"
+                  @click="noteStore.clearTags()"
+                  class="text-syno-blue hover:underline cursor-pointer"
+                >
+                  清空选择
+                </button>
+              </div>
+
+              <label
+                v-for="tagItem in panelTags"
+                :key="tagItem.name"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+              >
+                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
+                  <input
+                    type="checkbox"
+                    :checked="noteStore.selectedTags.includes(tagItem.name)"
+                    @change="noteStore.toggleTag(tagItem.name)"
+                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                  />
+                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                  {{ tagItem.count }}
+                </span>
+              </label>
+            </div>
           </div>
 
           <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50">
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
             <span class="text-[11px] font-medium text-slate-500">
               便签列表 ({{ noteStore.filteredNotes.length }})
             </span>
@@ -203,8 +268,8 @@
             </button>
           </div>
 
-          <!-- Note Items Container with Year-Month Grouping -->
-          <div class="max-h-[calc(100vh-270px)] overflow-y-auto p-2 space-y-2">
+          <!-- Note Items Container with Year-Month Grouping (滚动条仅在内部展示) -->
+          <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
             <!-- Loading indicator during note creation -->
             <div
               v-if="noteStore.isCreating"
@@ -222,7 +287,7 @@
               v-else-if="groupedNotes.length === 0"
               class="text-center py-8 text-xs text-slate-400"
             >
-              {{ noteStore.searchQuery || noteStore.selectedTag ? '没有找到匹配的便签' : '当前暂无便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '没有找到匹配的便签' : '当前暂无便签' }}
             </div>
 
             <!-- Month Groups -->
@@ -239,11 +304,12 @@
                 </span>
               </div>
 
-              <!-- Note Cards -->
+              <!-- Note Cards (支持右键上下文菜单) -->
               <div
                 v-for="note in group.notes"
                 :key="note.object_id"
                 @click="noteStore.selectNote(note.object_id)"
+                @contextmenu.prevent="openNoteContextMenu($event, note)"
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
@@ -259,7 +325,7 @@
                     {{ note.title || '无标题便签' }}
                   </h4>
 
-                  <!-- Actions: Share, History, Export & Delete -->
+                  <!-- Actions: Share, History, Export, Move & Delete -->
                   <div class="flex items-center space-x-0.5 shrink-0">
                     <button
                       @click.stop="$emit('open-share', note.object_id, note.title)"
@@ -284,10 +350,20 @@
                     <button
                       @click.stop="quickExportNote(note)"
                       class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="导出为此便签为 .md 文件"
+                      title="导出此便签为 .md 文件"
                     >
                       <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
+
+                    <button
+                      @click.stop="openMoveNoteModal(note)"
+                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
+                      title="移动至其他笔记本"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
                     </button>
 
@@ -329,18 +405,22 @@
         </div>
       </div>
 
-      <!-- 2. Notebooks Accordion Panels (One per notebook) -->
+      <!-- 2. Notebooks Accordion Panels (展开时独占显示，隐藏其他笔记本；收起时全部恢复显示) -->
       <div
         v-for="nb in noteStore.notebooks"
         :key="nb.object_id"
-        class="border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition"
+        v-show="!expandedNotebookId || expandedNotebookId === nb.object_id"
+        :class="[
+          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          expandedNotebookId === nb.object_id ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
+        ]"
       >
         <!-- Notebook Accordion Header -->
         <div
           @click="toggleAccordion(nb.object_id)"
           @contextmenu.prevent="openContextMenu($event, nb)"
           :class="[
-            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none',
+            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === nb.object_id
               ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
               : 'text-slate-700 hover:bg-slate-200/60'
@@ -423,9 +503,9 @@
         </div>
 
         <!-- Notebook Accordion Content (Only expanded for this notebook) -->
-        <div v-if="expandedNotebookId === nb.object_id" class="flex flex-col bg-slate-50/50">
-          <!-- 3. Dedicated Search Bar Row inside this Notebook's Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white">
+        <div v-if="expandedNotebookId === nb.object_id" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+          <!-- Dedicated Search Bar Row inside this Notebook's Accordion -->
+          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -453,47 +533,103 @@
             </div>
           </div>
 
-          <!-- 4. Tag Bubbles under Search Box inside this Notebook -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/60 flex flex-wrap items-center gap-1">
-            <button
-              @click="noteStore.selectTag(null)"
-              :class="[
-                'px-2 py-0.5 rounded text-[11px] transition flex items-center shrink-0 border cursor-pointer',
-                !noteStore.selectedTag
-                  ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
-                  : 'bg-white hover:bg-slate-200 text-slate-600 border-slate-200/80'
-              ]"
-            >
-              全部
-            </button>
-
-            <button
-              v-for="tagItem in panelTags"
-              :key="tagItem.name"
-              @click="noteStore.selectTag(tagItem.name)"
-              :class="[
-                'px-2 py-0.5 rounded text-[11px] transition flex items-center shrink-0 border cursor-pointer group',
-                noteStore.selectedTag === tagItem.name
-                  ? 'bg-syno-blue text-white border-syno-blue font-medium shadow-2xs'
-                  : 'bg-white hover:bg-slate-200 text-slate-600 border-slate-200/80 hover:border-slate-300'
-              ]"
-              :title="`筛选 #${tagItem.name} 标签便签 (当前笔记本共 ${tagItem.count} 篇)`"
-            >
-              <span class="mr-0.5" :class="noteStore.selectedTag === tagItem.name ? 'text-blue-100' : 'text-slate-400'">#</span>
-              <span class="truncate max-w-[90px]">{{ tagItem.name }}</span>
-              <span
+          <!-- Tag Dropdown Multi-Select Row inside this Notebook -->
+          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
+            <div class="flex items-center justify-between">
+              <!-- Dropdown Trigger Button -->
+              <button
+                type="button"
+                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
                 :class="[
-                  'ml-1 text-[10px] px-1 py-0.2 rounded-full',
-                  noteStore.selectedTag === tagItem.name ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
+                  noteStore.selectedTags.length > 0
+                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 ]"
               >
-                {{ tagItem.count }}
-              </span>
-            </button>
+                <div class="flex items-center space-x-1.5 truncate mr-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <span class="truncate">
+                    <template v-if="noteStore.selectedTags.length === 0">
+                      按标签筛选 (共 {{ panelTags.length }} 个)
+                    </template>
+                    <template v-else>
+                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                    </template>
+                  </span>
+                </div>
+
+                <div class="flex items-center space-x-1 shrink-0">
+                  <span
+                    v-if="noteStore.selectedTags.length > 0"
+                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
+                  >
+                    {{ noteStore.selectedTags.length }}
+                  </span>
+                  <svg
+                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Clear Tags Button -->
+              <button
+                v-if="noteStore.selectedTags.length > 0"
+                @click.stop="noteStore.clearTags()"
+                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
+                title="清空已选标签"
+              >
+                清空
+              </button>
+            </div>
+
+            <!-- Dropdown Floating Panel -->
+            <div
+              v-if="isTagDropdownOpen"
+              @click.stop
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+            >
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
+                <span>选择标签 (多选组合筛选)</span>
+                <button
+                  v-if="noteStore.selectedTags.length > 0"
+                  @click="noteStore.clearTags()"
+                  class="text-syno-blue hover:underline cursor-pointer"
+                >
+                  清空选择
+                </button>
+              </div>
+
+              <label
+                v-for="tagItem in panelTags"
+                :key="tagItem.name"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+              >
+                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
+                  <input
+                    type="checkbox"
+                    :checked="noteStore.selectedTags.includes(tagItem.name)"
+                    @change="noteStore.toggleTag(tagItem.name)"
+                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                  />
+                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                  {{ tagItem.count }}
+                </span>
+              </label>
+            </div>
           </div>
 
           <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50">
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
             <span class="text-[11px] font-medium text-slate-500">
               便签列表 ({{ noteStore.filteredNotes.length }})
             </span>
@@ -514,8 +650,8 @@
             </button>
           </div>
 
-          <!-- Note Items Container with Year-Month Grouping -->
-          <div class="max-h-[calc(100vh-270px)] overflow-y-auto p-2 space-y-2">
+          <!-- Note Items Container with Year-Month Grouping (滚动条仅在内部展示) -->
+          <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
             <!-- Loading indicator during note creation -->
             <div
               v-if="noteStore.isCreating"
@@ -533,7 +669,7 @@
               v-else-if="groupedNotes.length === 0"
               class="text-center py-8 text-xs text-slate-400"
             >
-              {{ noteStore.searchQuery || noteStore.selectedTag ? '没有找到匹配的便签' : '当前笔记本暂无便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '没有找到匹配的便签' : '当前笔记本暂无便签' }}
             </div>
 
             <!-- Month Groups -->
@@ -550,11 +686,12 @@
                 </span>
               </div>
 
-              <!-- Note Cards -->
+              <!-- Note Cards (支持右键上下文菜单) -->
               <div
                 v-for="note in group.notes"
                 :key="note.object_id"
                 @click="noteStore.selectNote(note.object_id)"
+                @contextmenu.prevent="openNoteContextMenu($event, note)"
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
@@ -570,7 +707,7 @@
                     {{ note.title || '无标题便签' }}
                   </h4>
 
-                  <!-- Actions: Share, History, Export & Delete -->
+                  <!-- Actions: Share, History, Export, Move & Delete -->
                   <div class="flex items-center space-x-0.5 shrink-0">
                     <button
                       @click.stop="$emit('open-share', note.object_id, note.title)"
@@ -599,6 +736,16 @@
                     >
                       <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
+
+                    <button
+                      @click.stop="openMoveNoteModal(note)"
+                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
+                      title="移动至其他笔记本"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
                     </button>
 
@@ -689,6 +836,75 @@
       </div>
     </div>
 
+    <!-- Right-Click Context Menu for Notes (便签项右键上下文菜单) -->
+    <div
+      v-if="noteContextMenu.isOpen"
+      :style="{ top: `${noteContextMenu.y}px`, left: `${noteContextMenu.x}px` }"
+      @click.stop
+      class="fixed z-50 w-44 bg-white border border-slate-200 shadow-xl rounded-lg py-1.5 text-xs text-slate-700 animate-in fade-in duration-100"
+    >
+      <div class="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100 truncate mb-1">
+        {{ noteContextMenu.targetNote?.title || '无标题便签' }}
+      </div>
+
+      <!-- 1. 分享 -->
+      <button
+        @click="triggerNoteShare"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+        </svg>
+        <span>分享</span>
+      </button>
+
+      <!-- 2. 历史版本 -->
+      <button
+        @click="triggerNoteHistory"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>历史版本</span>
+      </button>
+
+      <!-- 3. 导出.md文件 -->
+      <button
+        @click="triggerNoteExport"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span>导出.md文件</span>
+      </button>
+
+      <!-- 4. 移动至其他笔记本 -->
+      <button
+        @click="triggerNoteMove"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        <span>移动至其他笔记本</span>
+      </button>
+
+      <div class="h-px bg-slate-100 my-1"></div>
+
+      <!-- 5. 删除 -->
+      <button
+        @click="triggerNoteDelete"
+        class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        <span>删除</span>
+      </button>
+    </div>
+
     <!-- Create / Rename Notebook Custom Modal -->
     <div
       v-if="notebookModal.isOpen"
@@ -699,13 +915,13 @@
         <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <h3 class="text-sm font-semibold text-slate-800 flex items-center">
             <svg class="w-4 h-4 mr-1.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
             {{ notebookModal.mode === 'create' ? '新建笔记本' : '重命名笔记本' }}
           </h3>
           <button
             @click="closeNotebookModal"
-            class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition cursor-pointer"
+            class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition cursor-pointer"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -713,22 +929,21 @@
           </button>
         </div>
 
-        <div class="p-5 space-y-4">
-          <div v-if="notebookModal.error" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
-            {{ notebookModal.error }}
-          </div>
-
+        <form @submit.prevent="submitNotebookModal" class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1.5">笔记本名称</label>
+            <label class="block text-xs font-medium text-slate-700 mb-1">笔记本名称</label>
             <input
               ref="titleInputRef"
               v-model="notebookModal.title"
-              @keydown.enter="submitNotebookModal"
-              @keydown.esc="closeNotebookModal"
               type="text"
               placeholder="请输入笔记本名称..."
               class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition"
+              required
             />
+          </div>
+
+          <div v-if="notebookModal.error" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            {{ notebookModal.error }}
           </div>
 
           <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
@@ -741,8 +956,7 @@
               取消
             </button>
             <button
-              type="button"
-              @click="submitNotebookModal"
+              type="submit"
               :disabled="notebookModal.loading || !notebookModal.title.trim()"
               class="px-4 py-1.5 text-xs bg-syno-blue hover:bg-blue-600 text-white rounded-lg font-medium shadow-2xs transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
@@ -750,14 +964,93 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ notebookModal.mode === 'create' ? '创建' : '保存' }}</span>
+              <span>{{ notebookModal.loading ? '保存中...' : '确定' }}</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
 
-    <!-- Delete Notebook Custom Confirmation Modal -->
+    <!-- Move Note Custom Modal (移动便签至其他笔记本) -->
+    <div
+      v-if="moveNoteModal.isOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      @click.self="closeMoveNoteModal"
+    >
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-slate-800 flex items-center">
+            <svg class="w-4 h-4 mr-1.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            移动便签至其他笔记本
+          </h3>
+          <button
+            @click="closeMoveNoteModal"
+            class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="submitMoveNoteModal" class="p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">当前便签</label>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs font-semibold text-slate-800 truncate">
+              {{ moveNoteModal.targetNote?.title || '无标题便签' }}
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">选择目标笔记本</label>
+            <select
+              v-model="moveNoteModal.targetNotebookId"
+              class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition cursor-pointer"
+              required
+            >
+              <option value="" disabled>请选择目标笔记本...</option>
+              <option
+                v-for="nb in availableTargetNotebooks"
+                :key="nb.object_id"
+                :value="nb.object_id"
+              >
+                {{ nb.title || '默认笔记本' }} ({{ noteStore.getNotebookNoteCount(nb) }} 篇)
+              </option>
+            </select>
+          </div>
+
+          <div v-if="moveNoteModal.error" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            {{ moveNoteModal.error }}
+          </div>
+
+          <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              @click="closeMoveNoteModal"
+              :disabled="moveNoteModal.loading"
+              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="moveNoteModal.loading || !moveNoteModal.targetNotebookId"
+              class="px-4 py-1.5 text-xs bg-syno-blue hover:bg-blue-600 text-white rounded-lg font-medium shadow-2xs transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <svg v-if="moveNoteModal.loading" class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>{{ moveNoteModal.loading ? '正在移动...' : '确认移动' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Notebook Confirmation Modal -->
     <div
       v-if="deleteModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -776,8 +1069,8 @@
               <p class="text-xs text-slate-500 mt-1 leading-relaxed">
                 确定要删除笔记本【<b class="text-slate-800">{{ deleteModal.targetNotebook?.title }}</b>】吗？
               </p>
-              <p class="text-xs text-rose-600 mt-1 font-medium">
-                ⚠️ 该笔记本下的全部便签也将被永久删除，此操作无法撤销。
+              <p class="text-[11px] text-amber-600 mt-2 bg-amber-50 p-2 rounded-md border border-amber-200/60">
+                ⚠️ 注意：删除笔记本会同时删除其内部包含的所有便签，此操作不可撤销！
               </p>
             </div>
           </div>
@@ -874,7 +1167,7 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'open-import'): void;
   (e: 'open-share', noteId: string, noteTitle?: string): void;
   (e: 'open-history', noteId: string, noteTitle?: string): void;
@@ -886,8 +1179,11 @@ const layoutStore = useLayoutStore();
 
 const titleInputRef = ref<HTMLInputElement | null>(null);
 
-// Requirement 2: Strict single-expanded accordion state ("同时只能展开一个折叠面板")
+// Strict single-expanded accordion state ("展开时隐藏其他面板，收起时重新显示所有面板")
 const expandedNotebookId = ref<string>('__all_notes__');
+
+// Tag dropdown multi-select toggle state
+const isTagDropdownOpen = ref<boolean>(false);
 
 // Sync expanded accordion with active notebook if active notebook changes externally
 watch(
@@ -901,16 +1197,17 @@ watch(
 );
 
 /**
- * Toggle accordion panel (strictly only one panel expanded at a time)
+ * Toggle accordion panel (展开面板时独占并隐藏其他面板，再次点击收起时恢复显示其他所有面板)
  */
 function toggleAccordion(notebookId: string) {
+  isTagDropdownOpen.value = false;
   if (expandedNotebookId.value === notebookId) {
     // If user clicks the currently expanded panel, toggle it closed
     expandedNotebookId.value = '';
   } else {
     expandedNotebookId.value = notebookId;
     noteStore.searchQuery = '';
-    noteStore.selectTag(null);
+    noteStore.clearTags();
     noteStore.selectNotebook(notebookId);
   }
 }
@@ -1042,7 +1339,7 @@ async function quickExportNote(note: SynoNote) {
   exportSingleNoteAsMarkdown(noteToExport, nbTitle);
 }
 
-// ================= Modal States =================
+// ================= Modal & Menu States =================
 
 // Notebook Create / Rename Modal State
 const notebookModal = reactive({
@@ -1062,7 +1359,7 @@ const deleteModal = reactive({
   error: ''
 });
 
-// Delete Note Confirmation Modal State (Custom modal replacing native confirm)
+// Delete Note Confirmation Modal State
 const deleteNoteModal = reactive({
   isOpen: false,
   targetNote: null as SynoNote | null,
@@ -1070,7 +1367,22 @@ const deleteNoteModal = reactive({
   error: ''
 });
 
-// Right-Click Context Menu State
+// Move Note Modal State (新增“移动至其他笔记本”对话框)
+const moveNoteModal = reactive({
+  isOpen: false,
+  targetNote: null as SynoNote | null,
+  targetNotebookId: '',
+  loading: false,
+  error: ''
+});
+
+const availableTargetNotebooks = computed(() => {
+  if (!moveNoteModal.targetNote) return noteStore.notebooks;
+  const currentParentId = String(moveNoteModal.targetNote.parent_id || (moveNoteModal.targetNote as any).notebook_id || '');
+  return noteStore.notebooks.filter(nb => String(nb.object_id) !== currentParentId);
+});
+
+// Right-Click Context Menu State for Notebooks
 const contextMenu = reactive({
   isOpen: false,
   x: 0,
@@ -1078,7 +1390,17 @@ const contextMenu = reactive({
   targetNotebook: null as SynoNotebook | null
 });
 
+// Right-Click Context Menu State for Notes (便签右键菜单)
+const noteContextMenu = reactive({
+  isOpen: false,
+  x: 0,
+  y: 0,
+  targetNote: null as SynoNote | null
+});
+
 function openContextMenu(event: MouseEvent, nb: SynoNotebook) {
+  closeNoteContextMenu();
+  isTagDropdownOpen.value = false;
   contextMenu.isOpen = true;
   contextMenu.x = Math.min(event.clientX, window.innerWidth - 180);
   contextMenu.y = Math.min(event.clientY, window.innerHeight - 150);
@@ -1089,6 +1411,62 @@ function closeContextMenu() {
   if (contextMenu.isOpen) {
     contextMenu.isOpen = false;
     contextMenu.targetNotebook = null;
+  }
+}
+
+function openNoteContextMenu(event: MouseEvent, note: SynoNote) {
+  closeContextMenu();
+  isTagDropdownOpen.value = false;
+  noteContextMenu.isOpen = true;
+  noteContextMenu.x = Math.min(event.clientX, window.innerWidth - 190);
+  noteContextMenu.y = Math.min(event.clientY, window.innerHeight - 220);
+  noteContextMenu.targetNote = note;
+}
+
+function closeNoteContextMenu() {
+  if (noteContextMenu.isOpen) {
+    noteContextMenu.isOpen = false;
+    noteContextMenu.targetNote = null;
+  }
+}
+
+function triggerNoteShare() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    emit('open-share', note.object_id, note.title);
+  }
+}
+
+function triggerNoteHistory() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    emit('open-history', note.object_id, note.title);
+  }
+}
+
+function triggerNoteExport() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    quickExportNote(note);
+  }
+}
+
+function triggerNoteMove() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    openMoveNoteModal(note);
+  }
+}
+
+function triggerNoteDelete() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    openDeleteNoteModal(note);
   }
 }
 
@@ -1118,6 +1496,7 @@ function triggerContextDelete() {
 
 function openCreateModal() {
   closeContextMenu();
+  closeNoteContextMenu();
   notebookModal.isOpen = true;
   notebookModal.mode = 'create';
   notebookModal.targetNotebook = null;
@@ -1131,6 +1510,7 @@ function openCreateModal() {
 
 function openRenameModal(nb: SynoNotebook) {
   closeContextMenu();
+  closeNoteContextMenu();
   notebookModal.isOpen = true;
   notebookModal.mode = 'rename';
   notebookModal.targetNotebook = nb;
@@ -1180,6 +1560,7 @@ async function submitNotebookModal() {
 
 function openDeleteModal(nb: SynoNotebook) {
   closeContextMenu();
+  closeNoteContextMenu();
   deleteModal.isOpen = true;
   deleteModal.targetNotebook = nb;
   deleteModal.loading = false;
@@ -1213,6 +1594,7 @@ async function confirmDeleteNotebook() {
 
 function openDeleteNoteModal(note: SynoNote) {
   closeContextMenu();
+  closeNoteContextMenu();
   deleteNoteModal.isOpen = true;
   deleteNoteModal.targetNote = note;
   deleteNoteModal.loading = false;
@@ -1240,6 +1622,47 @@ async function confirmDeleteNote() {
     deleteNoteModal.error = `删除便签失败: ${e?.message || e}`;
   } finally {
     deleteNoteModal.loading = false;
+  }
+}
+
+function openMoveNoteModal(note: SynoNote) {
+  closeContextMenu();
+  closeNoteContextMenu();
+  moveNoteModal.isOpen = true;
+  moveNoteModal.targetNote = note;
+  moveNoteModal.error = '';
+  moveNoteModal.loading = false;
+  const currentParentId = String(note.parent_id || (note as any).notebook_id || '');
+  const candidate = noteStore.notebooks.find(nb => String(nb.object_id) !== currentParentId);
+  moveNoteModal.targetNotebookId = candidate ? candidate.object_id : (noteStore.notebooks[0]?.object_id || '');
+}
+
+function closeMoveNoteModal() {
+  if (moveNoteModal.loading) return;
+  moveNoteModal.isOpen = false;
+  moveNoteModal.targetNote = null;
+  moveNoteModal.targetNotebookId = '';
+  moveNoteModal.error = '';
+}
+
+async function submitMoveNoteModal() {
+  if (!moveNoteModal.targetNote || !moveNoteModal.targetNotebookId) {
+    moveNoteModal.error = '请选择目标笔记本';
+    return;
+  }
+
+  moveNoteModal.loading = true;
+  moveNoteModal.error = '';
+
+  try {
+    await noteStore.moveNote(moveNoteModal.targetNote.object_id, moveNoteModal.targetNotebookId);
+    moveNoteModal.isOpen = false;
+    moveNoteModal.targetNote = null;
+    moveNoteModal.targetNotebookId = '';
+  } catch (e: any) {
+    moveNoteModal.error = `移动便签失败: ${e?.message || e}`;
+  } finally {
+    moveNoteModal.loading = false;
   }
 }
 
@@ -1275,11 +1698,17 @@ async function handleExportNotebook(nb: SynoNotebook) {
   }
 }
 
+function handleGlobalClick() {
+  closeContextMenu();
+  closeNoteContextMenu();
+  isTagDropdownOpen.value = false;
+}
+
 onMounted(() => {
-  document.addEventListener('click', closeContextMenu);
+  document.addEventListener('click', handleGlobalClick);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', closeContextMenu);
+  document.removeEventListener('click', handleGlobalClick);
 });
 </script>

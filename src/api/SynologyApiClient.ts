@@ -581,6 +581,27 @@ export class SynologyApiClient {
   }
 
   /**
+   * Move a note to another notebook
+   */
+  async moveNote(objectId: string, targetNotebookId: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note',
+      version: '1',
+      method: 'set',
+      _sid: sid,
+      object_id: objectId,
+      parent_id: targetNotebookId
+    });
+
+    const res = await this.http.post<SynoApiResponse>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
    * List all tags
    */
   async listTags(): Promise<SynoTag[]> {
