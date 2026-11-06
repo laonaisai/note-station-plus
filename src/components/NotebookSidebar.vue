@@ -319,10 +319,23 @@
               >
                 <div class="flex items-start justify-between">
                   <h4
-                    class="text-xs font-semibold truncate flex-1 pr-1"
+                    class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
-                    {{ note.title || '无标题便签' }}
+                    <!-- Share Icon (已共享图标) -->
+                    <svg
+                      v-if="isNoteShared(note)"
+                      class="w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      title="已共享"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+
+                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -668,10 +681,23 @@
               >
                 <div class="flex items-start justify-between">
                   <h4
-                    class="text-xs font-semibold truncate flex-1 pr-1"
+                    class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
-                    {{ note.title || '无标题便签' }}
+                    <!-- Share Icon (已共享图标) -->
+                    <svg
+                      v-if="isNoteShared(note)"
+                      class="w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      title="已共享"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+
+                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -1112,6 +1138,7 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 import { showToast } from '@/utils/toast';
+import { isNoteShared } from '@/utils/shareUtils';
 
 const emit = defineEmits<{
   (e: 'open-import'): void;

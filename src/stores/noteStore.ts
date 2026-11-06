@@ -643,11 +643,19 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client) return false;
     const ok = await client.updateNoteShareSettings(params);
-    if (ok && activeNoteId.value === params.objectId) {
-      // Refresh active note's acl
-      const updated = await client.getNote(params.objectId);
-      if (activeNote.value) {
-        activeNote.value.acl = updated.acl;
+    if (ok) {
+      try {
+        // Refresh note acl in local notes list and activeNote
+        const updated = await client.getNote(params.objectId);
+        const targetNote = notes.value.find(n => n.object_id === params.objectId);
+        if (targetNote && updated) {
+          targetNote.acl = updated.acl;
+        }
+        if (activeNote.value && activeNote.value.object_id === params.objectId) {
+          activeNote.value.acl = updated.acl;
+        }
+      } catch (e) {
+        console.warn('Failed to refresh updated note acl', e);
       }
     }
     return ok;

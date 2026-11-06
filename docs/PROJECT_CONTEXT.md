@@ -132,6 +132,10 @@ graph TD
 - **DSM 用户与群组协作授权**：
   - 动态从群晖服务器拉取可分享的 DSM 用户（👤）与群组（👥）列表（`SYNO.NoteStation.Share.Priv`）。
   - 可为指定成员分配「只读」或「可读写」权限，并支持动态移除成员授权，保存后即时同步至 NAS 服务端。
+- **便签项已共享状态指示图标**：
+  - 基于群晖 `acl` 数据结构（[`shareUtils.ts`](../src/utils/shareUtils.ts)），当便签开启了公开外链访问或授权了 DSM 用户/群组时，自动判定为已共享；
+  - 在侧边栏折叠面板中的便签卡片标题前（以及 Markdown 编辑器标题前）呈现醒目的共享状态图标（未激活时为群晖蓝 `text-syno-blue`，卡片处于深色激活态时自适应为高亮亮蓝 `text-sky-300`）；
+  - 保存分享权限后，本地便签 `acl` 实时响应更新，共享状态图标即刻动态呈现或消除。
 - **弹窗与入口**：[`ShareModal.vue`](../src/components/ShareModal.vue)，在编辑器顶部与列表卡片操作区均有快捷入口。
 
 ### 5. 便签历史版本记录与版本回滚 (Version History & Restore)
