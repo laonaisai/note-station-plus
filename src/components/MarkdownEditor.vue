@@ -350,6 +350,7 @@ import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
+import { showToast } from '@/utils/toast';
 
 const emit = defineEmits<{
   (e: 'open-sync'): void;
@@ -500,7 +501,12 @@ function exportCurrentNote() {
     markdownContent: editMarkdown.value,
     tag: [...editTags.value]
   };
-  exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
+  try {
+    exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
+    showToast(`便签【${currentNote.title}】已成功导出为 Markdown 文件！`, 'success');
+  } catch (e: any) {
+    showToast(`导出便签失败: ${e?.message || e}`, 'error');
+  }
 }
 
 async function handleOpenSync() {

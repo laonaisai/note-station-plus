@@ -325,58 +325,17 @@
                     {{ note.title || '无标题便签' }}
                   </h4>
 
-                  <!-- Actions: Share, History, Export, Move & Delete -->
-                  <div class="flex items-center space-x-0.5 shrink-0">
-                    <button
-                      @click.stop="$emit('open-share', note.object_id, note.title)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="便签分享管理"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="$emit('open-history', note.object_id, note.title)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="查看历史版本"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="quickExportNote(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="导出此便签为 .md 文件"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="openMoveNoteModal(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="移动至其他笔记本"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="openDeleteNoteModal(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 p-0.5 transition cursor-pointer"
-                      title="删除便签"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
+                  <button
+                    @click.stop="openNoteMenuFromButton($event, note)"
+                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
+                    :class="noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id ? '!opacity-100 bg-slate-200 text-slate-700' : ''"
+                    title="便签操作菜单"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+                    </svg>
+                  </button>
                 </div>
 
                 <!-- Tags List on Note Item Card -->
@@ -707,58 +666,17 @@
                     {{ note.title || '无标题便签' }}
                   </h4>
 
-                  <!-- Actions: Share, History, Export, Move & Delete -->
-                  <div class="flex items-center space-x-0.5 shrink-0">
-                    <button
-                      @click.stop="$emit('open-share', note.object_id, note.title)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="便签分享管理"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="$emit('open-history', note.object_id, note.title)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="查看历史版本"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="quickExportNote(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="导出此便签为 .md 文件"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="openMoveNoteModal(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-syno-blue p-0.5 transition cursor-pointer"
-                      title="移动至其他笔记本"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                    </button>
-
-                    <button
-                      @click.stop="openDeleteNoteModal(note)"
-                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 p-0.5 transition cursor-pointer"
-                      title="删除便签"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
+                  <button
+                    @click.stop="openNoteMenuFromButton($event, note)"
+                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
+                    :class="noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id ? '!opacity-100 bg-slate-200 text-slate-700' : ''"
+                    title="便签操作菜单"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+                    </svg>
+                  </button>
                 </div>
 
                 <!-- Tags List on Note Item Card -->
@@ -847,7 +765,18 @@
         {{ noteContextMenu.targetNote?.title || '无标题便签' }}
       </div>
 
-      <!-- 1. 分享 -->
+      <!-- 1. 同步 (跨服务便签同步) -->
+      <button
+        @click="triggerNoteSync"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span>同步</span>
+      </button>
+
+      <!-- 2. 分享 -->
       <button
         @click="triggerNoteShare"
         class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
@@ -1166,11 +1095,13 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
+import { showToast } from '@/utils/toast';
 
 const emit = defineEmits<{
   (e: 'open-import'): void;
   (e: 'open-share', noteId: string, noteTitle?: string): void;
   (e: 'open-history', noteId: string, noteTitle?: string): void;
+  (e: 'open-sync'): void;
 }>();
 
 const noteStore = useNoteStore();
@@ -1336,7 +1267,13 @@ async function quickExportNote(note: SynoNote) {
   const nbTitle = noteStore.notebooks.find(
     nb => nb.object_id === (note.parent_id || (note as any).notebook_id)
   )?.title || noteStore.activeNotebook?.title;
-  exportSingleNoteAsMarkdown(noteToExport, nbTitle);
+  try {
+    exportSingleNoteAsMarkdown(noteToExport, nbTitle);
+    showToast(`便签【${noteToExport.title || '无标题便签'}】已成功导出为 Markdown 文件！`, 'success');
+  } catch (e: any) {
+    console.error('Failed to export note', e);
+    showToast(`导出便签失败: ${e?.message || e}`, 'error');
+  }
 }
 
 // ================= Modal & Menu States =================
@@ -1419,7 +1356,39 @@ function openNoteContextMenu(event: MouseEvent, note: SynoNote) {
   isTagDropdownOpen.value = false;
   noteContextMenu.isOpen = true;
   noteContextMenu.x = Math.min(event.clientX, window.innerWidth - 190);
-  noteContextMenu.y = Math.min(event.clientY, window.innerHeight - 220);
+  noteContextMenu.y = Math.min(event.clientY, window.innerHeight - 260);
+  noteContextMenu.targetNote = note;
+}
+
+function openNoteMenuFromButton(event: MouseEvent, note: SynoNote) {
+  closeContextMenu();
+  isTagDropdownOpen.value = false;
+
+  if (noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id) {
+    closeNoteContextMenu();
+    return;
+  }
+
+  const target = event.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  noteContextMenu.isOpen = true;
+  const menuWidth = 176;
+  const menuHeight = 260;
+
+  let x = rect.right - menuWidth;
+  if (x < 10) x = rect.left;
+  if (x + menuWidth > window.innerWidth - 10) {
+    x = window.innerWidth - menuWidth - 10;
+  }
+
+  let y = rect.bottom + 4;
+  if (y + menuHeight > window.innerHeight - 10) {
+    y = Math.max(10, rect.top - menuHeight - 4);
+  }
+
+  noteContextMenu.x = x;
+  noteContextMenu.y = y;
   noteContextMenu.targetNote = note;
 }
 
@@ -1427,6 +1396,17 @@ function closeNoteContextMenu() {
   if (noteContextMenu.isOpen) {
     noteContextMenu.isOpen = false;
     noteContextMenu.targetNote = null;
+  }
+}
+
+async function triggerNoteSync() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    if (noteStore.activeNoteId !== note.object_id) {
+      await noteStore.selectNote(note.object_id);
+    }
+    emit('open-sync');
   }
 }
 
@@ -1678,6 +1658,7 @@ async function handleExportNotebook(nb: SynoNotebook) {
   try {
     const res = await client.listAllNotes(nb.object_id);
     if (!res.notes || res.notes.length === 0) {
+      showToast(`笔记本【${nb.title || '默认笔记本'}】暂无便签可导出`, 'warning');
       return;
     }
 
@@ -1693,8 +1674,10 @@ async function handleExportNotebook(nb: SynoNotebook) {
     );
 
     await exportNotebookAsZip(nb.title || '默认笔记本', fullNotes);
+    showToast(`笔记本【${nb.title || '默认笔记本'}】全部便签 (${fullNotes.length} 篇) 已成功打包导出！`, 'success');
   } catch (e: any) {
     console.error(`导出笔记本失败: ${e?.message || e}`);
+    showToast(`导出笔记本失败: ${e?.message || e}`, 'error');
   }
 }
 
