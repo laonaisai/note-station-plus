@@ -142,7 +142,7 @@
           </div>
 
           <!-- Preview Content Area -->
-          <div class="flex-1 overflow-y-auto p-6 text-xs">
+          <div class="flex-1 overflow-y-auto p-6 text-xs select-text">
             <div v-if="isLoadingContent" class="h-full flex flex-col items-center justify-center text-slate-400">
               <svg class="animate-spin h-6 w-6 text-syno-blue mb-2" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

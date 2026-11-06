@@ -33,6 +33,7 @@
 
       <!-- Right Column: Markdown Editor / Preview -->
       <MarkdownEditor
+        class="select-text"
         @open-sync="isSyncModalOpen = true"
         @open-import="openImportModal"
         @open-share="openShareModal"

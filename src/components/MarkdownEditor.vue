@@ -481,12 +481,29 @@
         <div
           v-show="editorMode === 'split' || editorMode === 'preview'"
           :class="[
-            'h-full overflow-y-auto p-6 bg-slate-50/50',
+            'h-full overflow-y-auto p-6 bg-slate-50/50 select-text relative group',
             editorMode === 'split' ? 'w-1/2' : 'w-full'
           ]"
         >
+          <!-- Floating Quick Copy Button in Preview Area -->
+          <div class="sticky top-0 float-right z-10 -mt-2 -mr-2 mb-2 ml-4">
+            <button
+              @click="handleCopyPreviewText"
+              class="px-2.5 py-1 text-xs bg-white/90 hover:bg-white text-slate-600 hover:text-syno-blue rounded-md border border-slate-200/90 shadow-xs backdrop-blur-xs flex items-center space-x-1.5 transition cursor-pointer select-none opacity-70 hover:opacity-100"
+              :title="isCopied ? '已复制到剪贴板' : '复制预览文本内容 (选中文字优先复制所选)'"
+            >
+              <svg v-if="!isCopied" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <svg v-else class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span :class="isCopied ? 'text-emerald-600 font-medium' : ''">{{ isCopied ? '已复制' : '复制内容' }}</span>
+            </button>
+          </div>
+
           <div
-            class="markdown-preview prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue"
+            class="markdown-preview select-text prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue cursor-text"
             v-html="renderedPreviewHtml"
           ></div>
         </div>
@@ -634,6 +651,27 @@ const suggestedTags = computed(() => {
 const renderedPreviewHtml = computed(() => {
   return md.render(editMarkdown.value || '');
 });
+
+const isCopied = ref(false);
+
+async function handleCopyPreviewText() {
+  const selection = window.getSelection()?.toString().trim();
+  const textToCopy = selection && selection.length > 0 ? selection : (editMarkdown.value || '');
+  if (!textToCopy) {
+    showToast('便签内容为空', 'info');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    isCopied.value = true;
+    showToast(selection && selection.length > 0 ? '已复制所选文字！' : '已复制便签全文！', 'success');
+    setTimeout(() => {
+      isCopied.value = false;
+    }, 2000);
+  } catch (err) {
+    showToast('复制失败，请使用快捷键 Ctrl+C', 'error');
+  }
+}
 
 const isRecycledNote = computed(() => {
   return noteStore.activeNotebookId === '__recycle_bin__' || Boolean(noteStore.activeNote?.recycle);

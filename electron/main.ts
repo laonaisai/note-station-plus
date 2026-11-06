@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, Menu, MenuItem } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
@@ -124,6 +124,32 @@ const createWindow = () => {
   mainWindow.webContents.on('before-input-event', (_event, input) => {
     if (input.key === 'F12' && input.type === 'keyDown') {
       mainWindow?.webContents.toggleDevTools();
+    }
+  });
+
+  // Register context menu for text selection, copy, paste, etc.
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    const menu = new Menu();
+
+    if (params.selectionText && params.selectionText.trim().length > 0) {
+      menu.append(new MenuItem({ label: '复制', role: 'copy' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.isEditable) {
+      menu.append(new MenuItem({ label: '撤销', role: 'undo' }));
+      menu.append(new MenuItem({ label: '重做', role: 'redo' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: '剪切', role: 'cut' }));
+      menu.append(new MenuItem({ label: '复制', role: 'copy' }));
+      menu.append(new MenuItem({ label: '粘贴', role: 'paste' }));
+      menu.append(new MenuItem({ label: '全选', role: 'selectAll' }));
+    } else if (params.selectionText && params.selectionText.trim().length > 0) {
+      menu.append(new MenuItem({ label: '全选', role: 'selectAll' }));
+    }
+
+    if (menu.items.length > 0) {
+      menu.popup({ window: mainWindow || undefined });
     }
   });
 

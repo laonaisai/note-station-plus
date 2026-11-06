@@ -54,9 +54,23 @@ html, body, #app {
 
 /* Comprehensive Markdown Preview Typography */
 .markdown-preview {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: auto;
   color: #1e293b;
   font-size: 0.925rem;
   line-height: 1.7;
+}
+
+.markdown-preview * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+.markdown-preview ::selection,
+.markdown-preview *::selection {
+  background-color: #bae6fd;
+  color: #0369a1;
 }
 
 .markdown-preview h1 {

@@ -28,7 +28,7 @@
       </div>
 
       <!-- Content Form (Scrollable) -->
-      <div class="p-6 space-y-4 overflow-y-auto text-xs flex-1">
+      <div class="p-6 space-y-4 overflow-y-auto text-xs flex-1 select-text">
         <!-- Error Alert -->
         <div v-if="errorMessage" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-between">
           <span>{{ errorMessage }}</span>
