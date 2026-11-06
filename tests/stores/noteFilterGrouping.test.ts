@@ -68,6 +68,124 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.filteredNotes[0].object_id).toBe('note_2');
   });
 
+  it('搜索框能够同时匹配便签标题以及正文内容 (markdownContent / brief / content)', () => {
+    const noteStore = useNoteStore();
+
+    const mockNotes: SynoNote[] = [
+      {
+        object_id: 'note_title_match',
+        parent_id: 'nb1',
+        title: 'Kubernetes 集群搭建',
+        brief: '',
+        content: '<p>普通正文</p>',
+        markdownContent: '普通正文',
+        ctime: 1730790000,
+        mtime: 1730790000,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'note_content_match',
+        parent_id: 'nb1',
+        title: '日常会议备忘录',
+        brief: '关于云原生架构与微服务的研讨',
+        content: '<p>今天讨论了关于云原生架构与微服务的高可用部署策略。</p>',
+        markdownContent: '今天讨论了关于云原生架构与微服务的高可用部署策略。',
+        ctime: 1730791000,
+        mtime: 1730791000,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'note_other',
+        parent_id: 'nb1',
+        title: '购物清单',
+        brief: '周末买菜',
+        content: '<p>苹果 牛奶 面包</p>',
+        markdownContent: '苹果 牛奶 面包',
+        ctime: 1730792000,
+        mtime: 1730792000,
+        ver: '1',
+        tag: []
+      }
+    ];
+
+    noteStore.notebooks = [{ object_id: 'nb1', title: '笔记本1', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }];
+    noteStore.notes = mockNotes;
+    noteStore.activeNotebookId = 'nb1';
+
+    // 1. 搜索标题匹配
+    noteStore.searchQuery = 'Kubernetes';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_title_match');
+
+    // 2. 搜索正文内容匹配 (标题不含"高可用"，正文包含)
+    noteStore.searchQuery = '高可用';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_content_match');
+
+    // 3. 搜索 brief 匹配
+    noteStore.searchQuery = '研讨';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_content_match');
+
+    // 4. 清空搜索恢复全部
+    noteStore.searchQuery = '';
+    expect(noteStore.filteredNotes.length).toBe(3);
+  });
+
+  it('搜索框支持与群晖服务端 SYNO.NoteStation.FTS 全文检索联动匹配正文', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+
+    const mockNotes: SynoNote[] = [
+      {
+        object_id: 'note_remote_match',
+        parent_id: 'nb1',
+        title: '未在本地缓存正文的旧便签',
+        brief: '',
+        content: '', // 本地未拉取正文
+        ctime: 1730790000,
+        mtime: 1730790000,
+        ver: '1',
+        tag: []
+      },
+      {
+        object_id: 'note_other',
+        parent_id: 'nb1',
+        title: '其他便签',
+        brief: '',
+        content: '',
+        ctime: 1730791000,
+        mtime: 1730791000,
+        ver: '1',
+        tag: []
+      }
+    ];
+
+    noteStore.notebooks = [{ object_id: 'nb1', title: '笔记本1', category: '', ctime: 0, mtime: 0, ver: '1', preset: false, stack: '' }];
+    noteStore.notes = mockNotes;
+    noteStore.activeNotebookId = 'nb1';
+
+    // Mock activeClient & activeSessionState on sessionStore
+    const mockClient = {
+      searchNotes: vi.fn().mockResolvedValue([
+        { object_id: 'note_remote_match', parent_id: 'nb1', title: '未在本地缓存正文的旧便签' }
+      ])
+    };
+    vi.spyOn(sessionStore, 'activeClient', 'get').mockReturnValue(mockClient as any);
+    vi.spyOn(sessionStore, 'activeSessionState', 'get').mockReturnValue({ serverId: 'test', isLoggedIn: true, isConnecting: false });
+
+    // 触发搜索
+    noteStore.searchQuery = '远端全文关键词';
+    // 等待 debounce
+    await new Promise(resolve => setTimeout(resolve, 350));
+
+    expect(mockClient.searchNotes).toHaveBeenCalledWith('远端全文关键词');
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_remote_match');
+  });
+
   it('便签按年月分组算法能正确将不同月份的便签有序分类', () => {
     // 构造跨越 2026年11月、2026年10月、2025年12月的便签
     // 2026-11-05 -> 1793875200 (ms: 1793875200000)

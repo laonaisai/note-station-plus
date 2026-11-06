@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   SynoNotebook,
   SynoNote,
@@ -20,6 +20,59 @@ export const useNoteStore = defineStore('notes', () => {
   const activeNote = ref<SynoNote | null>(null);
 
   const searchQuery = ref<string>('');
+  const serverMatchedNoteIds = ref<Set<string>>(new Set());
+  const isSearchingServer = ref<boolean>(false);
+  let searchDebounceTimer: any = null;
+
+  async function performServerSearch(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      serverMatchedNoteIds.value = new Set();
+      isSearchingServer.value = false;
+      return;
+    }
+
+    const client = sessionStore.activeClient;
+    if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
+
+    isSearchingServer.value = true;
+    try {
+      const matches = await client.searchNotes(trimmed);
+      if (searchQuery.value.trim() === trimmed) {
+        serverMatchedNoteIds.value = new Set(matches.map(m => m.object_id));
+
+        // If any matched notes were not yet present in notes.value, dynamically append them
+        const existingIds = new Set(notes.value.map(n => n.object_id));
+        const newNotes = matches.filter(m => !existingIds.has(m.object_id));
+        if (newNotes.length > 0) {
+          notes.value = [...notes.value, ...newNotes];
+        }
+      }
+    } catch (e) {
+      console.warn('Server FTS search failed, falling back to local search', e);
+    } finally {
+      if (searchQuery.value.trim() === trimmed) {
+        isSearchingServer.value = false;
+      }
+    }
+  }
+
+  // Watch searchQuery and debounce server full-text search
+  watch(searchQuery, (newQuery) => {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+    const trimmed = newQuery.trim();
+    if (!trimmed) {
+      serverMatchedNoteIds.value = new Set();
+      isSearchingServer.value = false;
+      return;
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+      performServerSearch(trimmed);
+    }, 250);
+  });
   const selectedTag = ref<string | null>(null);
   const isLoading = ref<boolean>(false);
   const isCreating = ref<boolean>(false);
@@ -77,10 +130,39 @@ export const useNoteStore = defineStore('notes', () => {
 
     if (!searchQuery.value.trim()) return list;
     const q = searchQuery.value.toLowerCase().trim();
-    return list.filter(n =>
-      n.title.toLowerCase().includes(q) ||
-      (n.tag || []).some(t => t.toLowerCase().includes(q))
-    );
+    const serverIds = serverMatchedNoteIds.value;
+
+    return list.filter(n => {
+      // 1. Matched by server-side Full-Text Search (SYNO.NoteStation.FTS)
+      if (serverIds.has(n.object_id)) {
+        return true;
+      }
+
+      // 2. Note title match
+      if (n.title.toLowerCase().includes(q)) {
+        return true;
+      }
+
+      // 3. Note tags match
+      if ((n.tag || []).some(t => t.toLowerCase().includes(q))) {
+        return true;
+      }
+
+      // 4. Note brief / summary match
+      if (n.brief && n.brief.toLowerCase().includes(q)) {
+        return true;
+      }
+
+      // 5. Note cached markdown or html content match
+      if (n.markdownContent && n.markdownContent.toLowerCase().includes(q)) {
+        return true;
+      }
+      if (n.content && n.content.toLowerCase().includes(q)) {
+        return true;
+      }
+
+      return false;
+    });
   });
 
   const activeNotebook = computed(() => {
@@ -521,6 +603,12 @@ export const useNoteStore = defineStore('notes', () => {
     activeNoteId.value = null;
     activeNote.value = null;
     searchQuery.value = '';
+    serverMatchedNoteIds.value = new Set();
+    isSearchingServer.value = false;
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = null;
+    }
     selectedTag.value = null;
     isLoading.value = false;
     isCreating.value = false;
@@ -542,6 +630,7 @@ export const useNoteStore = defineStore('notes', () => {
     activeNoteId,
     activeNote,
     searchQuery,
+    isSearchingServer,
     isLoading,
     isCreating,
     isSaving,

@@ -413,6 +413,52 @@ export class SynologyApiClient {
   }
 
   /**
+   * Search notes by keyword using Synology Full-Text Search (SYNO.NoteStation.FTS).
+   * Searches note title, content body, and tags across the account.
+   */
+  async searchNotes(keyword: string, offset = 0, limit = 200): Promise<SynoNote[]> {
+    const trimmed = keyword.trim();
+    if (!trimmed) return [];
+
+    const sid = this.requireSid();
+    const queryParams: Record<string, any> = {
+      api: 'SYNO.NoteStation.FTS',
+      version: '1',
+      method: 'search',
+      _sid: sid,
+      keyword: trimmed,
+      offset,
+      limit
+    };
+
+    const res = await this.http.get<SynoApiResponse<{ matches?: any[]; offset: number }>>('/webapi/entry.cgi', {
+      params: queryParams
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    const matches: any[] = res.data.data?.matches || [];
+    return matches.map(n => {
+      const noteId = String(n.object_id || n.note_id || '');
+      const nbId = String(n.parent_id || n.notebook_id || '');
+      const ctime = Number(n.ctime || n.created_time || 0);
+      const mtime = Number(n.mtime || n.updated_time || ctime);
+
+      return {
+        ...n,
+        object_id: noteId,
+        parent_id: nbId,
+        notebook_id: nbId,
+        ctime,
+        mtime,
+        tag: Array.isArray(n.tag) ? n.tag : []
+      };
+    });
+  }
+
+  /**
    * Retrieve full details of a specific note, including Markdown translation.
    * If `ver` is specified, retrieves the note content at that specific historical version.
    */
