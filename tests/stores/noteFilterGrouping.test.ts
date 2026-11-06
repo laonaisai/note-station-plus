@@ -1046,7 +1046,7 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.favoriteNotes.map(n => n.object_id)).toEqual(['note_fav_1', 'note_fav_3']);
 
     // 3. 验证 getNotebookNoteCount('__favorites__')
-    const favCount = noteStore.getNotebookNoteCount({ object_id: '__favorites__', title: '收藏夹', ctime: 0, mtime: 0, ver: '', preset: true, stack: '' });
+    const favCount = noteStore.getNotebookNoteCount({ object_id: '__favorites__', title: '收藏夹', category: '', ctime: 0, mtime: 0, ver: '', preset: true, stack: '' });
     expect(favCount).toBe(2);
 
     // 4. 切换到收藏夹面板
