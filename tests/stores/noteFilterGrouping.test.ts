@@ -788,5 +788,78 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.selectedTags.length).toBe(0);
     expect(noteStore.filteredNotes.length).toBe(3);
   });
+
+  it('需求: 共享便签折叠面板 (__shared_notes__) 过滤仅展示已共享的便签', () => {
+    const noteStore = useNoteStore();
+
+    noteStore.notes = [
+      {
+        object_id: 'n_shared_public',
+        parent_id: 'nb1',
+        title: '公开分享便签',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['公开'],
+        acl: {
+          enabled: true,
+          public: { perm: 'ro' }
+        }
+      },
+      {
+        object_id: 'n_shared_user',
+        parent_id: 'nb2',
+        title: '协同分享便签',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['协同'],
+        acl: {
+          enabled: true,
+          dsm_user: {
+            '1024': { name: 'admin', perm: 'rw' }
+          }
+        }
+      },
+      {
+        object_id: 'n_private',
+        parent_id: 'nb1',
+        title: '私人便签',
+        brief: '',
+        content: '',
+        ctime: 0,
+        mtime: 0,
+        ver: '1',
+        tag: ['私人'],
+        acl: {
+          enabled: false
+        }
+      }
+    ];
+
+    // 1. 切换至共享便签面板 (__shared_notes__)
+    noteStore.activeNotebookId = '__shared_notes__';
+    expect(noteStore.filteredNotes.length).toBe(2);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['n_shared_public', 'n_shared_user']);
+    expect(noteStore.activeNotebook?.title).toBe('共享便签');
+
+    // 2. 验证 getNotebookNoteCount 对 '__shared_notes__' 的计数
+    expect(noteStore.getNotebookNoteCount({ object_id: '__shared_notes__', title: '共享便签' } as any)).toBe(2);
+
+    // 3. 在共享便签面板内结合标签筛选
+    noteStore.toggleTag('公开');
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('n_shared_public');
+
+    // 4. 在共享便签面板内搜索关键词
+    noteStore.clearTags();
+    noteStore.searchQuery = '协同';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('n_shared_user');
+  });
 });
 

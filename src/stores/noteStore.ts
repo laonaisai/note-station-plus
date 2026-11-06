@@ -8,6 +8,7 @@ import {
   SharedMember
 } from '@/types/synology';
 import { useSessionStore } from './sessionStore';
+import { isNoteShared } from '@/utils/shareUtils';
 
 export const useNoteStore = defineStore('notes', () => {
   const sessionStore = useSessionStore();
@@ -90,6 +91,9 @@ export const useNoteStore = defineStore('notes', () => {
     if (targetId === '__all_notes__') {
       return notes.value.length;
     }
+    if (targetId === '__shared_notes__') {
+      return notes.value.filter(n => isNoteShared(n)).length;
+    }
     const itemSet = new Set(nb.items?.map(i => String(i)) || []);
 
     if (notes.value.length > 0) {
@@ -107,23 +111,27 @@ export const useNoteStore = defineStore('notes', () => {
   const filteredNotes = computed(() => {
     let list = notes.value;
 
-    // Filter by active notebook (if '__all_notes__' is selected, display all notes)
+    // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes)
     if (activeNotebookId.value && activeNotebookId.value !== '__all_notes__') {
-      const targetId = String(activeNotebookId.value);
-      const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
-      const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
+      if (activeNotebookId.value === '__shared_notes__') {
+        list = list.filter(n => isNoteShared(n));
+      } else {
+        const targetId = String(activeNotebookId.value);
+        const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
+        const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
 
-      list = list.filter(n => {
-        const noteParentId = String(n.parent_id || '');
-        const noteNbId = String((n as any).notebook_id || '');
-        const noteId = String(n.object_id || '');
+        list = list.filter(n => {
+          const noteParentId = String(n.parent_id || '');
+          const noteNbId = String((n as any).notebook_id || '');
+          const noteId = String(n.object_id || '');
 
-        return (
-          noteParentId === targetId ||
-          noteNbId === targetId ||
-          targetNbItems.has(noteId)
-        );
-      });
+          return (
+            noteParentId === targetId ||
+            noteNbId === targetId ||
+            targetNbItems.has(noteId)
+          );
+        });
+      }
     }
 
     // Filter by selected tags (multi-select intersection)
@@ -185,6 +193,18 @@ export const useNoteStore = defineStore('notes', () => {
         stack: ''
       };
     }
+    if (activeNotebookId.value === '__shared_notes__') {
+      return {
+        object_id: '__shared_notes__',
+        title: '共享便签',
+        category: 'shared',
+        ctime: 0,
+        mtime: 0,
+        ver: '',
+        preset: true,
+        stack: ''
+      };
+    }
     return notebooks.value.find(nb => nb.object_id === activeNotebookId.value) || null;
   });
 
@@ -203,12 +223,14 @@ export const useNoteStore = defineStore('notes', () => {
 
     // Calculate tag counts for notes in current notebook (or all notes if no notebook selected)
     const targetNotes = (activeNotebookId.value && activeNotebookId.value !== '__all_notes__')
-      ? notes.value.filter(n => {
-          const targetId = String(activeNotebookId.value);
-          const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
-          const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
-          return String(n.parent_id || '') === targetId || String((n as any).notebook_id || '') === targetId || targetNbItems.has(String(n.object_id));
-        })
+      ? (activeNotebookId.value === '__shared_notes__'
+          ? notes.value.filter(n => isNoteShared(n))
+          : notes.value.filter(n => {
+              const targetId = String(activeNotebookId.value);
+              const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
+              const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
+              return String(n.parent_id || '') === targetId || String((n as any).notebook_id || '') === targetId || targetNbItems.has(String(n.object_id));
+            }))
       : notes.value;
 
     for (const note of targetNotes) {
