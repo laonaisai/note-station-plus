@@ -1,6 +1,6 @@
 # Note Station Plus 项目上下文与开发备忘录 (Agent Context)
 
-> 本文档由开发端智能体整理并持久化于代码仓库中，旨在帮助其他开发环境或后续接入的智能体快速掌握当前项目的全貌、架构设计、已实现的功能矩阵、已攻坚的技术坑点以及后续开发规范。
+> 本文档由开发端智能体整理并持久化于代码仓库中，旨在帮助不同开发环境（Windows / Linux / macOS）以及后续协同接入的智能体快速掌握当前项目的全貌、架构设计、已实现的功能矩阵、已攻坚的技术坑点以及后续开发协作规范。
 
 ---
 
@@ -12,24 +12,28 @@
 1. **官方富文本排版混乱** ➔ 原生 **Markdown 编辑体验**（分屏/单栏/预览切换、语法高亮、GFM 表格、LaTeX 公式、待办清单），并采用隐式注释实现与群晖官方 DS note / 网页端 **100% 双向无损兼容**。
 2. **多群晖实例无法同时使用** ➔ **多服务 Tabs 并行会话架构**，公司 NAS、家庭 NAS 毫秒级切换，底层网络请求与 Session 完全物理隔离。
 3. **跨 NAS 便签迁移与同步困难** ➔ 内置 **跨服务同步协同器 (Sync Coordinator)**，通过标题匹配自动执行新建或覆盖更新，并**完整保留并同步所有便签标签**。
-4. **大体量便签丢失/加载不全** ➔ 攻坚群晖 Note Station API `total` 批次数量陷阱，实现 400+ 大容量便签的**全量自动分页拉取与内存索引**。
-5. **安全与隐私保障** ➔ 支持 **6 位数字启动 PIN 码**，本地 AES-GCM + PBKDF2 高强度加密存储，输错 5 次触发 30 分钟防暴力破解锁定。
+4. **便签协作与外链分享受限** ➔ 原生**便签分享管理 (Share Management)**，支持开启专属公开外链（只读/读写）、一键复制/浏览器直达，并支持配置 DSM 系统用户与群组的协同权限。
+5. **历史编辑丢失无回滚机制** ➔ **历史版本记录与一键还原 (Version History & Restore)**，可视化时间轴追溯历次保存快照，支持 Markdown 预览与源码对照，服务端一键回滚还原。
+6. **文件导入导出与中文乱码** ➔ 支持单篇导出为带 Frontmatter 的 Markdown、整本导出为 Zip；导入支持文件拖拽并具备 **GB2312 / GBK / GB18030 / UTF-8** 智能编码识别，彻底解决 Windows 中文乱码。
+7. **大体量便签丢失/加载不全** ➔ 攻坚群晖 Note Station API `total` 批次数量陷阱，实现 400+ 大容量便签的**全量自动分页拉取与内存索引**。
+8. **沉浸式写作空间** ➔ 支持笔记本目录与便签列表**双侧栏自由折叠**，支持一键**全屏专注模式**。
+9. **安全与隐私保障** ➔ 支持 **6 位数字启动 PIN 码**，本地 AES-GCM + PBKDF2 高强度加密存储，输错 5 次触发 30 分钟防暴力破解锁定。
 
 ---
 
 ## 🏗️ 二、系统技术架构与核心模块
 
 ### 1. 技术栈选型
-- **宿主运行时**：Electron 33+ (支持 Windows 与 Linux)
+- **宿主运行时**：Electron 33+ (原生支持 Windows 10/11 与 Linux Ubuntu 24.04 LTS)
 - **前端视图层**：Vue 3 (Composition API, `<script setup lang="ts">`)
-- **语言与规范**：TypeScript 5 (严格类型检查 `vue-tsc`)
-- **状态管理**：Pinia 2 (多 Store 模块化解耦)
-- **样式与设计**：Tailwind CSS (响应式、毛玻璃质感、群晖蓝视觉基调)
-- **Markdown 转换**：
-  - 渲染：`markdown-it` (GFM, 任务列表, 表格, 代码块)
+- **语言与规范**：TypeScript 5 (全代码库严格类型约束，`vue-tsc` 0 报错)
+- **状态管理**：Pinia 2 (多 Store 模块化解耦：`sessionStore`、`noteStore`、`syncStore`、`layoutStore`)
+- **样式与设计**：Tailwind CSS (响应式设计、毛玻璃与渐变吸顶、群晖蓝视觉基调)
+- **Markdown 引擎**：
+  - 渲染与解析：`markdown-it` (GFM, 任务清单, 表格, 代码块)
   - HTML 反转 Markdown：`turndown` + `turndown-plugin-gfm`
-- **自动化测试**：Vitest (包含状态单测与针对真实群晖 NAS 的端到端 API 联调实机测试)
-- **打包分发**：`electron-builder` + NSIS 自定义升级脚本
+- **自动化测试**：Vitest 2 (包含离线单元测试以及针对真实群晖 NAS 的端到端 API 联调实机测试，共 11 个测试套件)
+- **打包分发**：`electron-builder` + 动态时间戳版本号注入 + NSIS 安装升级控制
 
 ### 2. 核心架构拓扑图
 
@@ -39,40 +43,41 @@ graph TD
   
   subgraph UI Layer
     TabBar[TabBar: 多服务切换 / 服务增删改]
-    Sidebar[NotebookSidebar: 笔记本目录 / 标签筛选]
-    NoteList[NoteList: 年月分组 / 独占搜索栏 / 列表]
-    Editor[MarkdownEditor: 分屏编辑 / 预览 / 工具栏]
-    Modals[Modals: 同步 / 导入 / 导出 / 分享 / 历史 / PIN]
+    Sidebar[NotebookSidebar: 笔记本目录 / 标签筛选 / 目录增删改模态框]
+    NoteList[NoteList: 年月吸顶分组 / 独占搜索栏 / 便签卡片标签展示]
+    Editor[MarkdownEditor: 分屏编辑 / 预览 / 工具栏 / 标签编辑]
+    Modals[Modals: 跨服务同步 / 导入导出 / 分享管理 / 历史版本 / PIN安全]
   end
 
   subgraph State Management [Pinia Stores]
-    SessionStore[sessionStore: 多账号配置 / 客户端实例池 / 会话态]
-    NoteStore[noteStore: 笔记本 / 便签缓存 / 标签统计 / 过滤分组]
+    SessionStore[sessionStore: 多账号配置 / 客户端实例池 / 会话态隔离]
+    NoteStore[noteStore: 笔记本 / 便签缓存 / 标签关联 / 过滤检索 / 历史回滚]
     SyncStore[syncStore: 跨服务便签与标签同步引擎]
     LayoutStore[layoutStore: 侧边栏折叠 / 专注全屏模式]
   end
 
   subgraph Service & API Layer
-    PinMgr[pinManager: Web Crypto PBKDF2 + AES-GCM]
-    ApiClient[SynologyApiClient: 群晖 Web API 封装]
-    MdEngine[markdown.ts: Markdown <-> Note HTML 无损协议转换]
+    PinMgr[pinManager: Web Crypto PBKDF2 + AES-GCM 加密]
+    ApiClient[SynologyApiClient: 群晖 Web API 封装与错误处理]
+    MdEngine[markdown.ts: Markdown <-> Note HTML 隐式无损协议]
+    Codec[importMarkdown.ts: GBK/UTF-8 字符集探测与解码]
   end
 
   subgraph Electron Main Process
-    Main[electron/main.ts: 窗口管理 / 退出确认 / 安全策略 / 凭证加解密]
+    Main[electron/main.ts: 单实例锁 / 退出二次确认 / 安全策略 / 凭证加解密]
   end
 
   UI --> State Management
   State Management --> Service & API Layer
   State Management --> Electron Main Process
-  ApiClient -->|HTTP/HTTPS WebAPI| SynoNAS[(群晖 Note Station 服务端)]
+  ApiClient -->|HTTP/HTTPS WebAPI| SynoNAS[(群晖 Note Station 服务端 180 / 182)]
 ```
 
 ---
 
-## 🚀 三、已实现的核心功能与现状
+## 🚀 三、已实现的核心功能矩阵与现状
 
-### 1. 笔记本与目录管理（全生命周期已闭环）
+### 1. 笔记本与目录管理（全生命周期闭环）
 - **便签数量实时展示**：左侧笔记本目录中，每个笔记本后展示便签数量徽标（如 `我的便签 (42)`），结合服务端 `items` 计数与本地加载便签计算。
 - **自定义模态框与右键菜单**：
   - 彻底淘汰了在 Electron 环境下会阻塞或失效的原生 `window.prompt` / `window.confirm`。
@@ -80,40 +85,62 @@ graph TD
   - 新增 **删除笔记本危险确认弹窗**，提示级联删除风险，删除后自动清空本地便签缓存并重新选定活动目录。
   - 支持右键任意笔记本弹出**桌面级右键菜单**（✏️ 重命名 / 📦 导出 Markdown Zip / 🗑️ 删除）。
 
-### 2. 便签列表、检索与分类
-- **双行独立布局**：顶部工具栏分为标题/新建/刷新行，以及**整行独占的搜索框**，输入空间充裕。
+### 2. 便签列表、标签展示与智能搜索
+- **便签卡片标签徽章**：便签列表中的每一项摘要下方直观展示该便签挂载的所有标签胶囊（带 🏷️ 图标，蓝色高亮），底部元数据标明标签数量。
+- **多维度全局搜索**：顶部独占搜索框支持同时匹配**便签标题**与**便签标签**。
 - **动态标签过滤栏**：
   - 笔记本目录下方提供垂直滚动的**标签筛选栏**，显示所有标签及当前分类下的便签计数胶囊（如 `#前端 (5)`）。
   - 支持单标签一键过滤、再次点击或点“全部”取消筛选，并支持与关键词搜索组合联动。
 - **年月吸顶分隔头 (Sticky Header)**：
   - 便签按修改/创建时间自动按年月归类（如 `2026年11月`、`2026年10月` 等）。
-  - 升级为**高对比度吸顶头部**：左侧 `syno-blue` 垂直品牌高亮条、浅蓝渐变毛玻璃背景（`bg-gradient-to-r from-blue-50/95`）、日历图标专用底色衬底、加粗深色文字与高对比度数量胶囊徽标。
+  - 具备高对比度吸顶头部：左侧品牌垂直高亮条、浅蓝渐变毛玻璃背景（`bg-gradient-to-r from-blue-50/95`）、日历图标专用底色衬底、加粗深色文字与高对比度数量胶囊徽标。
 - **400+ 便签完整分页加载**：突破群晖 API batch size 限制，已通过实机联调单测保证 400+ 篇便签完整获取不截断。
 
-### 3. Markdown 编辑与更多操作下拉
-- **Markdown 工具栏与模式切换**：支持粗体、斜体、标题、无序/有序列表、任务待办、代码块、GFM 表格、引用、LaTeX 公式；支持“分屏 / 编辑 / 预览”一键切换。
-- **工具栏下拉整合**：将使用频率较低的“导入 Markdown”、“导出 Markdown”、“便签分享管理”和“历史版本记录”收纳为“更多”下拉菜单，紧跟在“同步”按钮后，点击空白区域自动关闭。
+### 3. Markdown 编辑与界面交互
+- **Markdown 编辑能力**：支持粗体、斜体、标题、无序/有序列表、任务待办、代码块、GFM 表格、引用、LaTeX 公式；支持“分屏 / 编辑 / 预览”一键切换。
+- **工具栏操作布局**：保存状态指示灯、手动保存、导入、导出、分享管理、历史版本、同步、模式切换整齐排列。
 - **便签内标签编辑**：编辑器上方专属标签条，支持现有标签胶囊展示、一键移除、输入模糊联想已有标签。
+- **双栏折叠与专注模式**：笔记本目录和便签列表均支持一键折叠，并支持开启“专注全屏模式”，最大化编辑工作区。
 
-### 4. 跨服务便签与标签同步 (Sync Coordinator)
+### 4. 便签分享管理 (Share Management)
+- **公开外链分享**：
+  - 一键开启或关闭便签公开访问专属链接（调用 `SYNO.NoteStation.Shard.Link` 与 `SYNO.NoteStation.Permission.Public`）。
+  - 自动呈现公开 URL，支持**一键复制到剪贴板**与**在浏览器中直接打开**。
+  - 支持设置公开访问权限：**只读 (ro)** 或 **读写 (rw)**。
+- **DSM 用户与群组协作授权**：
+  - 动态从群晖服务器拉取可分享的 DSM 用户（👤）与群组（👥）列表（`SYNO.NoteStation.Share.Priv`）。
+  - 可为指定成员分配「只读」或「可读写」权限，并支持动态移除成员授权，保存后即时同步至 NAS 服务端。
+- **弹窗与入口**：[`ShareModal.vue`](../src/components/ShareModal.vue)，在编辑器顶部与列表卡片操作区均有快捷入口。
+
+### 5. 便签历史版本记录与版本回滚 (Version History & Restore)
+- **版本时间轴**：可视化列出便签在群晖 NAS 上的历次修改版本快照（`SYNO.NoteStation.Note.Version`），展示序号（#1, #2...）、修改具体时间、作者账号、提交设备（如 desktop）以及“当前最新”徽章。
+- **历史内容对比与预览**：点击任意版本，右侧实时获取该版本时刻的完整便签内容（`SYNO.NoteStation.Note` `ver` 接口），支持 **「Markdown 渲染预览」** 与 **「Markdown 源码」** 无缝对照。
+- **一键版本安全还原**：选定任一历史版本后，点击「还原此版本」，调用群晖原生接口将便签回滚，服务端自动生成还原快照，客户端本地编辑器与便签列表即时同步刷新。
+- **弹窗与入口**：[`HistoryModal.vue`](../src/components/HistoryModal.vue)，在编辑器顶部与列表卡片操作区均有快捷入口。
+
+### 6. Markdown 导入与导出
+- **导出功能**：
+  - 单篇导出为带 YAML Frontmatter（标题、标签、时间）的标准 `.md` 文件，文件名自动执行跨平台安全字符清洗；
+  - 笔记本批量导出：使用 `jszip` 将当前笔记本全量便签打包为 `.zip`，同名便签自动编号去重。
+- **导入功能与智能编码探测**：
+  - 支持文件选择对话框与本地文件拖拽直接释放导入；
+  - 攻坚字符集编码识别：内置 UTF-8、UTF-8 BOM、GB2312、GBK、GB18030 智能探测（基于字节模式与乱码统计探测），彻底解决 Windows 平台导入旧中文 Markdown 文件乱码的问题；
+  - 支持“覆盖当前便签”或“在当前笔记本新建便签”。
+
+### 7. 跨服务便签与标签同步 (Sync Coordinator)
 - **便签双向同步**：在编辑器中点击“同步”，自动前置保存最新便签内容及标签，然后唤起同步弹窗。
 - **智能覆盖/新建**：在目标服务上按标题检索，若存在同名便签则执行覆盖更新；若不存在则新建便签。
 - **标签无缝同步**：无论是新建还是覆盖更新，均提取源便签的 `tag: string[]` 数组传递给目标服务，确保目标服务生成对应的标签挂载。
-- **可视化日志**：同步弹窗实时输出连接状态、同名匹配探测、便签与标签写入结果。
+- **可视化日志**：同步弹窗实时输出带时间戳的连接状态、同名匹配探测、便签与标签写入结果。
 
-### 5. 便签分享与历史版本控制
-- **公开分享管理**：开启/关闭便签公开外链，设置访问只读或读写权限，一键复制链接。
-- **DSM 用户协作**：拉取 NAS 上的系统用户与群组列表，精细授予特定用户读写权限。
-- **历史版本回溯**：查看历次保存的版本时间线，支持历史版本 Markdown 内容预览对照与一键还原。
-
-### 6. 安全与启动 PIN 锁
+### 8. 安全与启动 PIN 锁
 - **PIN 设置与验证**：支持设置 6 位纯数字启动 PIN。
 - **加密存储**：PIN 经 PBKDF2 (100,000 次哈希) + 随机加盐并用 AES-GCM 本地加密保存于存储中，不保存任何明文。
 - **防暴力破解**：输错 5 次强制锁定半小时（30 分钟），期间完全阻止任何解锁尝试。
 - **应用退出二次确认**：拦截 Electron 窗口关闭及退出快捷键，弹出“确认退出 / 取消”提示，防止误关丢失未保存便签。
 - **干净重置与首装引导**：当删除所有服务后，彻底清理界面遗留的便签数据，并自动弹出服务添加向导。
 
-### 7. 打包、版本号与安装包控制
+### 9. 打包、版本号与安装包控制
 - **自动构建版本号格式**：`yyyyMMdd.HH.mm`（例如 `20261106.08.39`）。
 - **动态无污染注入**：采用 `scripts/build-electron.cjs` 在构建执行时通过内存/环境变量动态传递版本号，**绝不修改工作区源码或 `package.json`**，保持 git 干净。
 - **NSIS 防旧版本覆盖与新版本无缝升级**：
@@ -141,25 +168,45 @@ graph TD
   ```
   这里的 `total` **不是该笔记本下的总便签数**，而是**当前批次返回的数量**！
 - **后果**：如果依据 `offset + limit >= total` 判断循环终止，代码在拉取第一页（例如 20 篇）后就会误以为拉完了，导致 400+ 篇便签只显示前面零星几个。
-- **解决方案**：在 [SynologyApiClient.ts](file:///e:/Sources/note-station-plus/src/api/SynologyApiClient.ts#L290-L330) 中，以 `res.notes.length < pageSize` 作为单页未满的唯一定界条件，配合 `Set<string>` 判重与偏移累加，直至完整拉取所有便签。
+- **解决方案**：在 [SynologyApiClient.ts](../src/api/SynologyApiClient.ts) 中，以 `res.notes.length < pageSize` 作为单页未满的唯一定界条件，配合 `Set<string>` 判重与偏移累加，直至完整拉取所有便签。
 
-### 3. 便签标签（Tags）的持久化机制
-- **创建便签**：`method: 'create'` 支持带 `tag` 参数，但必须是序列化后的 JSON 字符串：`JSON.stringify(['标签A', '标签B'])`。
-- **更新/附加便签标签**：群晖对于便签元数据修改（包括标签覆盖）必须使用 `method: 'set'`，并在 `payload` 中附带 `tag: JSON.stringify(tags)`。如果以空数组更新标签，传 `JSON.stringify([])` 即可清空标签。
+### 3. 便签列表（List）默认省略 Tags 陷阱
+- **现象**：调用 `SYNO.NoteStation.Note` 的 `method: 'list'` 批量查询便签时，群晖 NAS 服务端为了轻量传输，**默认不返回便签的 `tag` 字段**！只有单个查看 `method: 'get'` 时才附带 `tag` 数组。
+- **解决方案**：在 [SynologyApiClient.ts](../src/api/SynologyApiClient.ts) 的 `listNotes` 中，使用 `Promise.all` 并行拉取 `SYNO.NoteStation.Tag` 标签清单（群晖以倒排索引格式保存：`{ title: '标签名', items: ['note_id_1', ...] }`），在客户端内存自动反转生成 `noteId -> tags` 映射，一次性为所有便签注入完整的 `tag: string[]`。
 
-### 4. 为什么不能在 Electron 中使用 `window.prompt` / `window.confirm`
-- Chromium / Electron 在主进程未特殊配置的情况下，`window.prompt()` 会直接被静默丢弃并返回 `null`，或者引起渲染进程消息泵阻塞卡死。
-- 所有用户输入与危险确认，必须使用纯 Vue 组件实现的模态框（如 `NotebookSidebar.vue` 现有的 `notebookModal` 和 `deleteModal`）。
+### 4. 创建便签（Create）忽略 Tags 陷阱
+- **现象**：在调用 `SYNO.NoteStation.Note` `method: 'create'` 时即使传入 `tag` 参数，群晖服务端也**不会持久化保存标签**。
+- **解决方案**：创建便签成功后，若存在标签，必须立即调用一次 `method: 'set'` 附带 `tag: JSON.stringify(tags)`，才能确保标签在服务端写入成功。
 
-### 5. Markdown 无损存储协议
+### 5. 历史版本管理（Version History）参数陷阱
+- **历史版本查询**：使用 `SYNO.NoteStation.Note.Version` (version: 2, method: 'list')，建议附带 `filter: { listable: true }` 剔除群晖内部中间版本。
+- **历史版本内容获取**：必须调用 `SYNO.NoteStation.Note` (version: 3, method: 'get', params: { object_id, ver })。
+  > ⚠️ 踩坑提示：参数名必须是 `ver`（版本哈希），且 API 的版本号必须用 `version: 3`（如果误用 version 1 或把哈希传给 `version` 字段，会导致 API 报 104 错误或被静默忽略）。
+- **版本还原**：调用 `SYNO.NoteStation.Note.Version` (version: 2, method: 'restore', params: { object_id, ver })。还原后群晖会自动将该版本提升为新的当前最新版本。
+
+### 6. 便签外链分享与 DSM 协同权限机制
+- **公开外链**：通过 `SYNO.NoteStation.Shard.Link` (version: 1, method: 'get', params: { object_id, mode: 'public' }) 获取外链专属 URL。
+- **生效权限**：必须配套调用 `SYNO.NoteStation.Permission.Public` (version: 1, method: 'set'/'delete', params: { object_id, perm: 'ro'|'rw' }) 才能真正放行外网未登录访问。
+- **DSM 用户与群组**：通过 `SYNO.NoteStation.Share.Priv` (version: 2, method: 'list') 检索可分享的系统用户与群组；通过 `Permission.User` 与 `Permission.Group` (version: 1, method: 'set'/'delete') 分配读写权限。
+
+### 7. Markdown 无损存储协议
 - 群晖服务端只原生解析 HTML，不支持直接存原生 Markdown。
-- 本项目通过 [markdown.ts](file:///e:/Sources/note-station-plus/src/utils/markdown.ts) 约定协议：
+- 本项目通过 [markdown.ts](../src/utils/markdown.ts) 约定协议：
   在保存时，将 Markdown 转为 HTML，同时在 HTML 开头嵌入隐式 HTML 注释：
   ```html
   <!-- syno-markdown-source: <base64编码的原始内容> -->
   <div>...生成的富文本HTML...</div>
   ```
   这样官方 DS note 或 Web 端查看时展示标准 HTML，本项目拉取到便签时，如果检测到该注释则以 Base64 解码出 100% 原汁原味的 Markdown；若无注释，则通过 Turndown 算法优雅降级将官方 HTML 逆向转成 Markdown。
+
+### 8. Windows 下 `pnpm-workspace.yaml` 的 packages 校验陷阱
+- **现象**：Windows 用户拉取代码后运行 `pnpm dev` 报错 `ERROR packages field missing or empty`。
+- **原因**：pnpm 9/10 在检测到工作区存在 `pnpm-workspace.yaml` 时，强制要求声明 `packages:` 字段。
+- **解决方案**：在 [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) 中明确写入 `packages: - '.'`，并同时支持 `allowBuilds`（pnpm 11+）和 `onlyBuiltDependencies`（pnpm 9/10），杜绝多平台跨版本报错。
+
+### 9. Vitest 实机联调并发竞争避坑
+- **现象**：当 Vitest 默认并发运行针对真实群晖 NAS（`172.28.10.180` / `172.28.10.182`）的测试套件时，同一测试账号并发高频写入导致 NAS 响应超时（15s）。
+- **解决方案**：在 [`vitest.config.ts`](../vitest.config.ts) 中配置 `fileParallelism: false` 顺序执行测试文件，并将单用例超时时间 `testTimeout` 调整为 `40000ms`，确保 11 个测试套件 100% 稳定通过。
 
 ---
 
@@ -176,47 +223,54 @@ note-station-plus/
 │   └── build-electron.cjs      # 动态计算 yyyyMMdd.HH.mm 并调用 electron-builder
 ├── src/
 │   ├── api/
-│   │   └── SynologyApiClient.ts# 群晖 Web API 核心封装（全 API 支持与统一错误处理）
+│   │   ├── SynologyApiClient.ts# 群晖 Web API 核心封装（含标签注水、历史版本、分享管理等）
+│   │   └── syncCoordinator.ts  # 跨服务便签与标签同步引擎
 │   ├── components/
 │   │   ├── TabBar.vue          # 顶部多服务 Tabs 栏
-│   │   ├── NotebookSidebar.vue # 笔记本目录树、标签筛选、自定义重命名/删除模态框、右键菜单
-│   │   ├── NoteList.vue        # 便签列表、独占单行搜索栏、年月分组吸顶头
-│   │   ├── MarkdownEditor.vue  # 编辑器核心、标签管理、工具栏“更多”操作下拉
-│   │   ├── SyncModal.vue       # 跨服务同步弹窗（带源便签标签展示与同步日志）
+│   │   ├── NotebookSidebar.vue # 笔记本目录树、标签筛选、新建/重命名/删除模态框、右键菜单
+│   │   ├── NoteList.vue        # 便签列表、独占单行搜索栏、年月吸顶分组、卡片标签徽标
+│   │   ├── MarkdownEditor.vue  # 编辑器核心、标签编辑、双栏折叠与专注模式
+│   │   ├── SyncModal.vue       # 跨服务同步弹窗（带源便签标签展示与时间戳日志）
 │   │   ├── ServerModal.vue     # 服务配置/添加/编辑弹窗
-│   │   ├── ImportModal.vue     # Markdown 文件导入（支持 GBK/UTF-8 自动识别编码）
-│   │   ├── ShareModal.vue      # 便签公开链接与 DSM 用户权限管理弹窗
-│   │   ├── HistoryModal.vue    # 便签历史版本快照时间轴与还原弹窗
+│   │   ├── ImportModal.vue     # Markdown 文件导入（含 GBK/UTF-8 编码智能识别）
+│   │   ├── ShareModal.vue      # 便签公开链接与 DSM 用户/群组协作权限管理弹窗
+│   │   ├── HistoryModal.vue    # 便签历史版本快照时间轴、Markdown 预览与一键还原弹窗
 │   │   ├── PinSettingsModal.vue# PIN 码设置/修改/关闭弹窗
-│   │   └── PinVerifyScreen.vue # 启动 PIN 验证锁屏界面（防暴击5次锁定30分钟）
+│   │   └── PinVerifyScreen.vue # 启动 PIN 验证锁屏界面（防暴力破解锁定）
 │   ├── services/
 │   │   ├── configManager.ts    # 本地服务器配置与安全持久化
 │   │   └── pinManager.ts       # PIN 密码学加密算法与锁定状态管理器
 │   ├── stores/
-│   │   ├── sessionStore.ts     # 多服务会话管理
-│   │   ├── noteStore.ts        # 便签与笔记本核心 Store（过滤、分组、重命名、删除）
+│   │   ├── sessionStore.ts     # 多服务会话管理与客户端实例池
+│   │   ├── noteStore.ts        # 便签与笔记本核心 Store（过滤、分组、重命名、删除、分享与历史动作）
 │   │   ├── syncStore.ts        # 跨服务同步 Store（含标签同步）
-│   │   └── layoutStore.ts      # 界面折叠与专注模式
+│   │   └── layoutStore.ts      # 侧边栏折叠与专注全屏模式 Store
 │   ├── types/
-│   │   └── synology.ts         # 全量 TypeScript 接口与类型定义
+│   │   └── synology.ts         # 全量 TypeScript 接口（NoteVersion, NoteShareInfo, NoteAcl 等）
 │   └── utils/
 │       ├── markdown.ts         # Markdown 与 Note Station HTML 双向转换协议
 │       ├── exportMarkdown.ts   # 导出单篇 / 导出笔记本为 Zip
-│       └── importMarkdown.ts   # 导入 Markdown 文件解析与字符编码识别
-├── tests/                      # 自动化测试套件
+│       └── importMarkdown.ts   # 导入 Markdown 解析与 GBK/UTF-8 编码自动识别
+├── tests/                      # 自动化测试套件（11 个测试套件，全面覆盖离线与实机）
 │   ├── api/
 │   │   ├── notebook_crud.test.ts          # 笔记本增删改查实机联调
 │   │   ├── pagination.test.ts             # 400+ 便签分页算法单测
-│   │   ├── sync-coordinator.test.ts       # 跨服务同步联调
+│   │   ├── sync-coordinator.test.ts       # 跨服务同步实机联调
 │   │   ├── synology-client.test.ts        # API Client 实机测试 (180/182)
 │   │   └── synology-share-history.test.ts # 分享与历史版本 API 实机测试
 │   ├── services/
 │   │   └── pinManager.test.ts             # PIN 码安全性与锁定单测
-│   └── stores/
-│       ├── noteFilterGrouping.test.ts     # 便签过滤、笔记本计数、重命名删除单测
-│       └── syncStore.test.ts              # 跨服务同步带标签单测
+│   ├── stores/
+│   │   ├── layoutStore.test.ts            # 侧边栏折叠与专注模式状态单测
+│   │   ├── noteFilterGrouping.test.ts     # 便签过滤、笔记本计数、重命名删除单测
+│   │   └── syncStore.test.ts              # 跨服务同步带标签单测
+│   └── utils/
+│       ├── exportMarkdown.test.ts         # 导出 Markdown 与 Zip 打包单测
+│       └── importMarkdown.test.ts         # 导入 Markdown 与 GBK/UTF-8 编码检测单测
+├── pnpm-workspace.yaml         # pnpm 工作区与原生构建白名单配置
 └── docs/
     ├── PROJECT_CONTEXT.md      # [当前文档] 跨设备智能体上下文与备忘录
+    ├── 开发文档.md
     ├── 可行性分析及开发方案.md
     └── 开发方案及计划.md
 ```
@@ -236,22 +290,22 @@ pnpm dev:win
 
 ### 2. 自动化测试与类型检查
 ```bash
-# 运行离线逻辑单元测试（Pinia Store、分页算法、PIN 管理器等）
-npx vitest run tests/stores/noteFilterGrouping.test.ts tests/stores/syncStore.test.ts tests/services/pinManager.test.ts
+# 运行离线逻辑单元测试（Pinia Store、分页算法、PIN 管理器、导入导出等）
+npx vitest run tests/stores/noteFilterGrouping.test.ts tests/stores/syncStore.test.ts tests/services/pinManager.test.ts tests/utils/importMarkdown.test.ts tests/utils/exportMarkdown.test.ts
 
-# 运行针对真实群晖 NAS 的端到端 API 联调测试 (需要内网可达 172.28.10.180 / 172.28.10.182)
-npx vitest run tests/api/synology-client.test.ts tests/api/notebook_crud.test.ts
+# 运行全量自动化测试套件（包含真实群晖 NAS 180 / 182 实机联调测试）
+pnpm test
 
-# TypeScript 完整类型检查
-npx vue-tsc --noEmit
+# TypeScript 完整类型检查（0 错误规范）
+pnpm vue-tsc --noEmit
 ```
 
 ### 3. 构建与打包
 ```bash
-# 检查前端构建
-npx vite build
+# 检查前端生产构建
+pnpm vite build
 
-# Windows 安装包与便携版打包 (自动注入 yyyyMMdd.HH.mm 版本号)
+# Windows 安装包与便携版打包 (自动动态注入 yyyyMMdd.HH.mm 版本号)
 pnpm build:win
 
 # Linux 安装包打包 (.deb & .AppImage)
@@ -262,14 +316,19 @@ pnpm build:linux
 
 ## 🧭 七、给后续协同智能体（AI Agent）的开发约定
 
-1. **保持 Git 工作区干净**：
-   - 每次任务完成后，必须先跑通 `npx vue-tsc --noEmit` 和对应单测，确认 `npx vite build` 成功。
-   - 必须通过 `git add`、`git commit` 提交改动，并执行 `git push origin main` 推送至远端。
+1. **保持 Git 工作区干净与双远端同步**：
+   - 每次任务完成后，必须先跑通 `pnpm vue-tsc --noEmit` 和对应单测，确认 `pnpm vite build` 成功。
+   - 必须通过 `git add`、`git commit` 提交改动，并**同时推送至 GitHub 与 Gitea 两个远端仓库**：
+     ```bash
+     git push origin main
+     git push gitea main:v2
+     ```
    - **绝对不要动态修改 `package.json` 中的 `version` 字段**，版本号由 `scripts/build-electron.cjs` 在打包时动态传入环境变量。
 2. **多服务会话独立原则**：
    - 任何涉及群晖网络请求的操作，必须通过 `sessionStore.getClient(serverId)` 或 `sessionStore.activeClient` 获取对应的客户端实例，切忌全局共享单个实例导致会话串扰。
 3. **Electron 原生弹窗禁令**：
    - 任何用户交互、文本输入、二次确认操作，一律使用 Vue 自定义模态框，杜绝使用 `window.prompt` 或 `window.confirm`。
 4. **群晖兼容性规范**：
-   - 便签内容无论如何修改，都必须经由 [markdown.ts](file:///e:/Sources/note-station-plus/src/utils/markdown.ts) 序列化后存储，严禁向群晖服务端直接提交纯 Markdown 纯文本（否则群晖官方客户端会报错或显示为未排版的单行文本）。
-
+   - 便签内容无论如何修改，都必须经由 [markdown.ts](../src/utils/markdown.ts) 序列化后存储，严禁向群晖服务端直接提交纯 Markdown 纯文本（否则群晖官方客户端会报错或显示为未排版的单行文本）。
+5. **跨平台兼容与路径规范**：
+   - 文档与代码引用避免硬编码类似 `E:\...` 或 `/home/...` 的平台特定绝对路径，使用工程相对路径以保证跨平台协同顺畅。
