@@ -63,6 +63,263 @@
         {{ sessionStore.activeSessionState?.isLoggedIn ? '暂无笔记本' : '未连接服务' }}
       </div>
 
+      <!-- 0. "收藏夹" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
+      <div
+        v-if="noteStore.notebooks.length > 0"
+        v-show="!expandedNotebookId || expandedNotebookId === '__favorites__'"
+        :class="[
+          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          expandedNotebookId === '__favorites__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
+        ]"
+      >
+        <!-- "收藏夹" Accordion Header -->
+        <div
+          @click="toggleAccordion('__favorites__')"
+          :class="[
+            'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
+            expandedNotebookId === '__favorites__'
+              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
+              : 'text-slate-700 hover:bg-slate-200/60'
+          ]"
+        >
+          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
+            <!-- Chevron arrow indicator -->
+            <svg
+              :class="[
+                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
+                expandedNotebookId === '__favorites__' ? 'transform rotate-90 text-syno-blue' : ''
+              ]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+
+            <!-- Star Icon (收藏夹图标) -->
+            <svg
+              class="w-3.5 h-3.5 shrink-0"
+              :class="expandedNotebookId === '__favorites__' ? 'text-amber-500 fill-amber-400' : 'text-slate-400'"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+
+            <span class="truncate">收藏夹</span>
+          </div>
+
+          <span
+            :class="[
+              'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
+              expandedNotebookId === '__favorites__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+            ]"
+          >
+            {{ noteStore.favoriteNotes.length }}
+          </span>
+        </div>
+
+        <!-- "收藏夹" Accordion Content -->
+        <div v-if="expandedNotebookId === '__favorites__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+          <!-- Dedicated Search Bar Row inside Accordion -->
+          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+            <div class="relative w-full flex items-center">
+              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <input
+                v-model="noteStore.searchQuery"
+                type="text"
+                placeholder="在收藏夹中搜索标题及内容..."
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+              />
+              <button
+                v-if="noteStore.searchQuery"
+                @click="noteStore.searchQuery = ''"
+                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
+                title="清空搜索"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tags Multi-Select Dropdown Filter Row -->
+          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-white/70 relative shrink-0">
+            <div class="flex items-center justify-between text-[11px]">
+              <div class="relative flex-1 mr-2">
+                <button
+                  type="button"
+                  @click="isTagDropdownOpen = !isTagDropdownOpen"
+                  class="w-full flex items-center justify-between px-2 py-1 bg-white border border-slate-200 rounded text-left text-slate-700 hover:border-slate-300 transition shadow-2xs cursor-pointer"
+                >
+                  <span class="truncate flex items-center">
+                    <svg class="w-3 h-3 text-slate-400 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span v-if="noteStore.selectedTags.length === 0" class="text-slate-400">按标签筛选 (多选)...</span>
+                    <span v-else class="text-syno-blue font-medium">已选 {{ noteStore.selectedTags.length }} 个标签</span>
+                  </span>
+                  <svg class="w-3 h-3 text-slate-400 shrink-0 ml-1 transition-transform" :class="isTagDropdownOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div
+                  v-if="isTagDropdownOpen"
+                  class="absolute left-0 top-full mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg z-30 py-1 max-h-48 overflow-y-auto"
+                >
+                  <div
+                    v-for="tag in panelTags"
+                    :key="tag.name"
+                    @click="noteStore.toggleTag(tag.name)"
+                    class="px-2.5 py-1 text-[11px] flex items-center justify-between hover:bg-slate-50 cursor-pointer transition select-none"
+                    :class="noteStore.selectedTags.includes(tag.name) ? 'text-syno-blue font-medium bg-blue-50/50' : 'text-slate-700'"
+                  >
+                    <span class="flex items-center space-x-1.5 truncate">
+                      <input
+                        type="checkbox"
+                        :checked="noteStore.selectedTags.includes(tag.name)"
+                        class="rounded border-slate-300 text-syno-blue pointer-events-none"
+                      />
+                      <span class="truncate"># {{ tag.name }}</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-normal shrink-0 ml-1">{{ tag.count }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                v-if="noteStore.selectedTags.length > 0"
+                @click="noteStore.clearTags()"
+                class="text-rose-500 hover:text-rose-600 hover:underline shrink-0 text-[10px] transition cursor-pointer"
+              >
+                清空
+              </button>
+            </div>
+          </div>
+
+          <!-- Notes Scrollable List (按年月分组) -->
+          <div class="flex-1 overflow-y-auto p-1.5 space-y-3 min-h-0">
+            <div v-if="groupedNotes.length === 0" class="text-center py-6 text-xs text-slate-400">
+              <svg class="w-8 h-8 mx-auto mb-1.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '无匹配便签' : '暂无收藏便签' }}
+            </div>
+
+            <div v-for="group in groupedNotes" :key="group.key" class="space-y-1">
+              <!-- Year-Month Group Header -->
+              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-2xs mb-1">
+                <span class="text-[11px] font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
+                <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
+                  {{ group.notes.length }} 篇
+                </span>
+              </div>
+
+              <!-- Note Items in Group -->
+              <div
+                v-for="note in group.notes"
+                :key="note.object_id"
+                @click="noteStore.selectNote(note.object_id)"
+                @contextmenu.prevent="openNoteContextMenu($event, note)"
+                :class="[
+                  'group relative p-2 rounded-lg cursor-pointer transition border',
+                  noteStore.activeNoteId === note.object_id
+                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
+                    : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                ]"
+              >
+                <div class="flex items-start justify-between">
+                  <h4
+                    class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
+                  >
+                    <!-- Favorite Icon (已收藏图标) -->
+                    <svg
+                      v-if="noteStore.isFavorite(note.object_id)"
+                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      title="已加入收藏夹"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+
+                    <!-- Share Icon (已共享图标) -->
+                    <svg
+                      v-if="isNoteShared(note)"
+                      class="w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      title="已共享"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+
+                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
+                  </h4>
+
+                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
+                  <button
+                    @click.stop="openNoteMenuFromButton($event, note)"
+                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
+                    :class="[
+                      noteStore.activeNoteId === note.object_id
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100',
+                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                        : ''
+                    ]"
+                    title="便签操作菜单"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                </div>
+
+                <p
+                  class="text-[11px] line-clamp-2 mt-1"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-slate-300' : 'text-slate-500'"
+                >
+                  {{ note.brief || note.markdownContent || '无内容' }}
+                </p>
+
+                <div
+                  class="flex items-center justify-between mt-2 pt-1.5 border-t text-[10px]"
+                  :class="noteStore.activeNoteId === note.object_id ? 'border-slate-700/80 text-slate-400' : 'border-slate-100 text-slate-400'"
+                >
+                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
+                  <div class="flex items-center space-x-1">
+                    <span
+                      v-for="t in (note.tag || []).slice(0, 2)"
+                      :key="t"
+                      class="px-1.5 py-0.2 rounded font-normal"
+                      :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-600'"
+                    >
+                      #{{ t }}
+                    </span>
+                    <span v-if="(note.tag || []).length > 2" class="text-[9px]">
+                      +{{ (note.tag || []).length - 2 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. "全部笔记" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
       <div
         v-if="noteStore.notebooks.length > 0"
@@ -322,6 +579,17 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
+                    <!-- Favorite Icon (已收藏图标) -->
+                    <svg
+                      v-if="noteStore.isFavorite(note.object_id)"
+                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      title="已加入收藏夹"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+
                     <!-- Share Icon (已共享图标) -->
                     <svg
                       v-if="isNoteShared(note)"
@@ -644,6 +912,17 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
+                    <!-- Favorite Icon (已收藏图标) -->
+                    <svg
+                      v-if="noteStore.isFavorite(note.object_id)"
+                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      title="已加入收藏夹"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+
                     <!-- Share Icon (已共享图标) -->
                     <svg
                       v-if="isNoteShared(note)"
@@ -927,6 +1206,17 @@
                 <!-- Title Row & Menu Button -->
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-1.5 flex-1 min-w-0 pr-1">
+                    <!-- Favorite Icon (已收藏图标) -->
+                    <svg
+                      v-if="noteStore.isFavorite(note.object_id)"
+                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      title="已加入收藏夹"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+
                     <svg
                       v-if="isNoteShared(note)"
                       class="w-3.5 h-3.5 shrink-0"
@@ -1295,6 +1585,17 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
+                    <!-- Favorite Icon (已收藏图标) -->
+                    <svg
+                      v-if="noteStore.isFavorite(note.object_id)"
+                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      title="已加入收藏夹"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+
                     <!-- Share Icon (已共享图标) -->
                     <svg
                       v-if="isNoteShared(note)"
@@ -1445,20 +1746,47 @@
         </button>
       </template>
 
-      <!-- 普通便签操作：同步, 分享, 历史版本, 导出.md文件, 移动至其他笔记本, 删除 -->
+      <!-- 普通便签操作：复制, 加入收藏夹, 移动到.., 分享, 同步, 历史版本, 导出.md文件, 打印, 复制便签链接, 信息, 删除 -->
       <template v-else>
-        <!-- 1. 同步 (跨服务便签同步) -->
+        <!-- 1. 复制 -->
         <button
-          @click="triggerNoteSync"
+          @click="triggerNoteCopy"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <span>同步</span>
+          <span>复制</span>
         </button>
 
-        <!-- 2. 分享 -->
+        <!-- 2. 加入收藏夹 / 从收藏夹删除 -->
+        <button
+          @click="triggerNoteToggleFavorite"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg
+            class="w-3.5 h-3.5"
+            :class="noteContextMenu.targetNote && noteStore.isFavorite(noteContextMenu.targetNote.object_id) ? 'text-amber-500 fill-amber-400' : 'text-slate-400'"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <span>{{ noteContextMenu.targetNote && noteStore.isFavorite(noteContextMenu.targetNote.object_id) ? '从收藏夹删除' : '加入收藏夹' }}</span>
+        </button>
+
+        <!-- 3. 移动到.. (Requirement 2) -->
+        <button
+          @click="triggerNoteMove"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span>移动到..</span>
+        </button>
+
+        <!-- 4. 分享 -->
         <button
           @click="triggerNoteShare"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
@@ -1469,7 +1797,18 @@
           <span>分享</span>
         </button>
 
-        <!-- 3. 历史版本 -->
+        <!-- 5. 同步 (跨服务便签同步) -->
+        <button
+          @click="triggerNoteSync"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>同步</span>
+        </button>
+
+        <!-- 6. 历史版本 -->
         <button
           @click="triggerNoteHistory"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
@@ -1480,7 +1819,7 @@
           <span>历史版本</span>
         </button>
 
-        <!-- 4. 导出.md文件 -->
+        <!-- 7. 导出.md文件 -->
         <button
           @click="triggerNoteExport"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
@@ -1491,20 +1830,42 @@
           <span>导出.md文件</span>
         </button>
 
-        <!-- 5. 移动至其他笔记本 -->
+        <!-- 8. 打印 (Requirement 1) -->
         <button
-          @click="triggerNoteMove"
+          @click="triggerNotePrint"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          <span>移动至其他笔记本</span>
+          <span>打印</span>
+        </button>
+
+        <!-- 9. 复制便签链接 (Requirement 1) -->
+        <button
+          @click="triggerNoteCopyLink"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span>复制便签链接</span>
+        </button>
+
+        <!-- 10. 信息 (Requirement 1) -->
+        <button
+          @click="triggerNoteInfo"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>信息</span>
         </button>
 
         <div class="h-px bg-slate-100 my-1"></div>
 
-        <!-- 6. 删除 -->
+        <!-- 11. 删除 -->
         <button
           @click="triggerNoteDelete"
           class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
@@ -1595,7 +1956,7 @@
             <svg class="w-4 h-4 mr-1.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
-            移动便签至其他笔记本
+            移动到..
           </h3>
           <button
             @click="closeMoveNoteModal"
@@ -1823,6 +2184,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Note Information Modal (便签信息对话框) -->
+    <NoteInfoModal
+      :is-open="noteInfoModal.isOpen"
+      :target-note="noteInfoModal.targetNote"
+      @close="noteInfoModal.isOpen = false"
+      @open-history="triggerHistoryFromInfo"
+    />
   </div>
 </template>
 
@@ -1835,6 +2204,8 @@ import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 import { showToast } from '@/utils/toast';
 import { isNoteShared } from '@/utils/shareUtils';
+import NoteInfoModal from '@/components/NoteInfoModal.vue';
+import { printNote } from '@/utils/printNote';
 
 const emit = defineEmits<{
   (e: 'open-import'): void;
@@ -1892,6 +2263,8 @@ const panelTags = computed<{ name: string; count: number }[]>(() => {
   if (currentNbId && currentNbId !== '__all_notes__') {
     if (currentNbId === '__recycle_bin__') {
       targetNotes = noteStore.recycledNotes;
+    } else if (currentNbId === '__favorites__') {
+      targetNotes = noteStore.favoriteNotes;
     } else if (currentNbId === '__shared_notes__') {
       targetNotes = targetNotes.filter(n => isNoteShared(n));
     } else {
@@ -2070,6 +2443,12 @@ const moveNoteModal = reactive({
   error: ''
 });
 
+// Note Information Modal State (便签信息对话框)
+const noteInfoModal = reactive({
+  isOpen: false,
+  targetNote: null as SynoNote | null
+});
+
 const availableTargetNotebooks = computed(() => {
   if (!moveNoteModal.targetNote) return noteStore.notebooks;
   const currentParentId = String(moveNoteModal.targetNote.parent_id || (moveNoteModal.targetNote as any).notebook_id || '');
@@ -2113,7 +2492,7 @@ function openNoteContextMenu(event: MouseEvent, note: SynoNote) {
   isTagDropdownOpen.value = false;
   noteContextMenu.isOpen = true;
   noteContextMenu.x = Math.min(event.clientX, window.innerWidth - 190);
-  noteContextMenu.y = Math.min(event.clientY, window.innerHeight - 260);
+  noteContextMenu.y = Math.min(event.clientY, window.innerHeight - 380);
   noteContextMenu.targetNote = note;
 }
 
@@ -2131,7 +2510,7 @@ function openNoteMenuFromButton(event: MouseEvent, note: SynoNote) {
 
   noteContextMenu.isOpen = true;
   const menuWidth = 176;
-  const menuHeight = 260;
+  const menuHeight = 380;
 
   let x = rect.right - menuWidth;
   if (x < 10) x = rect.left;
@@ -2197,6 +2576,63 @@ function triggerNoteMove() {
   if (note) {
     openMoveNoteModal(note);
   }
+}
+
+async function triggerNoteCopy() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  try {
+    const copied = await noteStore.copyNote(note.object_id);
+    if (copied) {
+      showToast(`便签已成功复制为【${copied.title || '无标题便签'}】`, 'success');
+    }
+  } catch (e: any) {
+    showToast(`复制便签失败: ${e?.message || e}`, 'error');
+  }
+}
+
+async function triggerNoteToggleFavorite() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  try {
+    const wasFavorite = noteStore.isFavorite(note.object_id);
+    await noteStore.toggleFavorite(note.object_id);
+    showToast(wasFavorite ? '已从收藏夹删除' : '已添加到收藏夹', 'success');
+  } catch (e: any) {
+    showToast(`操作收藏夹失败: ${e?.message || e}`, 'error');
+  }
+}
+
+function triggerNotePrint() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  const parentNb = noteStore.notebooks.find(nb => nb.object_id === note.parent_id);
+  printNote(note, parentNb?.title);
+}
+
+function triggerNoteCopyLink() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  const link = `notestation://remote/self/${note.object_id}`;
+  navigator.clipboard.writeText(link);
+  showToast('便签链接已复制到剪贴板', 'success');
+}
+
+function triggerNoteInfo() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (!note) return;
+  noteInfoModal.targetNote = note;
+  noteInfoModal.isOpen = true;
+}
+
+function triggerHistoryFromInfo(noteId: string) {
+  const note = noteStore.notes.find(n => n.object_id === noteId);
+  emit('open-history', noteId, note?.title);
 }
 
 function triggerNoteDelete() {

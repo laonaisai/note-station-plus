@@ -78,7 +78,33 @@ export function noteHtmlToMarkdown(html: string): string {
 
   // Fallback for legacy notes or notes edited in official client
   // Strip out any broken comment artifacts if any
-  const cleanHtml = html.replace(commentRegex, '');
+  let cleanHtml = html.replace(commentRegex, '');
+
+  // Pre-process official Synology Note Station embedded image objects
+  // e.g. <img class="syno-notestation-image-object" src="webman/3rdparty/NoteStation/images/transparent.gif" ref="..." />
+  cleanHtml = cleanHtml.replace(/<img[^>]*class=["'][^"']*syno-notestation-image-object[^"']*["'][^>]*>/gi, (imgTag) => {
+    const refMatch = imgTag.match(/ref=["']([^"']+)["']/i);
+    let filename = '嵌入图片';
+    if (refMatch && refMatch[1]) {
+      try {
+        const decoded = fromBase64(refMatch[1]);
+        if (decoded) {
+          // If decoded filename starts with digits (timestamp prefix), extract user-friendly filename
+          const cleanName = decoded.replace(/^\d{13}/, '');
+          filename = cleanName || decoded;
+        }
+      } catch (e) {
+        // ignore decode error
+      }
+    }
+    // If inline data-url src exists, preserve it
+    const dataSrcMatch = imgTag.match(/src=["'](data:image\/[^"']+)["']/i);
+    if (dataSrcMatch && dataSrcMatch[1]) {
+      return `<img src="${dataSrcMatch[1]}" alt="${filename}" />`;
+    }
+    return `<span>🖼️ [图片: ${filename}]</span>`;
+  });
+
   return turndown.turndown(cleanHtml);
 }
 

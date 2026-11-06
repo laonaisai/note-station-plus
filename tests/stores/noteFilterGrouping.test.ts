@@ -992,5 +992,152 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.recycledNotes.length).toBe(0);
     expect(noteStore.activeNoteId).toBeNull();
   });
+
+  it('需求: 收藏夹折叠面板 (__favorites__) 过滤仅展示已收藏的便签与数量统计', async () => {
+    const noteStore = useNoteStore();
+    noteStore.reset();
+
+    const sampleNotes: SynoNote[] = [
+      {
+        object_id: 'note_fav_1',
+        parent_id: 'nb_1',
+        title: '已收藏便签 1',
+        brief: '内容 1',
+        content: '<div>内容 1</div>',
+        ctime: 1700000000,
+        mtime: 1700000000,
+        ver: 'v1',
+        tag: ['工作']
+      },
+      {
+        object_id: 'note_fav_2',
+        parent_id: 'nb_2',
+        title: '未收藏便签 2',
+        brief: '内容 2',
+        content: '<div>内容 2</div>',
+        ctime: 1700001000,
+        mtime: 1700001000,
+        ver: 'v1',
+        tag: ['学习']
+      },
+      {
+        object_id: 'note_fav_3',
+        parent_id: 'nb_1',
+        title: '已收藏便签 3',
+        brief: '内容 3',
+        content: '<div>内容 3</div>',
+        ctime: 1700002000,
+        mtime: 1700002000,
+        ver: 'v1',
+        tag: ['工作', '生活']
+      }
+    ];
+
+    noteStore.notes = sampleNotes;
+    noteStore.shortcutIds = new Set(['note_fav_1', 'note_fav_3']);
+
+    // 1. 验证收藏状态判断
+    expect(noteStore.isFavorite('note_fav_1')).toBe(true);
+    expect(noteStore.isFavorite('note_fav_2')).toBe(false);
+    expect(noteStore.isFavorite('note_fav_3')).toBe(true);
+
+    // 2. 验证 favoriteNotes 计算属性
+    expect(noteStore.favoriteNotes.length).toBe(2);
+    expect(noteStore.favoriteNotes.map(n => n.object_id)).toEqual(['note_fav_1', 'note_fav_3']);
+
+    // 3. 验证 getNotebookNoteCount('__favorites__')
+    const favCount = noteStore.getNotebookNoteCount({ object_id: '__favorites__', title: '收藏夹', ctime: 0, mtime: 0, ver: '', preset: true, stack: '' });
+    expect(favCount).toBe(2);
+
+    // 4. 切换到收藏夹面板
+    noteStore.activeNotebookId = '__favorites__';
+    expect(noteStore.filteredNotes.length).toBe(2);
+    expect(noteStore.filteredNotes.map(n => n.object_id)).toEqual(['note_fav_1', 'note_fav_3']);
+
+    // 5. 组合搜索测试
+    noteStore.searchQuery = '便签 3';
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_fav_3');
+
+    // 6. 组合标签测试
+    noteStore.searchQuery = '';
+    noteStore.toggleTag('生活');
+    expect(noteStore.filteredNotes.length).toBe(1);
+    expect(noteStore.filteredNotes[0].object_id).toBe('note_fav_3');
+  });
+
+  it('需求: 收藏与取消收藏便签 (toggleFavorite) 正确调用客户端接口并同步更新状态', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+    noteStore.reset();
+
+    const mockAddShortcut = vi.fn().mockResolvedValue(true);
+    const mockRemoveShortcut = vi.fn().mockResolvedValue(true);
+
+    const mockClient = {
+      addShortcut: mockAddShortcut,
+      removeShortcut: mockRemoveShortcut
+    };
+    vi.spyOn(sessionStore, 'activeClient', 'get').mockReturnValue(mockClient as any);
+
+    expect(noteStore.isFavorite('note_100')).toBe(false);
+
+    // 1. 添加收藏
+    await noteStore.toggleFavorite('note_100');
+    expect(mockAddShortcut).toHaveBeenCalledWith('note_100');
+    expect(noteStore.isFavorite('note_100')).toBe(true);
+
+    // 2. 取消收藏
+    await noteStore.toggleFavorite('note_100');
+    expect(mockRemoveShortcut).toHaveBeenCalledWith('note_100');
+    expect(noteStore.isFavorite('note_100')).toBe(false);
+  });
+
+  it('需求: 复制便签 (copyNote) 调用群晖原生接口并追加到本地列表并选定', async () => {
+    const noteStore = useNoteStore();
+    const sessionStore = useSessionStore();
+    noteStore.reset();
+
+    const originalNote: SynoNote = {
+      object_id: 'orig_1',
+      parent_id: 'nb_1',
+      title: '原始便签',
+      brief: '原始简述',
+      content: '<div>原始正文</div>',
+      ctime: 1700000000,
+      mtime: 1700000000,
+      ver: 'v1',
+      tag: ['重要']
+    };
+
+    const copiedNote: SynoNote = {
+      object_id: 'copy_1',
+      parent_id: 'nb_1',
+      title: '原始便签',
+      brief: '原始简述',
+      content: '<div>原始正文</div>',
+      ctime: 1700000100,
+      mtime: 1700000100,
+      ver: 'v2',
+      tag: ['重要']
+    };
+
+    const mockCopy = vi.fn().mockResolvedValue(copiedNote);
+    const mockListNotebooks = vi.fn().mockResolvedValue([]);
+    const mockClient = {
+      copyNote: mockCopy,
+      listNotebooks: mockListNotebooks
+    };
+    vi.spyOn(sessionStore, 'activeClient', 'get').mockReturnValue(mockClient as any);
+
+    noteStore.notes = [originalNote];
+    const res = await noteStore.copyNote('orig_1');
+
+    expect(mockCopy).toHaveBeenCalledWith('orig_1');
+    expect(res).toEqual(copiedNote);
+    expect(noteStore.notes.length).toBe(2);
+    expect(noteStore.notes[0].object_id).toBe('copy_1');
+    expect(noteStore.activeNoteId).toBe('copy_1');
+  });
 });
 

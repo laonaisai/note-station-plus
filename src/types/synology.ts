@@ -64,12 +64,32 @@ export interface SynoNote {
   recycle?: boolean;
   encrypt?: boolean;
   acl?: NoteAcl;
+  owner?: {
+    display_name?: string;
+    uid?: number;
+  };
+  source_url?: string;
+  latitude?: number;
+  longitude?: number;
+  location?: string;
   attachment?: Array<{
     id: string;
     name: string;
     size: number;
     type: string;
+    md5?: string;
+    ref?: string;
   }>;
+}
+
+export interface SynoShortcut {
+  id: string;
+  category: string;
+  title: string;
+  owner?: {
+    display_name?: string;
+    uid?: number;
+  };
 }
 
 export interface NoteAcl {

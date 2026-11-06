@@ -18,8 +18,13 @@ export const useNoteStore = defineStore('notes', () => {
 
   const notes = ref<SynoNote[]>([]);
   const recycledNotes = ref<SynoNote[]>([]);
+  const shortcutIds = ref<Set<string>>(new Set());
   const activeNoteId = ref<string | null>(null);
   const activeNote = ref<SynoNote | null>(null);
+
+  const favoriteNotes = computed(() => {
+    return notes.value.filter(n => shortcutIds.value.has(n.object_id));
+  });
 
   const searchQuery = ref<string>('');
   const serverMatchedNoteIds = ref<Set<string>>(new Set());
@@ -95,6 +100,9 @@ export const useNoteStore = defineStore('notes', () => {
     if (targetId === '__shared_notes__') {
       return notes.value.filter(n => isNoteShared(n)).length;
     }
+    if (targetId === '__favorites__') {
+      return notes.value.filter(n => shortcutIds.value.has(n.object_id)).length;
+    }
     if (targetId === '__recycle_bin__') {
       return recycledNotes.value.length;
     }
@@ -115,10 +123,12 @@ export const useNoteStore = defineStore('notes', () => {
   const filteredNotes = computed(() => {
     let list = notes.value;
 
-    // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes; if '__recycle_bin__', display recycled notes)
+    // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes; if '__favorites__', display favorite notes; if '__recycle_bin__', display recycled notes)
     if (activeNotebookId.value && activeNotebookId.value !== '__all_notes__') {
       if (activeNotebookId.value === '__recycle_bin__') {
         list = recycledNotes.value;
+      } else if (activeNotebookId.value === '__favorites__') {
+        list = favoriteNotes.value;
       } else if (activeNotebookId.value === '__shared_notes__') {
         list = list.filter(n => isNoteShared(n));
       } else {
@@ -211,6 +221,18 @@ export const useNoteStore = defineStore('notes', () => {
         stack: ''
       };
     }
+    if (activeNotebookId.value === '__favorites__') {
+      return {
+        object_id: '__favorites__',
+        title: '收藏夹',
+        category: 'shortcut',
+        ctime: 0,
+        mtime: 0,
+        ver: '',
+        preset: true,
+        stack: ''
+      };
+    }
     if (activeNotebookId.value === '__recycle_bin__') {
       return {
         object_id: '__recycle_bin__',
@@ -244,9 +266,11 @@ export const useNoteStore = defineStore('notes', () => {
     const targetNotes = (activeNotebookId.value && activeNotebookId.value !== '__all_notes__')
       ? (activeNotebookId.value === '__recycle_bin__'
           ? recycledNotes.value
-          : activeNotebookId.value === '__shared_notes__'
-            ? notes.value.filter(n => isNoteShared(n))
-            : notes.value.filter(n => {
+          : activeNotebookId.value === '__favorites__'
+            ? favoriteNotes.value
+            : activeNotebookId.value === '__shared_notes__'
+              ? notes.value.filter(n => isNoteShared(n))
+              : notes.value.filter(n => {
                 const targetId = String(activeNotebookId.value);
                 const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
                 const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
@@ -330,6 +354,18 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function fetchShortcuts() {
+    const client = sessionStore.activeClient;
+    if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
+
+    try {
+      const res = await client.listShortcuts();
+      shortcutIds.value = new Set(res.shortcuts.map(s => s.id));
+    } catch (e) {
+      console.error('Failed to fetch shortcuts', e);
+    }
+  }
+
   async function fetchRecycledNotes() {
     const client = sessionStore.activeClient;
     if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
@@ -346,6 +382,15 @@ export const useNoteStore = defineStore('notes', () => {
     activeNotebookId.value = notebookId;
     activeNoteId.value = null;
     activeNote.value = null;
+
+    if (notebookId === '__favorites__') {
+      await fetchShortcuts();
+      const currentNotes = filteredNotes.value;
+      if (currentNotes.length > 0) {
+        await selectNote(currentNotes[0].object_id);
+      }
+      return;
+    }
 
     if (notebookId === '__recycle_bin__') {
       await fetchRecycledNotes();
@@ -389,8 +434,9 @@ export const useNoteStore = defineStore('notes', () => {
       const res = await client.listAllNotes();
       notes.value = res.notes;
 
-      // Also refresh recycle notes in background to keep count badge updated
+      // Also refresh recycle notes and shortcuts in background to keep count badge updated
       fetchRecycledNotes().catch(console.error);
+      fetchShortcuts().catch(console.error);
 
       // Filter notes for the active notebook
       const currentNotebookNotes = filteredNotes.value;
@@ -713,6 +759,53 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
+  async function copyNote(noteId: string): Promise<SynoNote | null> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) return null;
+
+    try {
+      const newNote = await client.copyNote(noteId);
+      // Prepend to current notes
+      notes.value = [newNote, ...notes.value];
+      activeNoteId.value = newNote.object_id;
+      activeNote.value = newNote;
+
+      // Update notebooks in background
+      fetchNotebooks().catch(console.error);
+      return newNote;
+    } catch (e) {
+      console.error('Failed to copy note', e);
+      throw e;
+    }
+  }
+
+  function isFavorite(noteId: string): boolean {
+    return shortcutIds.value.has(noteId);
+  }
+
+  async function toggleFavorite(noteId: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) return false;
+
+    try {
+      if (shortcutIds.value.has(noteId)) {
+        await client.removeShortcut(noteId);
+        const next = new Set(shortcutIds.value);
+        next.delete(noteId);
+        shortcutIds.value = next;
+      } else {
+        await client.addShortcut(noteId);
+        const next = new Set(shortcutIds.value);
+        next.add(noteId);
+        shortcutIds.value = next;
+      }
+      return true;
+    } catch (e) {
+      console.error('Failed to toggle favorite', e);
+      throw e;
+    }
+  }
+
   async function listNoteVersions(noteId: string): Promise<NoteVersion[]> {
     const client = sessionStore.activeClient;
     if (!client) return [];
@@ -779,6 +872,7 @@ export const useNoteStore = defineStore('notes', () => {
     activeNotebookId.value = null;
     notes.value = [];
     recycledNotes.value = [];
+    shortcutIds.value = new Set();
     activeNoteId.value = null;
     activeNote.value = null;
     searchQuery.value = '';
@@ -809,6 +903,8 @@ export const useNoteStore = defineStore('notes', () => {
     getNotebookNoteCount,
     notes,
     recycledNotes,
+    shortcutIds,
+    favoriteNotes,
     filteredNotes,
     activeNoteId,
     activeNote,
@@ -822,11 +918,15 @@ export const useNoteStore = defineStore('notes', () => {
     selectNotebook,
     fetchNotes,
     fetchRecycledNotes,
+    fetchShortcuts,
+    isFavorite,
+    toggleFavorite,
     selectNote,
     createNotebook,
     renameNotebook,
     deleteNotebook,
     createNote,
+    copyNote,
     importNote,
     updateActiveNote,
     deleteActiveNote,

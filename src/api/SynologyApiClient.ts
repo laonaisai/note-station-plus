@@ -6,6 +6,7 @@ import {
   SynoNotebook,
   SynoNote,
   SynoTag,
+  SynoShortcut,
   NoteVersion,
   SharePrivItem,
   SharedMember,
@@ -687,6 +688,122 @@ export class SynologyApiClient {
       throw this.formatError(res.data);
     }
     return true;
+  }
+
+  /**
+   * Copy (duplicate) a note on the server
+   */
+  async copyNote(objectId: string): Promise<SynoNote> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note',
+      version: '1',
+      method: 'copy',
+      _sid: sid,
+      object_id: objectId
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success || !res.data.data) {
+      throw this.formatError(res.data);
+    }
+
+    const n = res.data.data;
+    const noteId = String(n.object_id || n.note_id || '');
+    return {
+      ...n,
+      object_id: noteId,
+      parent_id: String(n.parent_id || n.notebook_id || ''),
+      notebook_id: String(n.parent_id || n.notebook_id || ''),
+      ctime: Number(n.ctime || n.created_time || Date.now() / 1000),
+      mtime: Number(n.mtime || n.updated_time || Date.now() / 1000),
+      tag: Array.isArray(n.tag) ? n.tag : [],
+      markdownContent: n.content ? noteHtmlToMarkdown(n.content) : ''
+    };
+  }
+
+  /**
+   * List all shortcuts / favorites
+   */
+  async listShortcuts(): Promise<{ shortcuts: SynoShortcut[]; total: number }> {
+    const sid = this.requireSid();
+    const res = await this.http.get<SynoApiResponse<{ shortcuts?: any[]; total: number; offset: number }>>('/webapi/entry.cgi', {
+      params: {
+        api: 'SYNO.NoteStation.Shortcut',
+        version: '1',
+        method: 'list',
+        _sid: sid
+      }
+    });
+
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+
+    const shortcuts: SynoShortcut[] = (res.data.data?.shortcuts || []).map((s: any) => ({
+      id: String(s.id || s.object_id || ''),
+      category: s.category || 'note',
+      title: s.title || '',
+      owner: s.owner
+    }));
+
+    return {
+      shortcuts,
+      total: res.data.data?.total ?? shortcuts.length
+    };
+  }
+
+  /**
+   * Add a note to shortcuts / favorites
+   */
+  async addShortcut(objectId: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Shortcut',
+      version: '1',
+      method: 'set',
+      _sid: sid,
+      object_id: objectId
+    });
+
+    const res = await this.http.post<SynoApiResponse>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
+   * Remove a note from shortcuts / favorites
+   */
+  async removeShortcut(objectId: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const data = new URLSearchParams({
+      api: 'SYNO.NoteStation.Shortcut',
+      version: '1',
+      method: 'delete',
+      _sid: sid,
+      object_id: objectId
+    });
+
+    const res = await this.http.post<SynoApiResponse>('/webapi/entry.cgi', data.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
+   * Get direct download URL for a note attachment or image
+   */
+  getAttachmentDownloadUrl(objectId: string, fileId: string, filename?: string): string {
+    const sid = this.sid || '';
+    const cleanBaseUrl = this.profile.serverUrl.replace(/\/+$/, '');
+    let url = `${cleanBaseUrl}/webapi/entry.cgi?api=SYNO.NoteStation.Note&version=3&method=download&object_id=${encodeURIComponent(objectId)}&file_id=${encodeURIComponent(fileId)}&format=raw&_sid=${encodeURIComponent(sid)}`;
+    if (filename) {
+      url += `&filename=${encodeURIComponent(filename)}`;
+    }
+    return url;
   }
 
   /**
