@@ -5,21 +5,21 @@
     @click.self="close"
     @keydown.esc="close"
   >
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
         <div class="flex items-center space-x-2">
-          <div class="p-1.5 rounded-lg bg-blue-50 text-syno-blue">
+          <div class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-syno-blue dark:text-sky-400">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 class="text-sm font-bold text-slate-800">便签信息</h3>
+          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('noteInfo.modalTitle') }}</h3>
         </div>
         <button
           @click="close"
-          class="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-          title="关闭"
+          class="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          :title="t('common.close')"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -30,28 +30,28 @@
       <!-- Content Form (Scrollable) -->
       <div class="p-6 space-y-4 overflow-y-auto text-xs flex-1 select-text">
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-between">
+        <div v-if="errorMessage" class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center justify-between">
           <span>{{ errorMessage }}</span>
           <button @click="errorMessage = ''" class="text-rose-500 hover:text-rose-700 ml-2">×</button>
         </div>
 
         <!-- 1. 标题 (Title) -->
         <div class="space-y-1.5">
-          <label class="block font-medium text-slate-700">标题</label>
+          <label class="block font-medium text-slate-700 dark:text-slate-300">{{ t('noteInfo.noteTitle') }}</label>
           <input
             v-model="formTitle"
             type="text"
-            placeholder="便签标题..."
-            class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800"
+            :placeholder="t('editor.titlePlaceholder')"
+            class="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800 dark:text-slate-100"
           />
         </div>
 
         <!-- 2. 所属笔记本 (Notebook) -->
         <div class="space-y-1.5">
-          <label class="block font-medium text-slate-700">所属笔记本</label>
+          <label class="block font-medium text-slate-700 dark:text-slate-300">{{ t('noteInfo.notebook') }}</label>
           <select
             v-model="formParentId"
-            class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800 cursor-pointer"
+            class="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800 dark:text-slate-100 cursor-pointer"
           >
             <option
               v-for="nb in regularNotebooks"
@@ -65,37 +65,37 @@
 
         <!-- 3. 标签 (Tags) -->
         <div class="space-y-1.5">
-          <label class="block font-medium text-slate-700">标签</label>
-          <div v-if="targetNote?.tag && targetNote.tag.length > 0" class="flex flex-wrap gap-1.5 p-2 bg-slate-50 rounded-lg border border-slate-200/60">
+          <label class="block font-medium text-slate-700 dark:text-slate-300">{{ t('sidebar.tags') }}</label>
+          <div v-if="targetNote?.tag && targetNote.tag.length > 0" class="flex flex-wrap gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200/60 dark:border-slate-700">
             <span
               v-for="t in targetNote.tag"
               :key="t"
-              class="px-2 py-0.5 rounded-md text-[11px] bg-white border border-slate-200 text-slate-700 shadow-2xs"
+              class="px-2 py-0.5 rounded-md text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-2xs"
             >
               # {{ t }}
             </span>
           </div>
-          <div v-else class="text-slate-400 italic py-1">
+          <div v-else class="text-slate-400 dark:text-slate-500 italic py-1">
             无标签
           </div>
         </div>
 
         <!-- 4. 时间与所有者 (Timestamps & Owner Grid) -->
-        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50/70 rounded-lg border border-slate-200/60 text-[11px]">
+        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50/70 dark:bg-slate-800/60 rounded-lg border border-slate-200/60 dark:border-slate-700 text-[11px]">
           <div>
-            <span class="text-slate-400 block mb-0.5">所有者</span>
-            <span class="font-medium text-slate-700 truncate block">
+            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">所有者</span>
+            <span class="font-medium text-slate-700 dark:text-slate-200 truncate block">
               {{ targetNote?.owner?.display_name || sessionStore.activeProfile?.account || 'notedev' }}
             </span>
           </div>
 
           <div>
-            <span class="text-slate-400 block mb-0.5">历史版本</span>
+            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">{{ t('history.modalTitle') }}</span>
             <button
               @click="handleOpenHistory"
-              class="text-syno-blue hover:underline font-medium flex items-center cursor-pointer"
+              class="text-syno-blue dark:text-sky-400 hover:underline font-medium flex items-center cursor-pointer"
             >
-              <span>查看版本记录</span>
+              <span>{{ t('noteInfo.viewHistory') }}</span>
               <svg class="w-3 h-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
@@ -103,51 +103,51 @@
           </div>
 
           <div>
-            <span class="text-slate-400 block mb-0.5">创建时间</span>
-            <span class="text-slate-600">
+            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">{{ t('noteInfo.ctime') }}</span>
+            <span class="text-slate-600 dark:text-slate-300">
               {{ formatDateTime(targetNote?.ctime) }}
             </span>
           </div>
 
           <div>
-            <span class="text-slate-400 block mb-0.5">修改时间</span>
-            <span class="text-slate-600">
+            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">{{ t('noteInfo.mtime') }}</span>
+            <span class="text-slate-600 dark:text-slate-300">
               {{ formatDateTime(targetNote?.mtime) }}
             </span>
           </div>
         </div>
 
         <!-- 5. 统计信息 (Word Count & Size) -->
-        <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50/50 rounded-lg border border-slate-200/60 text-center">
+        <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50/50 dark:bg-slate-800/40 rounded-lg border border-slate-200/60 dark:border-slate-700 text-center">
           <div>
-            <span class="text-slate-400 text-[10px] block">字数 (词)</span>
-            <span class="font-bold text-slate-700 text-sm">{{ wordCount }}</span>
+            <span class="text-slate-400 dark:text-slate-500 text-[10px] block">{{ t('editor.words') }}</span>
+            <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ wordCount }}</span>
           </div>
           <div>
-            <span class="text-slate-400 text-[10px] block">字符数</span>
-            <span class="font-bold text-slate-700 text-sm">{{ charCount }}</span>
+            <span class="text-slate-400 dark:text-slate-500 text-[10px] block">{{ t('editor.chars') }}</span>
+            <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ charCount }}</span>
           </div>
           <div>
-            <span class="text-slate-400 text-[10px] block">估算容量</span>
-            <span class="font-bold text-slate-700 text-sm">{{ noteSizeFormatted }}</span>
+            <span class="text-slate-400 dark:text-slate-500 text-[10px] block">{{ t('noteInfo.size') }}</span>
+            <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ noteSizeFormatted }}</span>
           </div>
         </div>
 
         <!-- 6. 来源链接 (Source URL) -->
         <div class="space-y-1.5">
-          <label class="block font-medium text-slate-700">来源链接</label>
+          <label class="block font-medium text-slate-700 dark:text-slate-300">来源链接</label>
           <input
             v-model="formSourceUrl"
             type="text"
             placeholder="https://..."
-            class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800"
+            class="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue text-slate-800 dark:text-slate-100"
           />
         </div>
 
         <!-- 7. 位置信息 (GPS / Location if any) -->
         <div v-if="targetNote?.location || (targetNote?.latitude && targetNote?.longitude)" class="space-y-1.5">
-          <label class="block font-medium text-slate-700">地理位置</label>
-          <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200/60 flex items-center space-x-2 text-slate-600">
+          <label class="block font-medium text-slate-700 dark:text-slate-300">地理位置</label>
+          <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200/60 dark:border-slate-700 flex items-center space-x-2 text-slate-600 dark:text-slate-300">
             <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -158,50 +158,50 @@
 
         <!-- 8. 便签链接 (Note Link & Object ID) -->
         <div class="space-y-1.5">
-          <label class="block font-medium text-slate-700">便签链接 (用于便签间交叉引用)</label>
+          <label class="block font-medium text-slate-700 dark:text-slate-300">便签链接</label>
           <div class="flex items-center space-x-2">
             <input
               type="text"
               readonly
               :value="noteLinkUri"
-              class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 font-mono text-[11px] select-all outline-none"
+              class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 font-mono text-[11px] select-all outline-none"
             />
             <button
               @click="handleCopyNoteLink"
-              class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition flex items-center shrink-0 cursor-pointer"
-              title="复制便签链接"
+              class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition flex items-center shrink-0 cursor-pointer"
+              :title="t('editor.copyLink')"
             >
-              <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span>复制链接</span>
+              <span>{{ t('common.copy') }}</span>
             </button>
           </div>
         </div>
 
         <!-- 9. 附件与文件 (Attachments if any) -->
         <div v-if="targetNote?.attachment && targetNote.attachment.length > 0" class="space-y-1.5">
-          <label class="block font-medium text-slate-700">关联附件 ({{ targetNote.attachment.length }})</label>
-          <div class="space-y-1 p-2 bg-slate-50 rounded-lg border border-slate-200/60 max-h-36 overflow-y-auto">
+          <label class="block font-medium text-slate-700 dark:text-slate-300">{{ t('editor.attachments') }} ({{ targetNote.attachment.length }})</label>
+          <div class="space-y-1 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200/60 dark:border-slate-700 max-h-36 overflow-y-auto">
             <div
               v-for="att in targetNote.attachment"
               :key="att.id"
-              class="flex items-center justify-between p-1.5 bg-white rounded border border-slate-200/80 text-[11px]"
+              class="flex items-center justify-between p-1.5 bg-white dark:bg-slate-800 rounded border border-slate-200/80 dark:border-slate-700 text-[11px]"
             >
               <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-2">
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
-                <span class="truncate font-medium text-slate-700">{{ att.name }}</span>
-                <span class="text-slate-400 shrink-0">({{ formatFileSize(att.size) }})</span>
+                <span class="truncate font-medium text-slate-700 dark:text-slate-200">{{ att.name }}</span>
+                <span class="text-slate-400 dark:text-slate-500 shrink-0">({{ formatFileSize(att.size) }})</span>
               </div>
               <a
                 :href="getDownloadUrl(att.id, att.name)"
                 target="_blank"
                 download
-                class="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-syno-blue rounded text-[10px] font-medium transition shrink-0"
+                class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-syno-blue dark:text-sky-400 rounded text-[10px] font-medium transition shrink-0"
               >
-                下载
+                {{ t('editor.download') }}
               </a>
             </div>
           </div>
@@ -209,13 +209,13 @@
       </div>
 
       <!-- Footer Buttons -->
-      <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end space-x-2 shrink-0">
+      <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end space-x-2 shrink-0">
         <button
           type="button"
           @click="close"
-          class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+          class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
         >
-          取消
+          {{ t('common.cancel') }}
         </button>
         <button
           type="button"
@@ -227,7 +227,7 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>{{ isSaving ? '保存中...' : '确定' }}</span>
+          <span>{{ isSaving ? t('common.saving') : t('common.confirm') }}</span>
         </button>
       </div>
     </div>
@@ -236,6 +236,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { t } from '@/i18n';
 import type { SynoNote } from '@/types/synology';
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';

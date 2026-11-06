@@ -1,22 +1,23 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs select-none">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
         <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-lg bg-blue-50 text-syno-blue flex items-center justify-center">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-syno-blue dark:text-sky-400 flex items-center justify-center">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </div>
           <div>
-            <h3 class="text-sm font-bold text-slate-800">便签分享管理</h3>
-            <p class="text-[11px] text-slate-400 truncate max-w-sm">{{ noteTitle || '设置便签的公开分享链接与 DSM 用户协同权限' }}</p>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('share.modalTitle') }}</h3>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-sm">{{ noteTitle || t('share.shareTip') }}</p>
           </div>
         </div>
         <button
           @click="$emit('close')"
-          class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition"
+          class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          :title="t('common.close')"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -34,13 +35,13 @@
       </div>
 
       <!-- Modal Body -->
-      <div v-else class="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-xs">
+      <div v-else class="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-xs text-slate-800 dark:text-slate-100">
         <!-- Section 1: 公开分享链接 -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <span class="font-bold text-slate-700 text-xs">公开链接分享</span>
-              <p class="text-[11px] text-slate-400">开启后可通过专属网址向他人分享此便签</p>
+              <span class="font-bold text-slate-700 dark:text-slate-200 text-xs">{{ t('share.enableShare') }}</span>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">开启后可通过专属网址向他人分享此便签</p>
             </div>
             <!-- Toggle Switch -->
             <button
@@ -48,7 +49,7 @@
               @click="isPublicEnabled = !isPublicEnabled"
               :class="[
                 'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                isPublicEnabled ? 'bg-syno-blue' : 'bg-slate-200'
+                isPublicEnabled ? 'bg-syno-blue' : 'bg-slate-200 dark:bg-slate-700'
               ]"
             >
               <span
@@ -61,37 +62,37 @@
           </div>
 
           <!-- Public Share Options (when enabled) -->
-          <div v-if="isPublicEnabled" class="p-3 bg-slate-50 border border-slate-100 rounded-lg space-y-3">
+          <div v-if="isPublicEnabled" class="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-lg space-y-3">
             <div>
-              <label class="block text-[11px] font-medium text-slate-500 mb-1">公开访问网址：</label>
+              <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">{{ t('share.shareUrl') }}</label>
               <div class="flex items-center space-x-2">
                 <input
                   type="text"
                   readonly
                   :value="publicUrl"
-                  class="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded text-slate-700 text-xs font-mono select-all focus:outline-none"
+                  class="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-xs font-mono select-all focus:outline-none"
                 />
                 <button
                   @click="copyShareLink"
-                  class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-medium transition flex items-center shrink-0"
-                  title="复制链接"
+                  class="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded font-medium transition flex items-center shrink-0 cursor-pointer"
+                  :title="t('share.copyShareUrl')"
                 >
-                  <svg v-if="!isCopied" class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg v-if="!isCopied" class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   <svg v-else class="w-3.5 h-3.5 mr-1 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  {{ isCopied ? '已复制' : '复制' }}
+                  {{ isCopied ? t('share.shareCopied') : t('common.copy') }}
                 </button>
                 <a
                   v-if="publicUrl"
                   :href="publicUrl"
                   target="_blank"
-                  class="p-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-medium transition flex items-center shrink-0"
+                  class="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded font-medium transition flex items-center shrink-0 cursor-pointer"
                   title="在浏览器中打开"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
@@ -99,7 +100,7 @@
             </div>
 
             <div class="flex items-center space-x-4 pt-1">
-              <span class="text-[11px] text-slate-500">访问权限：</span>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">访问权限：</span>
               <label class="inline-flex items-center space-x-1.5 cursor-pointer">
                 <input
                   type="radio"
@@ -107,7 +108,7 @@
                   v-model="publicPerm"
                   class="text-syno-blue focus:ring-0 focus:outline-none"
                 />
-                <span class="text-slate-700">只读 (View Only)</span>
+                <span class="text-slate-700 dark:text-slate-300">只读 (View Only)</span>
               </label>
               <label class="inline-flex items-center space-x-1.5 cursor-pointer">
                 <input
@@ -116,29 +117,29 @@
                   v-model="publicPerm"
                   class="text-syno-blue focus:ring-0 focus:outline-none"
                 />
-                <span class="text-slate-700">可编辑 (Edit)</span>
+                <span class="text-slate-700 dark:text-slate-300">可编辑 (Edit)</span>
               </label>
             </div>
           </div>
-          <div v-else class="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-400 text-[11px]">
+          <div v-else class="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-lg text-slate-400 dark:text-slate-500 text-[11px]">
             公开链接分享已关闭，非群晖授权人员无法通过外链查看此便签。
           </div>
         </div>
 
-        <hr class="border-slate-100" />
+        <hr class="border-slate-100 dark:border-slate-800" />
 
         <!-- Section 2: DSM 用户与群组协作 -->
         <div class="space-y-3">
           <div>
-            <span class="font-bold text-slate-700 text-xs">DSM 用户与群组协作</span>
-            <p class="text-[11px] text-slate-400">授权指定的群晖 DSM 用户或用户组协同查看或编辑此便签</p>
+            <span class="font-bold text-slate-700 dark:text-slate-200 text-xs">DSM 用户与群组协作</span>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500">授权指定的群晖 DSM 用户或用户组协同查看或编辑此便签</p>
           </div>
 
           <!-- Add Member Control -->
           <div class="flex items-center space-x-2">
             <select
               v-model="selectedCandidate"
-              class="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded text-slate-700 text-xs focus:border-syno-blue focus:outline-none"
+              class="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-xs focus:border-syno-blue focus:outline-none"
             >
               <option value="" disabled>选择 DSM 用户或用户组...</option>
               <optgroup v-if="filteredAvailableUsers.length > 0" label="DSM 用户">
@@ -163,7 +164,7 @@
 
             <select
               v-model="newMemberPerm"
-              class="w-24 px-2.5 py-1.5 bg-white border border-slate-200 rounded text-slate-700 text-xs focus:border-syno-blue focus:outline-none"
+              class="w-24 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-xs focus:border-syno-blue focus:outline-none"
             >
               <option value="ro">只读</option>
               <option value="rw">可读写</option>
@@ -172,7 +173,7 @@
             <button
               @click="addMember"
               :disabled="!selectedCandidate"
-              class="px-3 py-1.5 bg-syno-blue hover:bg-blue-600 disabled:opacity-50 text-white rounded font-medium transition flex items-center shrink-0"
+              class="px-3 py-1.5 bg-syno-blue hover:bg-blue-600 disabled:opacity-50 text-white rounded font-medium transition flex items-center shrink-0 cursor-pointer"
             >
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -182,16 +183,16 @@
           </div>
 
           <!-- Members List -->
-          <div class="border border-slate-100 rounded-lg divide-y divide-slate-100 overflow-hidden bg-white">
+          <div class="border border-slate-100 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-slate-850">
             <div
               v-for="(member, idx) in members"
               :key="member.type + ':' + member.name"
-              class="px-3 py-2 flex items-center justify-between hover:bg-slate-50 transition"
+              class="px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
               <div class="flex items-center space-x-2">
                 <span class="text-sm">{{ member.type === 'group' ? '👥' : '👤' }}</span>
-                <span class="font-medium text-slate-700">{{ member.name }}</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ member.name }}</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                   {{ member.type === 'group' ? '用户组' : '用户' }}
                 </span>
               </div>
@@ -199,7 +200,7 @@
               <div class="flex items-center space-x-2">
                 <select
                   v-model="member.perm"
-                  class="px-2 py-0.5 border border-slate-200 rounded text-xs text-slate-600 bg-white focus:outline-none"
+                  class="px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none"
                 >
                   <option value="ro">只读</option>
                   <option value="rw">可读写</option>
@@ -207,7 +208,7 @@
 
                 <button
                   @click="removeMember(idx)"
-                  class="text-slate-400 hover:text-rose-500 p-1 rounded hover:bg-slate-100 transition"
+                  class="text-slate-400 dark:text-slate-500 hover:text-rose-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                   title="移除权限"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,7 +219,7 @@
             </div>
 
             <!-- Empty Members State -->
-            <div v-if="members.length === 0" class="py-6 text-center text-slate-400 text-xs">
+            <div v-if="members.length === 0" class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">
               暂未指定任何 DSM 用户或用户组协作权限
             </div>
           </div>
@@ -226,11 +227,11 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between shrink-0">
-        <span v-if="feedbackMsg" class="text-xs text-emerald-600 font-medium">
+      <div class="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between shrink-0">
+        <span v-if="feedbackMsg" class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
           {{ feedbackMsg }}
         </span>
-        <span v-else class="text-[11px] text-slate-400">
+        <span v-else class="text-[11px] text-slate-400 dark:text-slate-500">
           保存后设置将立即同步至群晖 Note Station 服务端
         </span>
 
@@ -238,20 +239,20 @@
           <button
             @click="$emit('close')"
             :disabled="isSaving"
-            class="px-3.5 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-medium transition"
+            class="px-3.5 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition cursor-pointer"
           >
-            取消
+            {{ t('common.cancel') }}
           </button>
           <button
             @click="handleSave"
             :disabled="isSaving || isLoading"
-            class="px-4 py-1.5 bg-syno-blue hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition shadow-xs flex items-center"
+            class="px-4 py-1.5 bg-syno-blue hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition shadow-xs flex items-center cursor-pointer"
           >
             <svg v-if="isSaving" class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            {{ isSaving ? '保存中...' : '保存设置' }}
+            {{ isSaving ? t('common.saving') : t('common.save') }}
           </button>
         </div>
       </div>
@@ -261,6 +262,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
+import { t } from '@/i18n';
 import { useNoteStore } from '@/stores/noteStore';
 import { SharedMember } from '@/types/synology';
 

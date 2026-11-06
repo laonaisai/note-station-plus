@@ -228,5 +228,81 @@ html, body, #app {
   margin: 0.75rem 0;
 }
 
+/* Dark Mode Markdown Preview Typography */
+.dark .markdown-preview {
+  color: #cbd5e1;
+}
+
+.dark .markdown-preview ::selection,
+.dark .markdown-preview *::selection {
+  background-color: #0369a1;
+  color: #f0f9ff;
+}
+
+.dark .markdown-preview h1,
+.dark .markdown-preview h2,
+.dark .markdown-preview h3,
+.dark .markdown-preview h4 {
+  color: #f8fafc;
+}
+
+.dark .markdown-preview h1 {
+  border-bottom-color: #334155;
+}
+
+.dark .markdown-preview h2 {
+  border-bottom-color: #1e293b;
+}
+
+.dark .markdown-preview blockquote {
+  background-color: #0f172a;
+  color: #94a3b8;
+  border-left-color: #38bdf8;
+}
+
+.dark .markdown-preview code {
+  background-color: #1e293b;
+  color: #38bdf8;
+}
+
+.dark .markdown-preview pre {
+  background-color: #020617;
+  color: #f8fafc;
+  border: 1px solid #1e293b;
+}
+
+.dark .markdown-preview hr {
+  border-top-color: #334155;
+}
+
+.dark .markdown-preview a {
+  color: #38bdf8;
+}
+
+.dark .markdown-preview table th {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.dark .markdown-preview table td {
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .markdown-preview tr:nth-child(even) td {
+  background-color: #0f172a;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+
 
 

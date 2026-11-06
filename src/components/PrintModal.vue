@@ -4,17 +4,17 @@
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs select-none"
     @click.self="close"
   >
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[88vh] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl h-[88vh] border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <!-- Modal Header -->
-      <div class="px-6 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+      <div class="px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/70 shrink-0">
         <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-lg bg-blue-50 text-syno-blue flex items-center justify-center">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-syno-blue dark:text-sky-400 flex items-center justify-center">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
           </div>
           <div>
-            <h3 class="text-sm font-bold text-slate-800">便签打印与导出预览</h3>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('print.modalTitle') }}</h3>
             <p class="text-[11px] text-slate-400 truncate max-w-md">
               预览便签排版样式，可直接导出为高清 PDF 或发送至物理打印机
             </p>
@@ -24,11 +24,11 @@
         <!-- Header Actions -->
         <div class="flex items-center space-x-2">
           <!-- Toggle Metadata -->
-          <label class="flex items-center text-xs text-slate-600 mr-2 cursor-pointer select-none">
+          <label class="flex items-center text-xs text-slate-600 dark:text-slate-300 mr-2 cursor-pointer select-none">
             <input
               type="checkbox"
               v-model="showMetadata"
-              class="rounded border-slate-300 text-syno-blue focus:ring-syno-blue mr-1.5 cursor-pointer"
+              class="rounded border-slate-300 dark:border-slate-600 text-syno-blue focus:ring-syno-blue mr-1.5 cursor-pointer"
             />
             包含基本信息
           </label>
@@ -37,17 +37,17 @@
           <button
             @click="handleExportPdf"
             :disabled="isLoading || isExportingPdf"
-            class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center cursor-pointer disabled:opacity-50"
+            class="px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition flex items-center cursor-pointer disabled:opacity-50"
             title="直接保存为矢量高清 PDF 文件"
           >
             <svg v-if="!isExportingPdf" class="w-3.5 h-3.5 mr-1.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <svg v-else class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-slate-600" fill="none" viewBox="0 0 24 24">
+            <svg v-else class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            <span>{{ isExportingPdf ? '正在导出...' : '导出为 PDF' }}</span>
+            <span>{{ isExportingPdf ? t('common.loading') : t('print.exportPdf') }}</span>
           </button>
 
           <!-- Print Button -->
@@ -55,19 +55,19 @@
             @click="handlePrintDirect"
             :disabled="isLoading"
             class="px-3.5 py-1.5 text-xs bg-syno-blue hover:bg-blue-600 text-white font-medium rounded-lg shadow-2xs transition flex items-center cursor-pointer disabled:opacity-50"
-            title="调用系统打印机打印当前便签"
+            :title="t('print.printDirect')"
           >
             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            <span>打印便签</span>
+            <span>{{ t('print.printDirect') }}</span>
           </button>
 
           <!-- Close Button -->
           <button
             @click="close"
-            class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer ml-1"
-            title="关闭预览"
+            class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer ml-1"
+            :title="t('common.close')"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -77,48 +77,48 @@
       </div>
 
       <!-- Preview Sheet Area -->
-      <div class="flex-1 overflow-y-auto p-6 bg-slate-100/80 flex justify-center select-text">
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-100/80 dark:bg-slate-950 flex justify-center select-text">
         <!-- Loading State -->
-        <div v-if="isLoading" class="flex flex-col items-center justify-center h-64 text-slate-400">
-          <svg class="animate-spin h-8 w-8 text-syno-blue mb-3" fill="none" viewBox="0 0 24 24">
+        <div v-if="isLoading" class="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
+          <svg class="animate-spin h-8 w-8 text-syno-blue dark:text-sky-400 mb-3" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span class="text-xs">正在加载便签完整内容与排版...</span>
+          <span class="text-xs">{{ t('common.loading') }}</span>
         </div>
 
         <!-- A4 Paper Container -->
         <div
           v-else
-          class="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-md border border-slate-200/80 p-10 md:p-14 my-2 text-slate-800 rounded-sm"
+          class="w-full max-w-[210mm] min-h-[297mm] bg-white dark:bg-slate-900 shadow-md border border-slate-200/80 dark:border-slate-800 p-10 md:p-14 my-2 text-slate-800 dark:text-slate-100 rounded-sm"
         >
           <!-- Note Title -->
-          <h1 class="text-2xl font-bold text-slate-900 pb-3 mb-3 border-b-2 border-slate-200 break-words">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-50 pb-3 mb-3 border-b-2 border-slate-200 dark:border-slate-800 break-words">
             {{ displayTitle }}
           </h1>
 
           <!-- Note Metadata Box -->
           <div
             v-if="showMetadata"
-            class="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-md p-2.5 mb-6 flex flex-wrap gap-x-4 gap-y-1.5"
+            class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-md p-2.5 mb-6 flex flex-wrap gap-x-4 gap-y-1.5"
           >
             <span v-if="notebookTitle">
-              <strong class="text-slate-600">笔记本:</strong> {{ notebookTitle }}
+              <strong class="text-slate-600 dark:text-slate-300">笔记本:</strong> {{ notebookTitle }}
             </span>
             <span v-if="ctimeStr">
-              <strong class="text-slate-600">创建时间:</strong> {{ ctimeStr }}
+              <strong class="text-slate-600 dark:text-slate-300">创建时间:</strong> {{ ctimeStr }}
             </span>
             <span v-if="mtimeStr">
-              <strong class="text-slate-600">更新时间:</strong> {{ mtimeStr }}
+              <strong class="text-slate-600 dark:text-slate-300">更新时间:</strong> {{ mtimeStr }}
             </span>
             <span v-if="tagsStr">
-              <strong class="text-slate-600">标签:</strong> {{ tagsStr }}
+              <strong class="text-slate-600 dark:text-slate-300">标签:</strong> {{ tagsStr }}
             </span>
           </div>
 
           <!-- Note Body -->
           <div
-            class="prose prose-sm max-w-none text-slate-700 leading-relaxed break-words"
+            class="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-200 leading-relaxed break-words"
             v-html="renderedContentHtml"
           ></div>
         </div>
@@ -129,6 +129,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { t } from '@/i18n';
 import MarkdownIt from 'markdown-it';
 import type { SynoNote } from '@/types/synology';
 import { useSessionStore } from '@/stores/sessionStore';

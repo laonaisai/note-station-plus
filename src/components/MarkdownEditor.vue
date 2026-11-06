@@ -1,27 +1,27 @@
 <template>
-  <div class="flex-1 h-full bg-white flex flex-col overflow-hidden">
+  <div class="flex-1 h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
     <!-- Note Empty State -->
     <div v-if="!noteStore.activeNote" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
       <!-- Distraction-free recovery bar if sidebar is collapsed while empty -->
       <div v-if="layoutStore.isSidebarCollapsed" class="mb-4 flex items-center space-x-2">
         <button
           @click="layoutStore.toggleSidebar"
-          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition cursor-pointer"
+          class="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg flex items-center transition cursor-pointer"
         >
-          » 展开笔记本与便签
+          {{ t('editor.expandSidebar') }}
         </button>
       </div>
 
-      <svg class="w-16 h-16 mb-3 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="w-16 h-16 mb-3 text-slate-200 dark:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
-      <p class="text-sm">选择左侧便签或新建便签开始编辑</p>
+      <p class="text-sm text-slate-400 dark:text-slate-500">{{ t('editor.emptySelectTip') }}</p>
     </div>
 
     <!-- Active Note Editor -->
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
       <!-- Top Note Bar -->
-      <div class="h-14 px-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+      <div class="h-14 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
         <!-- Left Side: Sidebar Toggle Icons & Note Title Input -->
         <div class="flex items-center flex-1 mr-4 min-w-0">
           <!-- Sidebar Toggle Buttons (Collapse / Expand controls) -->
@@ -30,9 +30,9 @@
               @click="layoutStore.toggleSidebar"
               :class="[
                 'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
-                layoutStore.isSidebarCollapsed ? 'bg-blue-50 text-syno-blue' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                layoutStore.isSidebarCollapsed ? 'bg-blue-50 dark:bg-blue-950/40 text-syno-blue' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               ]"
-              :title="layoutStore.isSidebarCollapsed ? '展开笔记本与便签' : '折叠笔记本与便签'"
+              :title="layoutStore.isSidebarCollapsed ? t('editor.expandSidebar') : t('editor.collapseSidebar')"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
@@ -43,9 +43,9 @@
               @click="layoutStore.toggleFocusMode"
               :class="[
                 'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
-                layoutStore.isSidebarCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                layoutStore.isSidebarCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               ]"
-              :title="layoutStore.isSidebarCollapsed ? '退出专注模式 (恢复侧边栏)' : '开启专注全屏模式 (最大化编辑空间)'"
+              :title="layoutStore.isSidebarCollapsed ? t('editor.focusModeExit') : t('editor.focusModeEnter')"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -59,12 +59,12 @@
             <button
               v-if="noteStore.activeNote && !isRecycledNote"
               @click="toggleActiveFavorite"
-              class="mr-1.5 p-1 rounded-md transition cursor-pointer hover:bg-slate-100 shrink-0"
-              :title="noteStore.isFavorite(noteStore.activeNote.object_id) ? '已收藏 (点击取消收藏)' : '添加到收藏夹'"
+              class="mr-1.5 p-1 rounded-md transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              :title="noteStore.isFavorite(noteStore.activeNote.object_id) ? t('editor.favoriteRemove') : t('editor.favoriteAdd')"
             >
               <svg
                 class="w-4 h-4"
-                :class="noteStore.isFavorite(noteStore.activeNote.object_id) ? 'text-amber-500 fill-amber-400' : 'text-slate-300 hover:text-amber-400'"
+                :class="noteStore.isFavorite(noteStore.activeNote.object_id) ? 'text-amber-500 fill-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -79,7 +79,7 @@
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              title="当前便签已共享"
+              :title="t('editor.sharedBadge')"
             >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
@@ -88,8 +88,8 @@
               @input="onContentChanged"
               :readonly="isRecycledNote"
               type="text"
-              placeholder="便签标题..."
-              class="text-base font-bold text-slate-800 placeholder-slate-300 border-none outline-none flex-1 bg-transparent truncate"
+              :placeholder="t('editor.titlePlaceholder')"
+              class="text-base font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 border-none outline-none flex-1 bg-transparent truncate"
             />
           </div>
         </div>
@@ -101,45 +101,45 @@
             <button
               @click="handleRestoreRecycledNote"
               class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
-              title="将便签恢复至原笔记本"
+              :title="t('editor.restore')"
             >
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
-              恢复
+              {{ t('editor.restore') }}
             </button>
 
             <button
               @click="handlePermanentDeleteRecycledNote"
               class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
-              title="彻底删除此便签 (不可撤销)"
+              :title="t('editor.permDelete')"
             >
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              彻底删除
+              {{ t('editor.permDelete') }}
             </button>
           </template>
 
           <!-- 普通便签操作栏 -->
           <template v-else>
             <!-- Save status indicator -->
-            <span class="text-slate-400 text-xs flex items-center">
-              <span v-if="noteStore.isSaving" class="flex items-center text-amber-500">
-                <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-amber-500" fill="none" viewBox="0 0 24 24">
+            <span class="text-slate-400 dark:text-slate-500 text-xs flex items-center">
+              <span v-if="noteStore.isSaving" class="flex items-center text-amber-500 dark:text-amber-400">
+                <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                保存中...
+                {{ t('common.saving') }}
               </span>
-              <span v-else-if="isModified" class="text-slate-400">
-                未保存
+              <span v-else-if="isModified" class="text-slate-400 dark:text-slate-500">
+                {{ t('common.unsaved') }}
               </span>
-              <span v-else class="text-emerald-500 flex items-center">
+              <span v-else class="text-emerald-500 dark:text-emerald-400 flex items-center">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                已保存
+                {{ t('common.saved') }}
               </span>
             </span>
 
@@ -147,25 +147,25 @@
             <button
               @click="saveNote(true)"
               :disabled="noteStore.isSaving"
-              class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
-              title="保存便签 (Ctrl+S)"
+              class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
+              :title="t('editor.saveNote') + ' (Ctrl+S)'"
             >
-              <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
-              保存
+              {{ t('common.save') }}
             </button>
 
             <!-- Sync to other servers button (REQ-3) -->
             <button
               @click="handleOpenSync"
               class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
-              title="将此便签同步到其他 Note Station 服务"
+              :title="t('editor.sync')"
             >
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              同步
+              {{ t('editor.sync') }}
             </button>
 
             <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
@@ -174,154 +174,154 @@
                 @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
                 :class="[
                   'px-2 py-1 rounded-md font-medium transition flex items-center border cursor-pointer text-xs',
-                  isMoreMenuOpen ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80'
+                  isMoreMenuOpen ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
                 ]"
-                title="更多便签操作 (导入/导出/分享/历史)"
+                :title="t('editor.more')"
               >
-                <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
-                <span>更多</span>
-                <svg class="w-3 h-3 ml-1 text-slate-400 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <span>{{ t('editor.more') }}</span>
+                <svg class="w-3 h-3 ml-1 text-slate-400 dark:text-slate-500 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
-            <!-- Dropdown Menu -->
-            <div
-              v-if="isMoreMenuOpen"
-              @click.stop
-              class="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 shadow-xl rounded-lg py-1.5 z-40 text-xs animate-in fade-in duration-150"
-            >
-              <!-- 导入 -->
-              <button
-                @click="triggerImport"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+              <!-- Dropdown Menu -->
+              <div
+                v-if="isMoreMenuOpen"
+                @click.stop
+                class="absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 z-40 text-xs animate-in fade-in duration-150"
               >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>导入 Markdown (.md)</span>
-              </button>
+                <!-- 导入 -->
+                <button
+                  @click="triggerImport"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>{{ t('editor.importMd') }}</span>
+                </button>
 
-              <!-- 导出 -->
-              <button
-                @click="triggerExport"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>导出为 Markdown (.md)</span>
-              </button>
+                <!-- 导出 -->
+                <button
+                  @click="triggerExport"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>{{ t('editor.exportMd') }}</span>
+                </button>
 
-              <div class="h-px bg-slate-100 my-1"></div>
+                <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
-              <!-- 分享 -->
-              <button
-                @click="triggerShare"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                <span>便签分享管理</span>
-              </button>
+                <!-- 分享 -->
+                <button
+                  @click="triggerShare"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  <span>{{ t('editor.shareManage') }}</span>
+                </button>
 
-              <!-- 历史 -->
-              <button
-                @click="triggerHistory"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>历史版本记录</span>
-              </button>
+                <!-- 历史 -->
+                <button
+                  @click="triggerHistory"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{{ t('editor.historyVersions') }}</span>
+                </button>
 
-              <div class="h-px bg-slate-100 my-1"></div>
+                <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
-              <!-- 打印 -->
-              <button
-                @click="triggerPrint"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span>打印便签</span>
-              </button>
+                <!-- 打印 -->
+                <button
+                  @click="triggerPrint"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>{{ t('editor.printNote') }}</span>
+                </button>
 
-              <!-- 复制便签链接 -->
-              <button
-                @click="triggerCopyLink"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-                <span>复制便签链接</span>
-              </button>
+                <!-- 复制便签链接 -->
+                <button
+                  @click="triggerCopyLink"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <span>{{ t('editor.copyLink') }}</span>
+                </button>
 
-              <!-- 便签信息 -->
-              <button
-                @click="triggerInfo"
-                class="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>便签信息</span>
-              </button>
+                <!-- 便签信息 -->
+                <button
+                  @click="triggerInfo"
+                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{{ t('editor.noteInfo') }}</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </template>
+          </template>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
-          <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
             <button
               @click="editorMode = 'split'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition', editorMode === 'split' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800']"
+              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'split' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
-              分屏
+              {{ t('editor.modeSplit') }}
             </button>
             <button
               @click="editorMode = 'edit'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition', editorMode === 'edit' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800']"
+              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'edit' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
-              编辑
+              {{ t('editor.modeEdit') }}
             </button>
             <button
               @click="editorMode = 'preview'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition', editorMode === 'preview' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800']"
+              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'preview' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
-              预览
+              {{ t('editor.modePreview') }}
             </button>
           </div>
         </div>
       </div>
 
       <!-- Tag Editing Strip (Requirement 2: 便签标签编辑) -->
-      <div class="px-5 py-1.5 bg-slate-50/70 border-b border-slate-100 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs">
-        <span class="flex items-center text-slate-400 text-[11px] mr-1">
-          <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="px-5 py-1.5 bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs">
+        <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] mr-1">
+          <svg class="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          标签:
+          {{ t('editor.tags') }}
         </span>
 
         <!-- Existing Tag Pills -->
         <span
           v-for="tag in editTags"
           :key="tag"
-          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-100 text-slate-700 border border-slate-200 group transition hover:border-slate-300"
+          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 group transition hover:border-slate-300 dark:hover:border-slate-600"
         >
           <span>{{ tag }}</span>
           <button
             v-if="!isRecycledNote"
             @click="removeTag(tag)"
-            class="ml-1 text-slate-400 hover:text-rose-500 rounded transition"
-            title="移除此标签"
+            class="ml-1 text-slate-400 dark:text-slate-500 hover:text-rose-500 rounded transition cursor-pointer"
+            :title="t('common.remove')"
           >
             <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -334,13 +334,13 @@
           <button
             v-if="!isAddingTag"
             @click="startAddTag"
-            class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] text-slate-500 hover:text-syno-blue border border-dashed border-slate-300 hover:border-syno-blue bg-white hover:bg-blue-50/40 transition"
-            title="添加便签标签"
+            class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 border border-dashed border-slate-300 dark:border-slate-700 hover:border-syno-blue bg-white dark:bg-slate-800 hover:bg-blue-50/40 dark:hover:bg-slate-700 transition cursor-pointer"
+            :title="t('editor.addTag')"
           >
-            <svg class="w-3 h-3 mr-0.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-3 h-3 mr-0.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            添加标签
+            {{ t('editor.addTag') }}
           </button>
 
           <div v-else class="flex items-center space-x-1">
@@ -350,32 +350,32 @@
               @keydown.enter.prevent="confirmAddTag"
               @keydown.esc="cancelAddTag"
               @blur="onTagInputBlur"
-              placeholder="输入标签按回车..."
-              class="w-32 px-2 py-0.5 text-[11px] bg-white border border-syno-blue rounded-md outline-none focus:ring-1 focus:ring-syno-blue text-slate-800"
+              :placeholder="t('editor.tagPlaceholder')"
+              class="w-32 px-2 py-0.5 text-[11px] bg-white dark:bg-slate-800 border border-syno-blue rounded-md outline-none focus:ring-1 focus:ring-syno-blue text-slate-800 dark:text-slate-100"
             />
             <button
               @mousedown.prevent="confirmAddTag"
-              class="px-1.5 py-0.5 bg-syno-blue hover:bg-blue-600 text-white rounded text-[10px] transition"
+              class="px-1.5 py-0.5 bg-syno-blue hover:bg-blue-600 text-white rounded text-[10px] transition cursor-pointer"
             >
-              添加
+              {{ t('common.confirm') }}
             </button>
             <button
               @mousedown.prevent="cancelAddTag"
-              class="px-1 py-0.5 text-slate-400 hover:text-slate-600 rounded text-[10px] transition"
+              class="px-1 py-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded text-[10px] transition cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
 
             <!-- Autocomplete suggestions dropdown -->
             <div
               v-if="suggestedTags.length > 0"
-              class="absolute left-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-30 min-w-[120px] max-h-36 overflow-y-auto"
+              class="absolute left-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1 z-30 min-w-[120px] max-h-36 overflow-y-auto"
             >
               <div
                 v-for="sTag in suggestedTags"
                 :key="sTag"
                 @mousedown.prevent="selectSuggestedTag(sTag)"
-                class="px-2.5 py-1 text-[11px] text-slate-700 hover:bg-blue-50 hover:text-syno-blue cursor-pointer truncate"
+                class="px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-syno-blue dark:hover:text-sky-400 cursor-pointer truncate"
               >
                 {{ sTag }}
               </div>
@@ -387,46 +387,46 @@
       <!-- Attachments Strip (关联附件与文件) -->
       <div
         v-if="noteStore.activeNote?.attachment && noteStore.activeNote.attachment.length > 0"
-        class="px-5 py-1.5 bg-slate-50/90 border-b border-slate-100 flex items-center flex-wrap gap-2 shrink-0 text-xs select-none"
+        class="px-5 py-1.5 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-2 shrink-0 text-xs select-none"
       >
-        <span class="flex items-center text-slate-400 text-[11px] mr-1 shrink-0 font-medium">
-          <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] mr-1 shrink-0 font-medium">
+          <svg class="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
-          附件 ({{ noteStore.activeNote.attachment.length }}):
+          {{ t('editor.attachments') }} ({{ noteStore.activeNote.attachment.length }}):
         </span>
 
         <div
           v-for="att in noteStore.activeNote.attachment"
           :key="att.file_id || att.id"
-          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-white border border-slate-200 text-slate-700 shadow-2xs group hover:border-syno-blue transition"
+          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs group hover:border-syno-blue dark:hover:border-sky-500 transition"
         >
           <span class="truncate max-w-[150px] font-medium mr-1">{{ att.name }}</span>
-          <span class="text-slate-400 text-[10px] mr-1.5">({{ formatFileSize(att.size) }})</span>
+          <span class="text-slate-400 dark:text-slate-500 text-[10px] mr-1.5">({{ formatFileSize(att.size) }})</span>
           <a
             :href="getAttachmentDownloadUrl(att.file_id || att.id, att.name)"
             target="_blank"
             download
-            class="text-syno-blue hover:text-blue-700 font-medium text-[10px] hover:underline"
-            title="下载此附件"
+            class="text-syno-blue dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 font-medium text-[10px] hover:underline"
+            :title="t('editor.download')"
           >
-            下载
+            {{ t('editor.download') }}
           </a>
           <button
             v-if="!isRecycledNote"
             type="button"
             @click="insertAttachmentToBody(att)"
-            class="ml-1.5 text-slate-400 hover:text-syno-blue font-medium text-[10px] hover:underline cursor-pointer"
-            title="将此附件插入到便签正文光标处"
+            class="ml-1.5 text-slate-400 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 font-medium text-[10px] hover:underline cursor-pointer"
+            :title="t('editor.insert')"
           >
-            插入
+            {{ t('editor.insert') }}
           </button>
           <button
             v-if="!isRecycledNote"
             type="button"
             @click="handleDeleteAttachment(att)"
-            class="ml-1.5 text-slate-300 hover:text-rose-500 font-medium text-[11px] transition cursor-pointer"
-            title="从便签中删除此附件"
+            class="ml-1.5 text-slate-300 dark:text-slate-500 hover:text-rose-500 font-medium text-[11px] transition cursor-pointer"
+            :title="t('common.delete')"
           >
             ✕
           </button>
@@ -434,64 +434,64 @@
       </div>
 
       <!-- Recycle Bin Warning Banner -->
-      <div v-if="isRecycledNote" class="px-5 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center justify-between shrink-0">
+      <div v-if="isRecycledNote" class="px-5 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between shrink-0">
         <div class="flex items-center space-x-2">
-          <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <span>此便签当前位于回收站中，处于只读模式。如需编辑，请先恢复便签。</span>
+          <span>{{ t('editor.recycledBanner') }}</span>
         </div>
         <div class="flex items-center space-x-2">
           <button
             @click="handleRestoreRecycledNote"
-            class="px-2.5 py-0.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-800 rounded font-medium transition cursor-pointer"
+            class="px-2.5 py-0.5 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-slate-700 text-amber-800 dark:text-amber-300 rounded font-medium transition cursor-pointer"
           >
-            恢复便签
+            {{ t('editor.restore') }}
           </button>
           <button
             @click="handlePermanentDeleteRecycledNote"
             class="px-2.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-medium transition cursor-pointer"
           >
-            彻底删除
+            {{ t('editor.permDelete') }}
           </button>
         </div>
       </div>
 
       <!-- Quick Markdown Toolbar (普通编辑模式下显示) -->
-      <div v-if="!isRecycledNote" class="h-9 px-5 bg-slate-50/50 border-b border-slate-100 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
-        <button @click="insertMarkdown('**', '**')" class="p-1 rounded hover:bg-slate-200 text-slate-600 font-bold text-xs" title="粗体 (Ctrl+B)">B</button>
-        <button @click="insertMarkdown('*', '*')" class="p-1 rounded hover:bg-slate-200 text-slate-600 italic text-xs" title="斜体">I</button>
-        <button @click="insertMarkdown('# ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs font-semibold" title="一级标题">H1</button>
-        <button @click="insertMarkdown('## ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs font-semibold" title="二级标题">H2</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 mx-1"></span>
-        <button @click="insertMarkdown('- ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="无序列表">• 列表</button>
-        <button @click="insertMarkdown('1. ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="有序列表">1. 列表</button>
-        <button @click="insertMarkdown('- [ ] ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="任务待办">☑ 任务</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 mx-1"></span>
-        <button @click="insertMarkdown('```\n', '\n```')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs font-mono" title="代码块">&lt;/&gt;</button>
-        <button @click="insertMarkdown('| 列1 | 列2 |\n| :--- | :--- |\n| 内容1 | 内容2 |\n')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="插入表格">表格</button>
-        <button @click="insertMarkdown('> ')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="引用">&ldquo; 引用</button>
-        <button @click="insertMarkdown('$$ \n', '\n $$')" class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs" title="LaTeX 数学公式">∑</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 mx-1"></span>
+      <div v-if="!isRecycledNote" class="h-9 px-5 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
+        <button @click="insertMarkdown('**', '**')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs" :title="t('editor.bold') + ' (Ctrl+B)'">B</button>
+        <button @click="insertMarkdown('*', '*')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 italic text-xs" :title="t('editor.italic')">I</button>
+        <button @click="insertMarkdown('# ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold" :title="t('editor.h1')">H1</button>
+        <button @click="insertMarkdown('## ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold" :title="t('editor.h2')">H2</button>
+        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+        <button @click="insertMarkdown('- ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.ul')">• {{ t('editor.ul') }}</button>
+        <button @click="insertMarkdown('1. ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.ol')">1. {{ t('editor.ol') }}</button>
+        <button @click="insertMarkdown('- [ ] ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.task')">☑ {{ t('editor.task') }}</button>
+        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+        <button @click="insertMarkdown('```\n', '\n```')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-mono" :title="t('editor.code')">&lt;/&gt;</button>
+        <button @click="insertMarkdown('| 列1 | 列2 |\n| :--- | :--- |\n| 内容1 | 内容2 |\n')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.table')">{{ t('editor.table') }}</button>
+        <button @click="insertMarkdown('> ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.quote')">&ldquo; {{ t('editor.quote') }}</button>
+        <button @click="insertMarkdown('$$ \n', '\n $$')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.formula')">∑</button>
+        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
         <button
           @click="triggerSelectImage"
-          class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs flex items-center space-x-1 cursor-pointer"
-          title="插入图片 (支持本地文件选择、截图直接粘贴 Ctrl+V、拖拽图片进入编辑器)"
+          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center space-x-1 cursor-pointer"
+          :title="t('editor.image')"
         >
-          <svg class="w-3.5 h-3.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>图片</span>
+          <span>{{ t('editor.image') }}</span>
         </button>
         <button
           @click="triggerSelectAttachment"
-          class="p-1 rounded hover:bg-slate-200 text-slate-600 text-xs flex items-center space-x-1 cursor-pointer"
-          title="添加附件 (支持所有格式文件，拖拽文件进入编辑器也可直接上传)"
+          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center space-x-1 cursor-pointer"
+          :title="t('editor.attachments')"
         >
-          <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
-          <span>附件</span>
+          <span>{{ t('editor.attachments') }}</span>
         </button>
 
         <!-- Hidden File Inputs -->
@@ -510,12 +510,12 @@
         />
 
         <!-- Uploading Indicator in Toolbar -->
-        <div v-if="noteStore.isUploadingAttachment" class="ml-auto flex items-center text-xs text-syno-blue font-medium space-x-1 animate-pulse">
-          <svg class="animate-spin h-3.5 w-3.5 text-syno-blue" fill="none" viewBox="0 0 24 24">
+        <div v-if="noteStore.isUploadingAttachment" class="ml-auto flex items-center text-xs text-syno-blue dark:text-sky-400 font-medium space-x-1 animate-pulse">
+          <svg class="animate-spin h-3.5 w-3.5 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>正在上传附件 ({{ noteStore.uploadProgress }}%)...</span>
+          <span>{{ t('editor.uploadingProgress', { percent: noteStore.uploadProgress }) }}</span>
         </div>
       </div>
 
@@ -526,7 +526,7 @@
           v-show="editorMode === 'split' || editorMode === 'edit'"
           :class="[
             'h-full flex flex-col',
-            editorMode === 'split' ? 'w-1/2 border-r border-slate-200' : 'w-full'
+            editorMode === 'split' ? 'w-1/2 border-r border-slate-200 dark:border-slate-800' : 'w-full'
           ]"
         >
           <textarea
@@ -538,8 +538,8 @@
             @dragover.prevent
             @drop.prevent="handleDrop"
             :readonly="isRecycledNote"
-            placeholder="使用 Markdown 编写便签内容 (支持截图直接粘贴 Ctrl+V、拖拽图片/附件直接上传)..."
-            class="w-full h-full p-6 text-sm font-mono text-slate-800 bg-white resize-none outline-none leading-relaxed"
+            :placeholder="t('editor.markdownPlaceholder', undefined) || '使用 Markdown 编写便签内容...'"
+            class="w-full h-full p-6 text-sm font-mono text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950 resize-none outline-none leading-relaxed"
           ></textarea>
         </div>
 
@@ -547,7 +547,7 @@
         <div
           v-show="editorMode === 'split' || editorMode === 'preview'"
           :class="[
-            'h-full overflow-y-auto p-6 bg-slate-50/50 select-text relative group',
+            'h-full overflow-y-auto p-6 bg-slate-50/50 dark:bg-slate-900/40 select-text relative group',
             editorMode === 'split' ? 'w-1/2' : 'w-full'
           ]"
         >
@@ -555,8 +555,8 @@
           <div class="sticky top-0 float-right z-10 -mt-2 -mr-2 mb-2 ml-4">
             <button
               @click="handleCopyPreviewText"
-              class="px-2.5 py-1 text-xs bg-white/90 hover:bg-white text-slate-600 hover:text-syno-blue rounded-md border border-slate-200/90 shadow-xs backdrop-blur-xs flex items-center space-x-1.5 transition cursor-pointer select-none opacity-70 hover:opacity-100"
-              :title="isCopied ? '已复制到剪贴板' : '复制预览文本内容 (选中文字优先复制所选)'"
+              class="px-2.5 py-1 text-xs bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-syno-blue dark:hover:text-sky-400 rounded-md border border-slate-200/90 dark:border-slate-700 shadow-xs backdrop-blur-xs flex items-center space-x-1.5 transition cursor-pointer select-none opacity-70 hover:opacity-100"
+              :title="isCopied ? t('editor.copySuccess') : t('editor.copyContent')"
             >
               <svg v-if="!isCopied" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -564,12 +564,12 @@
               <svg v-else class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              <span :class="isCopied ? 'text-emerald-600 font-medium' : ''">{{ isCopied ? '已复制' : '复制内容' }}</span>
+              <span :class="isCopied ? 'text-emerald-600 dark:text-emerald-400 font-medium' : ''">{{ isCopied ? t('editor.copied') : t('editor.copyContent') }}</span>
             </button>
           </div>
 
           <div
-            class="markdown-preview select-text prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue cursor-text"
+            class="markdown-preview select-text prose prose-sm max-w-none prose-slate dark:prose-invert prose-headings:font-bold prose-a:text-syno-blue cursor-text"
             v-html="renderedPreviewHtml"
           ></div>
         </div>
@@ -582,33 +582,33 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="isPermanentDeleteModalOpen = false"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
         <div class="p-5">
           <div class="flex items-start space-x-3">
-            <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
+            <div class="p-2 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-bold text-slate-800">彻底删除便签</h3>
-              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                确定要彻底删除便签【<b class="text-slate-800">{{ noteStore.activeNote?.title || '无标题便签' }}</b>】吗？
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('editor.permDeleteModalTitle') }}</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                {{ t('editor.permDeleteModalConfirm', { title: noteStore.activeNote?.title || t('editor.untitledNote') }) }}
               </p>
               <p class="text-xs text-rose-500 mt-1 font-medium">
-                ⚠️ 彻底删除后此便签将无法找回，不可撤销！
+                {{ t('editor.permDeleteModalWarning') }}
               </p>
             </div>
           </div>
 
-          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="isPermanentDeleteModalOpen = false"
               :disabled="isPermanentDeleting"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -620,7 +620,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ isPermanentDeleting ? '正在彻底删除...' : '确认彻底删除' }}</span>
+              <span>{{ isPermanentDeleting ? t('editor.deleting') : t('editor.confirmPermDelete') }}</span>
             </button>
           </div>
         </div>
@@ -640,6 +640,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import MarkdownIt from 'markdown-it';
+import { t } from '@/i18n';
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useLayoutStore } from '@/stores/layoutStore';

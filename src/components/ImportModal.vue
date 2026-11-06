@@ -1,18 +1,18 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm select-none">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
       <!-- Modal Header -->
-      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <h3 class="text-sm font-semibold text-slate-800 flex items-center">
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center">
           <svg class="w-4 h-4 mr-2 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          导入 Markdown 便签
+          {{ t('import.title') }}
         </h3>
         <button
           @click="closeModal"
           :disabled="isImporting"
-          class="text-slate-400 hover:text-slate-600 p-1 rounded-lg disabled:opacity-30 transition"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg disabled:opacity-30 transition cursor-pointer"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -40,74 +40,80 @@
           @drop.prevent="handleDrop"
           :class="[
             'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2',
-            isDragging ? 'border-syno-blue bg-blue-50/50' : 'border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
+            isDragging
+              ? 'border-syno-blue bg-blue-50/50 dark:bg-blue-950/20'
+              : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800'
           ]"
         >
-          <div class="p-3 bg-white rounded-full shadow-xs text-syno-blue border border-slate-200">
+          <div class="p-3 bg-white dark:bg-slate-800 rounded-full shadow-xs text-syno-blue border border-slate-200 dark:border-slate-700">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <div class="text-xs font-semibold text-slate-700">点击选择或拖拽 Markdown 文件到此处</div>
-          <div class="text-[11px] text-slate-400">支持 UTF-8、GB2312/GBK 等全格式中文编码（自动识别防乱码）</div>
+          <div class="text-xs font-semibold text-slate-700 dark:text-slate-200">{{ t('import.dropTip') }}</div>
+          <div class="text-[11px] text-slate-400 dark:text-slate-400">{{ t('import.dropSubTip') }}</div>
         </div>
 
-        <div v-else class="bg-slate-50 rounded-lg p-3.5 border border-slate-200 space-y-2.5 text-xs">
+        <div v-else class="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3.5 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs">
           <!-- File Name & Change Button -->
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2 truncate">
               <svg class="w-4 h-4 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span class="font-semibold text-slate-800 truncate">{{ currentFileName }}</span>
+              <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">{{ currentFileName }}</span>
             </div>
             <button
               @click="triggerFilePick"
               type="button"
-              class="text-[11px] text-syno-blue hover:text-blue-700 shrink-0 font-medium ml-2"
+              class="text-[11px] text-syno-blue hover:text-blue-700 dark:hover:text-blue-400 shrink-0 font-medium ml-2 cursor-pointer"
             >
-              更换文件
+              {{ t('import.changeFile') }}
             </button>
           </div>
 
           <!-- Encoding Selector & File Stats -->
-          <div class="flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/70">
+          <div class="flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-200/70 dark:border-slate-700/70">
             <!-- Encoding selector -->
             <div class="flex items-center space-x-1.5">
-              <span class="text-slate-600 font-medium">文件编码:</span>
+              <span class="text-slate-600 dark:text-slate-300 font-medium">{{ t('import.fileEncoding') }}</span>
               <select
                 v-model="selectedEncoding"
                 @change="reDecodeFile"
-                class="px-1.5 py-0.5 text-[11px] bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-syno-blue text-slate-700"
+                class="px-1.5 py-0.5 text-[11px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-syno-blue text-slate-700 dark:text-slate-200 cursor-pointer"
               >
                 <option value="utf-8">UTF-8</option>
-                <option value="gb18030">GB2312 / GBK / GB18030</option>
+                <option value="big5">Big5 (繁體中文)</option>
+                <option value="shift_jis">Shift_JIS (日本語)</option>
+                <option value="euc-jp">EUC-JP (日本語)</option>
+                <option value="gb18030">GB2312 / GBK / GB18030 (简体中文)</option>
                 <option value="utf-16le">UTF-16 LE</option>
+                <option value="utf-16be">UTF-16 BE</option>
               </select>
               <span
                 v-if="selectedEncoding === autoDetectedEncoding"
-                class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-medium"
+                class="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800 font-medium"
               >
-                自动识别
+                {{ t('import.autoDetected') }}
               </span>
               <span
                 v-else
-                class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 font-medium"
+                class="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800 font-medium"
               >
-                已手动切换
+                {{ t('import.manualChanged') }}
               </span>
             </div>
 
             <!-- Stats -->
-            <div class="flex items-center space-x-2 text-slate-500">
-              <span>字数: <b>{{ importedData.content.length }}</b> 字符</span>
+            <div class="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+              <span>{{ t('editor.words') }}: <b>{{ importedData.content.length }}</b></span>
               <span v-if="importedData.tags.length > 0">•</span>
               <span v-if="importedData.tags.length > 0" class="flex items-center space-x-1">
-                <span>标签:</span>
+                <span>{{ t('sidebar.tags') }}:</span>
                 <span
                   v-for="tag in importedData.tags"
                   :key="tag"
-                  class="bg-slate-200/80 text-slate-700 px-1 py-0.2 rounded text-[10px]"
+                  class="bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1 py-0.2 rounded text-[10px]"
                 >
                   {{ tag }}
                 </span>
@@ -250,27 +256,27 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end space-x-2 shrink-0">
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-2 shrink-0">
         <button
           type="button"
           @click="closeModal"
           :disabled="isImporting"
-          class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-200/60 transition disabled:opacity-40"
+          class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition disabled:opacity-40 cursor-pointer"
         >
-          取消
+          {{ t('common.cancel') }}
         </button>
 
         <button
           type="button"
           @click="executeImport"
           :disabled="!importedData || !editTitle.trim() || isImporting"
-          class="px-4 py-1.5 text-xs text-white bg-syno-blue hover:bg-blue-600 rounded-lg shadow-sm font-medium transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-1.5 text-xs text-white bg-syno-blue hover:bg-blue-600 rounded-lg shadow-sm font-medium transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <svg v-if="isImporting" class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>{{ isImporting ? '正在导入...' : (importMode === 'update' ? '确认覆盖更新' : '确认创建便签') }}</span>
+          <span>{{ isImporting ? t('import.importing') : t('import.importButton') }}</span>
         </button>
       </div>
     </div>
@@ -280,6 +286,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useNoteStore } from '@/stores/noteStore';
+import { t } from '@/i18n';
 import {
   parseImportMarkdown,
   detectAndDecodeText,

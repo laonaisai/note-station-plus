@@ -1,18 +1,18 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
       <!-- Modal Header -->
-      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-slate-800 flex items-center">
-          <svg class="w-4 h-4 mr-2 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center">
+          <svg class="w-4 h-4 mr-2 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          跨服务便签同步
+          {{ t('sync.modalTitle') }}
         </h3>
         <button
           @click="closeModal"
           :disabled="syncStore.isSyncing"
-          class="text-slate-400 hover:text-slate-600 p-1 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -22,21 +22,21 @@
 
       <div class="p-6 space-y-4">
         <!-- Source Note Info -->
-        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
-          <div class="text-slate-400 font-medium mb-1">源便签信息</div>
-          <div class="font-bold text-slate-800 text-sm truncate">{{ noteStore.activeNote?.title || '无标题便签' }}</div>
-          <div class="text-slate-500 mt-1 flex items-center space-x-2">
-            <span>来源服务: <b class="text-slate-700">{{ sessionStore.activeProfile?.alias }}</b></span>
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+          <div class="text-slate-400 dark:text-slate-500 font-medium mb-1">{{ t('sync.sourceNoteInfo') }}</div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{{ noteStore.activeNote?.title || t('editor.untitledNote') }}</div>
+          <div class="text-slate-500 dark:text-slate-400 mt-1 flex items-center space-x-2">
+            <span>{{ t('sync.sourceServer') }}: <b class="text-slate-700 dark:text-slate-200">{{ sessionStore.activeProfile?.alias }}</b></span>
             <span>•</span>
-            <span>字数: {{ (noteStore.activeNote?.markdownContent || '').length }} 字符</span>
+            <span>{{ t('sync.words') }}: {{ (noteStore.activeNote?.markdownContent || '').length }} {{ t('editor.chars') }}</span>
           </div>
           <!-- Tags list -->
-          <div v-if="noteStore.activeNote?.tag && noteStore.activeNote.tag.length > 0" class="mt-2 flex items-center flex-wrap gap-1 border-t border-slate-200/60 pt-1.5">
-            <span class="text-slate-400 text-[11px] mr-1">附带标签:</span>
+          <div v-if="noteStore.activeNote?.tag && noteStore.activeNote.tag.length > 0" class="mt-2 flex items-center flex-wrap gap-1 border-t border-slate-200/60 dark:border-slate-700/60 pt-1.5">
+            <span class="text-slate-400 dark:text-slate-500 text-[11px] mr-1">{{ t('sync.tags') }}:</span>
             <span
               v-for="t in noteStore.activeNote.tag"
               :key="t"
-              class="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200/80 text-syno-blue text-[11px] font-medium"
+              class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/40 text-syno-blue dark:text-sky-400 text-[11px] font-medium"
             >
               #{{ t }}
             </span>
@@ -45,9 +45,9 @@
 
         <!-- Target Server Selection -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">选择同步目标服务</label>
-          <div v-if="targetProfiles.length === 0" class="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-            暂无其他可用服务。请在顶部 Tab 栏点击「+ 添加服务」接入第二个 Note Station 服务后再试。
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{{ t('sync.selectTargetServer') }}</label>
+          <div v-if="targetProfiles.length === 0" class="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800/60">
+            {{ t('sync.noTargetServers') }}
           </div>
           <div v-else class="space-y-2" :class="syncStore.isSyncing ? 'pointer-events-none opacity-60' : ''">
             <div
@@ -57,34 +57,34 @@
               :class="[
                 'p-3 rounded-lg border text-xs cursor-pointer transition flex items-center justify-between',
                 selectedTargetId === profile.id
-                  ? 'border-syno-blue bg-blue-50/50 ring-1 ring-syno-blue/40'
-                  : 'border-slate-200 hover:bg-slate-50'
+                  ? 'border-syno-blue bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-syno-blue/40'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/60'
               ]"
             >
               <div>
-                <div class="font-semibold text-slate-800">{{ profile.alias }}</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">{{ profile.account }} @ {{ profile.serverUrl }}</div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">{{ profile.alias }}</div>
+                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{{ profile.account }} @ {{ profile.serverUrl }}</div>
               </div>
 
               <!-- Matching Status Probe -->
               <div>
                 <span
                   v-if="checkingMatch"
-                  class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded animate-pulse"
+                  class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded animate-pulse"
                 >
-                  探测中...
+                  {{ t('sync.probing') }}
                 </span>
                 <span
                   v-else-if="matchedNoteInfo && selectedTargetId === profile.id"
-                  class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium flex items-center"
+                  class="text-[10px] bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded font-medium flex items-center"
                 >
-                  已匹配同名便签 (将覆盖更新)
+                  {{ t('sync.matchedOverwrite') }}
                 </span>
                 <span
                   v-else-if="selectedTargetId === profile.id"
-                  class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium flex items-center"
+                  class="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-medium flex items-center"
                 >
-                  未发现同名便签 (将新建)
+                  {{ t('sync.noMatchCreate') }}
                 </span>
               </div>
             </div>
@@ -96,12 +96,14 @@
           v-if="syncResult"
           :class="[
             'p-3.5 rounded-lg border flex items-start space-x-3 transition-all animate-in fade-in duration-200',
-            syncResult.success ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900' : 'bg-rose-50/90 border-rose-200 text-rose-900'
+            syncResult.success
+              ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200'
+              : 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200'
           ]"
         >
           <div
             class="p-1 rounded-full shrink-0 mt-0.5"
-            :class="syncResult.success ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'"
+            :class="syncResult.success ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400'"
           >
             <svg v-if="syncResult.success" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
@@ -112,21 +114,14 @@
           </div>
           <div class="flex-1 text-xs">
             <div class="font-bold text-sm flex items-center justify-between">
-              <span>{{ syncResult.success ? '同步已完成' : '同步失败' }}</span>
-              <span class="text-[11px] font-normal text-slate-400">
+              <span>{{ syncResult.success ? t('sync.syncSuccess') : t('sync.syncFailed') }}</span>
+              <span class="text-[11px] font-normal text-slate-400 dark:text-slate-500">
                 {{ formatLogTime(syncResult.timestamp) }}
               </span>
             </div>
             <div class="mt-1 leading-relaxed">
               <template v-if="syncResult.success">
-                便签【<b>{{ syncResult.noteTitle }}</b>】已成功
-                <span
-                  class="font-semibold px-1.5 py-0.5 rounded text-[11px]"
-                  :class="syncResult.action === 'updated' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'"
-                >
-                  {{ syncResult.action === 'updated' ? '覆盖更新' : '新建便签' }}
-                </span>
-                至目标服务【<b>{{ syncResult.targetAlias }}</b>】。
+                <span>{{ syncResult.noteTitle }} &rarr; {{ syncResult.targetAlias }}</span>
               </template>
               <template v-else>
                 {{ syncResult.error }}
@@ -136,20 +131,20 @@
         </div>
 
         <!-- Sync rule explanation -->
-        <div v-else class="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 leading-relaxed">
-          <b>同步规则说明：</b>
-          系统将自动在目标服务中检索同名便签。若存在同名便签，将使用当前便签内容执行覆盖更新；若不存在，将在目标服务中自动新建便签。
+        <div v-else class="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/80 leading-relaxed">
+          <b>{{ t('common.info') }}:</b>
+          {{ t('sync.matchedOverwrite') }} / {{ t('sync.noMatchCreate') }}
         </div>
 
         <!-- Sync Logs with Timestamps -->
         <div v-if="syncStore.syncLogs.length > 0" class="space-y-1">
-          <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
-            <span>同步执行日志</span>
-            <span class="font-mono text-[10px]">共 {{ syncStore.syncLogs.length }} 条记录</span>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1">
+            <span>{{ t('history.modalTitle') }}</span>
+            <span class="font-mono text-[10px]">{{ syncStore.syncLogs.length }}</span>
           </div>
           <div
             ref="logsContainerRef"
-            class="max-h-36 overflow-y-auto bg-slate-900 text-slate-300 p-3 rounded-lg font-mono text-[11px] space-y-1.5 scroll-smooth"
+            class="max-h-36 overflow-y-auto bg-slate-900 dark:bg-slate-950 text-slate-300 p-3 rounded-lg font-mono text-[11px] space-y-1.5 scroll-smooth border border-slate-800"
           >
             <div
               v-for="(log, idx) in syncStore.syncLogs"
@@ -169,14 +164,14 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             @click="closeModal"
             :disabled="syncStore.isSyncing"
-            class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            {{ syncResult?.success ? '完成并关闭' : '取消' }}
+            {{ t('common.close') }}
           </button>
 
           <!-- Sync Trigger / Status Button -->
@@ -185,7 +180,7 @@
             @click="executeSync"
             :disabled="!selectedTargetId || syncStore.isSyncing"
             :class="[
-              'px-4 py-1.5 text-xs rounded-lg shadow-sm font-medium transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed text-white',
+              'px-4 py-1.5 text-xs rounded-lg shadow-sm font-medium transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed text-white cursor-pointer',
               syncResult?.success && !syncStore.isSyncing
                 ? 'bg-emerald-600 hover:bg-emerald-700'
                 : 'bg-syno-blue hover:bg-blue-600'
@@ -202,9 +197,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
             </svg>
 
-            <span v-if="syncStore.isSyncing">同步中...</span>
-            <span v-else-if="syncResult?.success">再次同步</span>
-            <span v-else>立即同步</span>
+            <span v-if="syncStore.isSyncing">{{ t('sync.syncing') }}</span>
+            <span v-else>{{ t('sync.syncButton') }}</span>
           </button>
         </div>
       </div>
@@ -218,6 +212,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useSyncStore } from '@/stores/syncStore';
 import { SynoNote } from '@/types/synology';
+import { t } from '@/i18n';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -333,8 +328,8 @@ async function executeSync() {
   if (!noteStore.activeNote || !selectedTargetId.value || syncStore.isSyncing) return;
 
   const targetProfile = sessionStore.profiles.find(p => p.id === selectedTargetId.value);
-  const targetAlias = targetProfile?.alias || '目标服务';
-  const noteTitle = noteStore.activeNote.title || '无标题便签';
+  const targetAlias = targetProfile?.alias || 'Target Server';
+  const noteTitle = noteStore.activeNote.title || t('editor.untitledNote');
 
   syncResult.value = null;
   syncStore.clearLogs();
@@ -353,7 +348,7 @@ async function executeSync() {
     } else {
       syncResult.value = {
         success: false,
-        error: result.error || '同步未成功完成',
+        error: result.error || t('sync.syncFailed'),
         timestamp: Date.now()
       };
     }

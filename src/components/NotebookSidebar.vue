@@ -1,17 +1,17 @@
 <template>
   <div
     :class="[
-      'h-full bg-slate-100/90 flex flex-col select-none shrink-0 transition-all duration-200 ease-in-out relative',
-      layoutStore.isSidebarCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-80 border-r border-slate-200/90'
+      'h-full bg-slate-100/90 dark:bg-slate-900/90 flex flex-col select-none shrink-0 transition-all duration-200 ease-in-out relative',
+      layoutStore.isSidebarCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-80 border-r border-slate-200/90 dark:border-slate-800'
     ]"
   >
     <!-- Top Global Header -->
-    <div class="h-10 px-3 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-700 shrink-0 bg-white/70 backdrop-blur-xs">
-      <span class="flex items-center text-slate-700 truncate mr-2">
-        <svg class="w-4 h-4 mr-1.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="h-10 px-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs">
+      <span class="flex items-center text-slate-700 dark:text-slate-200 truncate mr-2">
+        <svg class="w-4 h-4 mr-1.5 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        <span class="truncate">笔记本与便签</span>
+        <span class="truncate">{{ t('sidebar.notebooks') }}</span>
       </span>
 
       <!-- Action Buttons -->
@@ -20,8 +20,8 @@
         <button
           @click="handleRefreshAll"
           :disabled="noteStore.isLoading"
-          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition disabled:opacity-40 cursor-pointer"
-          title="刷新目录与便签"
+          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition disabled:opacity-40 cursor-pointer"
+          :title="t('common.refresh')"
         >
           <svg :class="['w-3.5 h-3.5', noteStore.isLoading ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -31,8 +31,8 @@
         <!-- New Notebook Button -->
         <button
           @click="openCreateModal"
-          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer"
-          title="新建笔记本"
+          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+          :title="t('sidebar.addNotebook')"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -42,8 +42,8 @@
         <!-- Collapse Sidebar Button -->
         <button
           @click="layoutStore.toggleSidebar"
-          class="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer"
-          title="折叠笔记本与便签面板"
+          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+          :title="t('editor.collapseSidebar')"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
@@ -60,7 +60,7 @@
       ]"
     >
       <div v-if="noteStore.notebooks.length === 0" class="text-center py-8 text-xs text-slate-400">
-        {{ sessionStore.activeSessionState?.isLoggedIn ? '暂无笔记本' : '未连接服务' }}
+        {{ sessionStore.activeSessionState?.isLoggedIn ? t('sidebar.emptyNotebooks') : t('sidebar.notConnected') }}
       </div>
 
       <!-- 0. "收藏夹" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
@@ -68,7 +68,7 @@
         v-if="noteStore.notebooks.length > 0"
         v-show="!expandedNotebookId || expandedNotebookId === '__favorites__'"
         :class="[
-          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
           expandedNotebookId === '__favorites__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
         ]"
       >
@@ -78,8 +78,8 @@
           :class="[
             'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === '__favorites__'
-              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
-              : 'text-slate-700 hover:bg-slate-200/60'
+              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           ]"
         >
           <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
@@ -87,7 +87,7 @@
             <svg
               :class="[
                 'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__favorites__' ? 'transform rotate-90 text-syno-blue' : ''
+                expandedNotebookId === '__favorites__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
               ]"
               fill="none"
               viewBox="0 0 24 24"
@@ -106,13 +106,13 @@
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
 
-            <span class="truncate">收藏夹</span>
+            <span class="truncate">{{ t('sidebar.favorites') }}</span>
           </div>
 
           <span
             :class="[
               'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__favorites__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+              expandedNotebookId === '__favorites__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             ]"
           >
             {{ noteStore.favoriteNotes.length }}
@@ -120,9 +120,9 @@
         </div>
 
         <!-- "收藏夹" Accordion Content -->
-        <div v-if="expandedNotebookId === '__favorites__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+        <div v-if="expandedNotebookId === '__favorites__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
           <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -134,14 +134,14 @@
               <input
                 v-model="noteStore.searchQuery"
                 type="text"
-                placeholder="在收藏夹中搜索标题及内容..."
-                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+                :placeholder="t('sidebar.searchPlaceholder')"
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
               />
               <button
                 v-if="noteStore.searchQuery"
                 @click="noteStore.searchQuery = ''"
                 class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                title="清空搜索"
+                :title="t('sidebar.clearSearch')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -151,20 +151,20 @@
           </div>
 
           <!-- Tags Multi-Select Dropdown Filter Row -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-white/70 relative shrink-0">
+          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 relative shrink-0">
             <div class="flex items-center justify-between text-[11px]">
               <div class="relative flex-1 mr-2">
                 <button
                   type="button"
                   @click="isTagDropdownOpen = !isTagDropdownOpen"
-                  class="w-full flex items-center justify-between px-2 py-1 bg-white border border-slate-200 rounded text-left text-slate-700 hover:border-slate-300 transition shadow-2xs cursor-pointer"
+                  class="w-full flex items-center justify-between px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-left text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition shadow-2xs cursor-pointer"
                 >
                   <span class="truncate flex items-center">
                     <svg class="w-3 h-3 text-slate-400 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
-                    <span v-if="noteStore.selectedTags.length === 0" class="text-slate-400">按标签筛选 (多选)...</span>
-                    <span v-else class="text-syno-blue font-medium">已选 {{ noteStore.selectedTags.length }} 个标签</span>
+                    <span v-if="noteStore.selectedTags.length === 0" class="text-slate-400 dark:text-slate-500">{{ t('sidebar.filterByTag') }}...</span>
+                    <span v-else class="text-syno-blue dark:text-sky-400 font-medium">{{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}</span>
                   </span>
                   <svg class="w-3 h-3 text-slate-400 shrink-0 ml-1 transition-transform" :class="isTagDropdownOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -173,24 +173,24 @@
 
                 <div
                   v-if="isTagDropdownOpen"
-                  class="absolute left-0 top-full mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg z-30 py-1 max-h-48 overflow-y-auto"
+                  class="absolute left-0 top-full mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-30 py-1 max-h-48 overflow-y-auto"
                 >
                   <div
                     v-for="tag in panelTags"
                     :key="tag.name"
                     @click="noteStore.toggleTag(tag.name)"
-                    class="px-2.5 py-1 text-[11px] flex items-center justify-between hover:bg-slate-50 cursor-pointer transition select-none"
-                    :class="noteStore.selectedTags.includes(tag.name) ? 'text-syno-blue font-medium bg-blue-50/50' : 'text-slate-700'"
+                    class="px-2.5 py-1 text-[11px] flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
+                    :class="noteStore.selectedTags.includes(tag.name) ? 'text-syno-blue dark:text-sky-400 font-medium bg-blue-50/50 dark:bg-blue-950/40' : 'text-slate-700 dark:text-slate-300'"
                   >
                     <span class="flex items-center space-x-1.5 truncate">
                       <input
                         type="checkbox"
                         :checked="noteStore.selectedTags.includes(tag.name)"
-                        class="rounded border-slate-300 text-syno-blue pointer-events-none"
+                        class="rounded border-slate-300 dark:border-slate-600 text-syno-blue pointer-events-none"
                       />
                       <span class="truncate"># {{ tag.name }}</span>
                     </span>
-                    <span class="text-[10px] text-slate-400 font-normal shrink-0 ml-1">{{ tag.count }}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal shrink-0 ml-1">{{ tag.count }}</span>
                   </div>
                 </div>
               </div>
@@ -198,9 +198,9 @@
               <button
                 v-if="noteStore.selectedTags.length > 0"
                 @click="noteStore.clearTags()"
-                class="text-rose-500 hover:text-rose-600 hover:underline shrink-0 text-[10px] transition cursor-pointer"
+                class="text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:underline shrink-0 text-[10px] transition cursor-pointer"
               >
-                清空
+                {{ t('common.clear') }}
               </button>
             </div>
           </div>
@@ -211,15 +211,15 @@
               <svg class="w-8 h-8 mx-auto mb-1.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '无匹配便签' : '暂无收藏便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noFavorites') }}
             </div>
 
             <div v-for="group in groupedNotes" :key="group.key" class="space-y-1">
               <!-- Year-Month Group Header -->
-              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-2xs mb-1">
-                <span class="text-[11px] font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
+              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+                <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
                 <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} 篇
+                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
                 </span>
               </div>
 
@@ -232,14 +232,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
-                    : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
+                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
@@ -247,7 +247,7 @@
                       class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      title="已加入收藏夹"
+                      :title="t('sidebar.addToFavorites')"
                     >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -260,12 +260,12 @@
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      title="已共享"
+                      :title="t('editor.sharedBadge')"
                     >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
 
-                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
+                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -280,7 +280,7 @@
                         ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
                         : ''
                     ]"
-                    title="便签操作菜单"
+                    :title="t('common.actions')"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -290,14 +290,14 @@
 
                 <p
                   class="text-[11px] line-clamp-2 mt-1"
-                  :class="noteStore.activeNoteId === note.object_id ? 'text-slate-300' : 'text-slate-500'"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'"
                 >
-                  {{ note.brief || note.markdownContent || '无内容' }}
+                  {{ note.brief || note.markdownContent || t('common.info') }}
                 </p>
 
                 <div
                   class="flex items-center justify-between mt-2 pt-1.5 border-t text-[10px]"
-                  :class="noteStore.activeNoteId === note.object_id ? 'border-slate-700/80 text-slate-400' : 'border-slate-100 text-slate-400'"
+                  :class="noteStore.activeNoteId === note.object_id ? 'border-slate-700/80 text-slate-400' : 'border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500'"
                 >
                   <span>{{ formatTime(note.mtime || note.ctime) }}</span>
                   <div class="flex items-center space-x-1">
@@ -305,7 +305,7 @@
                       v-for="t in (note.tag || []).slice(0, 2)"
                       :key="t"
                       class="px-1.5 py-0.2 rounded font-normal"
-                      :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-600'"
+                      :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700 dark:bg-blue-900/60 text-slate-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'"
                     >
                       #{{ t }}
                     </span>
@@ -325,7 +325,7 @@
         v-if="noteStore.notebooks.length > 0"
         v-show="!expandedNotebookId || expandedNotebookId === '__all_notes__'"
         :class="[
-          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
           expandedNotebookId === '__all_notes__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
         ]"
       >
@@ -335,8 +335,8 @@
           :class="[
             'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === '__all_notes__'
-              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
-              : 'text-slate-700 hover:bg-slate-200/60'
+              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           ]"
         >
           <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
@@ -344,7 +344,7 @@
             <svg
               :class="[
                 'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__all_notes__' ? 'transform rotate-90 text-syno-blue' : ''
+                expandedNotebookId === '__all_notes__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
               ]"
               fill="none"
               viewBox="0 0 24 24"
@@ -364,13 +364,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
 
-            <span class="truncate">全部笔记</span>
+            <span class="truncate">{{ t('sidebar.allNotes') }}</span>
           </div>
 
           <span
             :class="[
               'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__all_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+              expandedNotebookId === '__all_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             ]"
           >
             {{ noteStore.notes.length }}
@@ -378,9 +378,9 @@
         </div>
 
         <!-- "全部笔记" Accordion Content -->
-        <div v-if="expandedNotebookId === '__all_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+        <div v-if="expandedNotebookId === '__all_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
           <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -392,14 +392,14 @@
               <input
                 v-model="noteStore.searchQuery"
                 type="text"
-                placeholder="在全部笔记中搜索标题及内容..."
-                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+                :placeholder="t('sidebar.searchPlaceholder')"
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
               />
               <button
                 v-if="noteStore.searchQuery"
                 @click="noteStore.searchQuery = ''"
                 class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                title="清空搜索"
+                :title="t('sidebar.clearSearch')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -418,8 +418,8 @@
                 :class="[
                   'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
                   noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-center space-x-1.5 truncate mr-1">
@@ -428,10 +428,10 @@
                   </svg>
                   <span class="truncate">
                     <template v-if="noteStore.selectedTags.length === 0">
-                      按标签筛选 (共 {{ panelTags.length }} 个)
+                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
                     </template>
                     <template v-else>
-                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
                     </template>
                   </span>
                 </div>
@@ -459,9 +459,9 @@
                 v-if="noteStore.selectedTags.length > 0"
                 @click.stop="noteStore.clearTags()"
                 class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                title="清空已选标签"
+                :title="t('sidebar.clearTags')"
               >
-                清空
+                {{ t('common.clear') }}
               </button>
             </div>
 
@@ -469,34 +469,34 @@
             <div
               v-if="isTagDropdownOpen"
               @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
             >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
-                <span>选择标签 (多选组合筛选)</span>
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
+                <span>{{ t('sidebar.filterByTag') }}</span>
                 <button
                   v-if="noteStore.selectedTags.length > 0"
                   @click="noteStore.clearTags()"
                   class="text-syno-blue hover:underline cursor-pointer"
                 >
-                  清空选择
+                  {{ t('sidebar.clearTags') }}
                 </button>
               </div>
 
               <label
                 v-for="tagItem in panelTags"
                 :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
               >
                 <div class="flex items-center space-x-2 truncate flex-1 pr-1">
                   <input
                     type="checkbox"
                     :checked="noteStore.selectedTags.includes(tagItem.name)"
                     @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
                   />
-                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
                 </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
                   {{ tagItem.count }}
                 </span>
               </label>
@@ -504,15 +504,15 @@
           </div>
 
           <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
-            <span class="text-[11px] font-medium text-slate-500">
-              便签列表 ({{ noteStore.filteredNotes.length }})
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
+            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
             </span>
             <button
               @click="handleCreateNoteInPanel('__all_notes__')"
               :disabled="noteStore.isCreating"
               class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              title="新建便签"
+              :title="t('sidebar.newNote')"
             >
               <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -521,7 +521,7 @@
               <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              <span>{{ noteStore.isCreating ? '创建中' : '新建便签' }}</span>
+              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
             </button>
           </div>
 
@@ -536,7 +536,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span class="font-medium">正在向服务器创建新便签...</span>
+              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
             </div>
 
             <!-- Empty State -->
@@ -544,7 +544,7 @@
               v-else-if="groupedNotes.length === 0"
               class="text-center py-8 text-xs text-slate-400"
             >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '没有找到匹配的便签' : '当前暂无便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noNotes') }}
             </div>
 
             <!-- Month Groups -->
@@ -554,10 +554,10 @@
               class="space-y-1"
             >
               <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-2xs mb-1">
-                <span class="text-[11px] font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
+              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+                <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
                 <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} 篇
+                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
                 </span>
               </div>
 
@@ -570,14 +570,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
-                    : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
+                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
@@ -585,7 +585,7 @@
                       class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      title="已加入收藏夹"
+                      :title="t('sidebar.addToFavorites')"
                     >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -598,12 +598,12 @@
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      title="已共享"
+                      :title="t('editor.sharedBadge')"
                     >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
 
-                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
+                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -618,7 +618,7 @@
                         ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
                         : ''
                     ]"
-                    title="便签操作菜单"
+                    :title="t('common.actions')"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
@@ -644,7 +644,7 @@
                 <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
                   <span>{{ formatTime(note.mtime || note.ctime) }}</span>
                   <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} 标签
+                    {{ note.tag.length }} {{ t('sidebar.tags') }}
                   </span>
                 </div>
               </div>
@@ -658,7 +658,7 @@
         v-if="noteStore.notebooks.length > 0"
         v-show="!expandedNotebookId || expandedNotebookId === '__shared_notes__'"
         :class="[
-          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
           expandedNotebookId === '__shared_notes__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
         ]"
       >
@@ -668,8 +668,8 @@
           :class="[
             'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === '__shared_notes__'
-              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
-              : 'text-slate-700 hover:bg-slate-200/60'
+              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           ]"
         >
           <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
@@ -677,7 +677,7 @@
             <svg
               :class="[
                 'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__shared_notes__' ? 'transform rotate-90 text-syno-blue' : ''
+                expandedNotebookId === '__shared_notes__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
               ]"
               fill="none"
               viewBox="0 0 24 24"
@@ -697,13 +697,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
 
-            <span class="truncate">共享便签</span>
+            <span class="truncate">{{ t('sidebar.sharedNotes') }}</span>
           </div>
 
           <span
             :class="[
               'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__shared_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+              expandedNotebookId === '__shared_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             ]"
           >
             {{ sharedNotesCount }}
@@ -711,9 +711,9 @@
         </div>
 
         <!-- "共享便签" Accordion Content -->
-        <div v-if="expandedNotebookId === '__shared_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+        <div v-if="expandedNotebookId === '__shared_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
           <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -725,14 +725,14 @@
               <input
                 v-model="noteStore.searchQuery"
                 type="text"
-                placeholder="在共享便签中搜索标题及内容..."
-                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+                :placeholder="t('sidebar.searchPlaceholder')"
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
               />
               <button
                 v-if="noteStore.searchQuery"
                 @click="noteStore.searchQuery = ''"
                 class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                title="清空搜索"
+                :title="t('sidebar.clearSearch')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -751,8 +751,8 @@
                 :class="[
                   'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
                   noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-center space-x-1.5 truncate mr-1">
@@ -761,10 +761,10 @@
                   </svg>
                   <span class="truncate">
                     <template v-if="noteStore.selectedTags.length === 0">
-                      按标签筛选 (共 {{ panelTags.length }} 个)
+                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
                     </template>
                     <template v-else>
-                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
                     </template>
                   </span>
                 </div>
@@ -792,9 +792,9 @@
                 v-if="noteStore.selectedTags.length > 0"
                 @click.stop="noteStore.clearTags()"
                 class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                title="清空已选标签"
+                :title="t('sidebar.clearTags')"
               >
-                清空
+                {{ t('common.clear') }}
               </button>
             </div>
 
@@ -802,34 +802,34 @@
             <div
               v-if="isTagDropdownOpen"
               @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
             >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
-                <span>选择标签 (多选组合筛选)</span>
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
+                <span>{{ t('sidebar.filterByTag') }}</span>
                 <button
                   v-if="noteStore.selectedTags.length > 0"
                   @click="noteStore.clearTags()"
                   class="text-syno-blue hover:underline cursor-pointer"
                 >
-                  清空选择
+                  {{ t('sidebar.clearTags') }}
                 </button>
               </div>
 
               <label
                 v-for="tagItem in panelTags"
                 :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
               >
                 <div class="flex items-center space-x-2 truncate flex-1 pr-1">
                   <input
                     type="checkbox"
                     :checked="noteStore.selectedTags.includes(tagItem.name)"
                     @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
                   />
-                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
                 </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
                   {{ tagItem.count }}
                 </span>
               </label>
@@ -837,15 +837,15 @@
           </div>
 
           <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
-            <span class="text-[11px] font-medium text-slate-500">
-              便签列表 ({{ noteStore.filteredNotes.length }})
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
+            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
             </span>
             <button
               @click="handleCreateNoteInPanel('__shared_notes__')"
               :disabled="noteStore.isCreating"
               class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              title="新建便签"
+              :title="t('sidebar.newNote')"
             >
               <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -854,7 +854,7 @@
               <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              <span>{{ noteStore.isCreating ? '创建中' : '新建便签' }}</span>
+              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
             </button>
           </div>
 
@@ -869,7 +869,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span class="font-medium">正在向服务器创建新便签...</span>
+              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
             </div>
 
             <!-- Empty State -->
@@ -877,7 +877,7 @@
               v-else-if="groupedNotes.length === 0"
               class="text-center py-8 text-xs text-slate-400"
             >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '没有找到匹配的便签' : '当前暂无共享便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noShared') }}
             </div>
 
             <!-- Month Groups -->
@@ -887,10 +887,10 @@
               class="space-y-1"
             >
               <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-2xs mb-1">
-                <span class="text-[11px] font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
+              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+                <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
                 <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} 篇
+                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
                 </span>
               </div>
 
@@ -903,14 +903,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
-                    : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
+                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
@@ -918,7 +918,7 @@
                       class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      title="已加入收藏夹"
+                      :title="t('sidebar.addToFavorites')"
                     >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -931,12 +931,12 @@
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      title="已共享"
+                      :title="t('editor.sharedBadge')"
                     >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
 
-                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
+                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -951,7 +951,7 @@
                         ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
                         : ''
                     ]"
-                    title="便签操作菜单"
+                    :title="t('common.actions')"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
@@ -977,7 +977,7 @@
                 <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
                   <span>{{ formatTime(note.mtime || note.ctime) }}</span>
                   <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} 标签
+                    {{ note.tag.length }} {{ t('sidebar.tags') }}
                   </span>
                 </div>
               </div>
@@ -991,7 +991,7 @@
         v-if="noteStore.notebooks.length > 0"
         v-show="!expandedNotebookId || expandedNotebookId === '__recycle_bin__'"
         :class="[
-          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
           expandedNotebookId === '__recycle_bin__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
         ]"
       >
@@ -1001,8 +1001,8 @@
           :class="[
             'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === '__recycle_bin__'
-              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
-              : 'text-slate-700 hover:bg-slate-200/60'
+              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           ]"
         >
           <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
@@ -1010,7 +1010,7 @@
             <svg
               :class="[
                 'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__recycle_bin__' ? 'transform rotate-90 text-syno-blue' : ''
+                expandedNotebookId === '__recycle_bin__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
               ]"
               fill="none"
               viewBox="0 0 24 24"
@@ -1030,13 +1030,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
 
-            <span class="truncate">回收站</span>
+            <span class="truncate">{{ t('sidebar.recycleBin') }}</span>
           </div>
 
           <span
             :class="[
               'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__recycle_bin__' ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+              expandedNotebookId === '__recycle_bin__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             ]"
           >
             {{ noteStore.recycledNotes.length }}
@@ -1044,9 +1044,9 @@
         </div>
 
         <!-- "回收站" Accordion Content -->
-        <div v-if="expandedNotebookId === '__recycle_bin__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+        <div v-if="expandedNotebookId === '__recycle_bin__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
           <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1058,14 +1058,14 @@
               <input
                 v-model="noteStore.searchQuery"
                 type="text"
-                placeholder="在回收站中搜索标题及内容..."
-                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+                :placeholder="t('sidebar.searchPlaceholder')"
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
               />
               <button
                 v-if="noteStore.searchQuery"
                 @click="noteStore.searchQuery = ''"
                 class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                title="清空搜索"
+                :title="t('sidebar.clearSearch')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1084,8 +1084,8 @@
                 :class="[
                   'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
                   noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-center space-x-1.5 truncate mr-1">
@@ -1094,10 +1094,10 @@
                   </svg>
                   <span class="truncate">
                     <template v-if="noteStore.selectedTags.length === 0">
-                      按标签筛选 (共 {{ panelTags.length }} 个)
+                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
                     </template>
                     <template v-else>
-                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
                     </template>
                   </span>
                 </div>
@@ -1125,9 +1125,9 @@
                 v-if="noteStore.selectedTags.length > 0"
                 @click.stop="noteStore.clearTags()"
                 class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                title="清空已选标签"
+                :title="t('sidebar.clearTags')"
               >
-                清空
+                {{ t('common.clear') }}
               </button>
             </div>
 
@@ -1135,34 +1135,34 @@
             <div
               v-if="isTagDropdownOpen"
               @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
             >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
-                <span>选择标签 (多选组合筛选)</span>
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
+                <span>{{ t('sidebar.filterByTag') }}</span>
                 <button
                   v-if="noteStore.selectedTags.length > 0"
                   @click="noteStore.clearTags()"
                   class="text-syno-blue hover:underline cursor-pointer"
                 >
-                  清空选择
+                  {{ t('sidebar.clearTags') }}
                 </button>
               </div>
 
               <label
                 v-for="tagItem in panelTags"
                 :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
               >
                 <div class="flex items-center space-x-2 truncate flex-1 pr-1">
                   <input
                     type="checkbox"
                     :checked="noteStore.selectedTags.includes(tagItem.name)"
                     @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
                   />
-                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
                 </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
                   {{ tagItem.count }}
                 </span>
               </label>
@@ -1170,9 +1170,9 @@
           </div>
 
           <!-- Panel Action Bar: Note Count Only (No New Note button in Recycle Bin) -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
-            <span class="font-medium text-slate-700">便签 ({{ noteStore.filteredNotes.length }})</span>
-            <span class="text-[11px] text-slate-400">回收站中的便签</span>
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
+            <span class="font-medium text-slate-700 dark:text-slate-300">{{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})</span>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">{{ t('sidebar.recycledNotes') }}</span>
           </div>
 
           <!-- Notes Scrollable List inside Accordion Panel -->
@@ -1182,13 +1182,13 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              正在加载便签...
+              {{ t('common.loading') }}
             </div>
             <div v-else-if="noteStore.filteredNotes.length === 0" class="p-8 text-center text-xs text-slate-400">
               <svg class="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              <span>回收站为空</span>
+              <span>{{ t('sidebar.emptyRecycleBin') }}</span>
             </div>
             <div v-else>
               <div
@@ -1212,7 +1212,7 @@
                       class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      title="已加入收藏夹"
+                      :title="t('sidebar.addToFavorites')"
                     >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -1224,7 +1224,7 @@
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      title="已共享便签"
+                      :title="t('editor.sharedBadge')"
                     >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
@@ -1235,7 +1235,7 @@
                         noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'
                       ]"
                     >
-                      {{ note.title || '无标题便签' }}
+                      {{ note.title || t('editor.untitledNote') }}
                     </h4>
                   </div>
 
@@ -1251,7 +1251,7 @@
                         ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
                         : ''
                     ]"
-                    title="便签操作菜单"
+                    :title="t('common.actions')"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
@@ -1277,7 +1277,7 @@
                 <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
                   <span>{{ formatTime(note.mtime || note.ctime) }}</span>
                   <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} 标签
+                    {{ note.tag.length }} {{ t('sidebar.tags') }}
                   </span>
                 </div>
               </div>
@@ -1292,7 +1292,7 @@
         :key="nb.object_id"
         v-show="!expandedNotebookId || expandedNotebookId === nb.object_id"
         :class="[
-          'border border-slate-200/80 rounded-lg overflow-hidden bg-white/60 shadow-2xs transition',
+          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
           expandedNotebookId === nb.object_id ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
         ]"
       >
@@ -1303,8 +1303,8 @@
           :class="[
             'group flex items-center justify-between px-2.5 py-2 text-xs cursor-pointer transition select-none shrink-0',
             expandedNotebookId === nb.object_id
-              ? 'bg-blue-50/90 text-syno-blue font-semibold border-b border-blue-100'
-              : 'text-slate-700 hover:bg-slate-200/60'
+              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           ]"
         >
           <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
@@ -1312,7 +1312,7 @@
             <svg
               :class="[
                 'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === nb.object_id ? 'transform rotate-90 text-syno-blue' : ''
+                expandedNotebookId === nb.object_id ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
               ]"
               fill="none"
               viewBox="0 0 24 24"
@@ -1332,7 +1332,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
 
-            <span class="truncate" :title="nb.title || '默认笔记本'">{{ nb.title || '默认笔记本' }}</span>
+            <span class="truncate" :title="nb.title || t('sidebar.notebooks')">{{ nb.title || t('sidebar.notebooks') }}</span>
           </div>
 
           <div class="flex items-center space-x-1 shrink-0">
@@ -1341,7 +1341,7 @@
             <button
               @click.stop="openRenameModal(nb)"
               class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition cursor-pointer"
-              title="重命名笔记本"
+              :title="t('sidebar.editNotebook')"
             >
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -1352,7 +1352,7 @@
             <button
               @click.stop="handleExportNotebook(nb)"
               class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition cursor-pointer"
-              title="导出此笔记本便签为 Markdown (.zip)"
+              :title="t('sidebar.exportZip')"
             >
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1364,7 +1364,7 @@
               v-if="!nb.preset && noteStore.notebooks.length > 1"
               @click.stop="openDeleteModal(nb)"
               class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition cursor-pointer"
-              title="删除笔记本"
+              :title="t('sidebar.deleteNotebookTitle')"
             >
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1375,7 +1375,7 @@
             <span
               :class="[
                 'text-[10px] px-1.5 py-0.2 rounded-full font-normal shrink-0 ml-0.5',
-                expandedNotebookId === nb.object_id ? 'bg-syno-blue text-white' : 'bg-slate-200 text-slate-500'
+                expandedNotebookId === nb.object_id ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
               ]"
             >
               {{ noteStore.getNotebookNoteCount(nb) }}
@@ -1384,9 +1384,9 @@
         </div>
 
         <!-- Notebook Accordion Content (Only expanded for this notebook) -->
-        <div v-if="expandedNotebookId === nb.object_id" class="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+        <div v-if="expandedNotebookId === nb.object_id" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
           <!-- Dedicated Search Bar Row inside this Notebook's Accordion -->
-          <div class="p-2 border-b border-slate-200/60 bg-white shrink-0">
+          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <div class="relative w-full flex items-center">
               <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1398,14 +1398,14 @@
               <input
                 v-model="noteStore.searchQuery"
                 type="text"
-                :placeholder="`在【${nb.title || '当前笔记本'}】中搜索标题及内容...`"
-                class="w-full pl-8 pr-7 py-1 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 shadow-2xs transition"
+                :placeholder="t('sidebar.searchPlaceholder')"
+                class="w-full pl-8 pr-7 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
               />
               <button
                 v-if="noteStore.searchQuery"
                 @click="noteStore.searchQuery = ''"
                 class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                title="清空搜索"
+                :title="t('sidebar.clearSearch')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1424,8 +1424,8 @@
                 :class="[
                   'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
                   noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 border-syno-blue/40 text-syno-blue font-medium'
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-center space-x-1.5 truncate mr-1">
@@ -1434,10 +1434,10 @@
                   </svg>
                   <span class="truncate">
                     <template v-if="noteStore.selectedTags.length === 0">
-                      按标签筛选 (共 {{ panelTags.length }} 个)
+                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
                     </template>
                     <template v-else>
-                      已选 {{ noteStore.selectedTags.length }} 个: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
                     </template>
                   </span>
                 </div>
@@ -1465,9 +1465,9 @@
                 v-if="noteStore.selectedTags.length > 0"
                 @click.stop="noteStore.clearTags()"
                 class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                title="清空已选标签"
+                :title="t('sidebar.clearTags')"
               >
-                清空
+                {{ t('common.clear') }}
               </button>
             </div>
 
@@ -1475,34 +1475,34 @@
             <div
               v-if="isTagDropdownOpen"
               @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white border border-slate-200 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
             >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 flex items-center justify-between mb-1">
-                <span>选择标签 (多选组合筛选)</span>
+              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
+                <span>{{ t('sidebar.filterByTag') }}</span>
                 <button
                   v-if="noteStore.selectedTags.length > 0"
                   @click="noteStore.clearTags()"
                   class="text-syno-blue hover:underline cursor-pointer"
                 >
-                  清空选择
+                  {{ t('sidebar.clearTags') }}
                 </button>
               </div>
 
               <label
                 v-for="tagItem in panelTags"
                 :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 cursor-pointer transition select-none"
+                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
               >
                 <div class="flex items-center space-x-2 truncate flex-1 pr-1">
                   <input
                     type="checkbox"
                     :checked="noteStore.selectedTags.includes(tagItem.name)"
                     @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 cursor-pointer"
+                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
                   />
-                  <span class="truncate text-slate-700"># {{ tagItem.name }}</span>
+                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
                 </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-mono">
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
                   {{ tagItem.count }}
                 </span>
               </label>
@@ -1510,15 +1510,15 @@
           </div>
 
           <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 bg-white/50 shrink-0">
-            <span class="text-[11px] font-medium text-slate-500">
-              便签列表 ({{ noteStore.filteredNotes.length }})
+          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
+            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
             </span>
             <button
               @click="handleCreateNoteInPanel(nb.object_id)"
               :disabled="noteStore.isCreating"
               class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              title="在此笔记本中新建便签"
+              :title="t('sidebar.newNote')"
             >
               <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1527,7 +1527,7 @@
               <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              <span>{{ noteStore.isCreating ? '创建中' : '新建便签' }}</span>
+              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
             </button>
           </div>
 
@@ -1542,7 +1542,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span class="font-medium">正在向服务器创建新便签...</span>
+              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
             </div>
 
             <!-- Empty State -->
@@ -1550,7 +1550,7 @@
               v-else-if="groupedNotes.length === 0"
               class="text-center py-8 text-xs text-slate-400"
             >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? '没有找到匹配的便签' : '当前笔记本暂无便签' }}
+              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noNotes') }}
             </div>
 
             <!-- Month Groups -->
@@ -1560,10 +1560,10 @@
               class="space-y-1"
             >
               <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 text-slate-800 shadow-2xs mb-1">
-                <span class="text-[11px] font-bold text-slate-800 tracking-tight">{{ group.label }}</span>
+              <div class="sticky top-0 z-10 px-2 py-1 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+                <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
                 <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} 篇
+                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
                 </span>
               </div>
 
@@ -1576,14 +1576,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
-                    : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
+                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
@@ -1591,7 +1591,7 @@
                       class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      title="已加入收藏夹"
+                      :title="t('sidebar.addToFavorites')"
                     >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -1604,12 +1604,12 @@
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      title="已共享"
+                      :title="t('editor.sharedBadge')"
                     >
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
 
-                    <span class="truncate">{{ note.title || '无标题便签' }}</span>
+                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
                   </h4>
 
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
@@ -1624,7 +1624,7 @@
                         ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
                         : ''
                     ]"
-                    title="便签操作菜单"
+                    :title="t('common.actions')"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
@@ -1650,7 +1650,7 @@
                 <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
                   <span>{{ formatTime(note.mtime || note.ctime) }}</span>
                   <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} 标签
+                    {{ note.tag.length }} {{ t('sidebar.tags') }}
                   </span>
                 </div>
               </div>
@@ -1665,46 +1665,46 @@
       v-if="contextMenu.isOpen"
       :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
       @click.stop
-      class="fixed z-50 w-44 bg-white border border-slate-200 shadow-xl rounded-lg py-1.5 text-xs text-slate-700 animate-in fade-in duration-100"
+      class="fixed z-50 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in duration-100"
     >
-      <div class="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100 truncate mb-1">
+      <div class="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100 dark:border-slate-700 truncate mb-1">
         {{ contextMenu.targetNotebook?.title }}
       </div>
 
       <button
         @click="triggerContextRename"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
-        <span>重命名笔记本</span>
+        <span>{{ t('sidebar.editNotebook') }}</span>
       </button>
 
       <button
         @click="triggerContextExport"
-        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+        class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
-        <span>导出为 Markdown (.zip)</span>
+        <span>{{ t('sidebar.exportZip') }}</span>
       </button>
 
-      <div class="h-px bg-slate-100 my-1"></div>
+      <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
       <button
         v-if="!contextMenu.targetNotebook?.preset && noteStore.notebooks.length > 1"
         @click="triggerContextDelete"
-        class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+        class="w-full px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
-        <span>删除笔记本</span>
+        <span>{{ t('sidebar.deleteNotebookTitle') }}</span>
       </button>
       <div v-else class="px-3 py-1 text-[11px] text-slate-400 italic">
-        预设笔记本不可删除
+        {{ t('sidebar.cannotDeletePreset') }}
       </div>
     </div>
 
@@ -1713,10 +1713,10 @@
       v-if="noteContextMenu.isOpen"
       :style="{ top: `${noteContextMenu.y}px`, left: `${noteContextMenu.x}px` }"
       @click.stop
-      class="fixed z-50 w-44 bg-white border border-slate-200 shadow-xl rounded-lg py-1.5 text-xs text-slate-700 animate-in fade-in duration-100"
+      class="fixed z-50 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in duration-100"
     >
-      <div class="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100 truncate mb-1">
-        {{ noteContextMenu.targetNote?.title || '无标题便签' }}
+      <div class="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100 dark:border-slate-700 truncate mb-1">
+        {{ noteContextMenu.targetNote?.title || t('editor.untitledNote') }}
       </div>
 
       <!-- 回收站中的便签操作：仅有“恢复”和“彻底删除” -->
@@ -1724,25 +1724,25 @@
         <!-- 1. 恢复 -->
         <button
           @click="triggerNoteRestore"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
           </svg>
-          <span>恢复</span>
+          <span>{{ t('sidebar.restoreNote') }}</span>
         </button>
 
-        <div class="h-px bg-slate-100 my-1"></div>
+        <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
         <!-- 2. 彻底删除 -->
         <button
           @click="triggerNotePermanentDelete"
-          class="w-full px-3 py-1.5 text-left hover:bg-rose-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
-          <span>彻底删除</span>
+          <span>{{ t('sidebar.permDelete') }}</span>
         </button>
       </template>
 
@@ -1751,18 +1751,18 @@
         <!-- 1. 复制 -->
         <button
           @click="triggerNoteCopy"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <span>复制</span>
+          <span>{{ t('sidebar.copyNote') }}</span>
         </button>
 
         <!-- 2. 加入收藏夹 / 从收藏夹删除 -->
         <button
           @click="triggerNoteToggleFavorite"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg
             class="w-3.5 h-3.5"
@@ -1772,108 +1772,108 @@
           >
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
-          <span>{{ noteContextMenu.targetNote && noteStore.isFavorite(noteContextMenu.targetNote.object_id) ? '从收藏夹删除' : '加入收藏夹' }}</span>
+          <span>{{ noteContextMenu.targetNote && noteStore.isFavorite(noteContextMenu.targetNote.object_id) ? t('sidebar.removeFromFavorites') : t('sidebar.addToFavorites') }}</span>
         </button>
 
         <!-- 3. 移动到.. (Requirement 2) -->
         <button
           @click="triggerNoteMove"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          <span>移动到..</span>
+          <span>{{ t('sidebar.moveNoteTo') }}</span>
         </button>
 
         <!-- 4. 分享 -->
         <button
           @click="triggerNoteShare"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
-          <span>分享</span>
+          <span>{{ t('editor.shareManage') }}</span>
         </button>
 
         <!-- 5. 同步 (跨服务便签同步) -->
         <button
           @click="triggerNoteSync"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span>同步</span>
+          <span>{{ t('editor.sync') }}</span>
         </button>
 
         <!-- 6. 历史版本 -->
         <button
           @click="triggerNoteHistory"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>历史版本</span>
+          <span>{{ t('editor.historyVersions') }}</span>
         </button>
 
         <!-- 7. 导出.md文件 -->
         <button
           @click="triggerNoteExport"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>导出.md文件</span>
+          <span>{{ t('editor.exportMd') }}</span>
         </button>
 
         <!-- 8. 打印 (Requirement 1) -->
         <button
           @click="triggerNotePrint"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          <span>打印</span>
+          <span>{{ t('sidebar.printNote') }}</span>
         </button>
 
         <!-- 9. 复制便签链接 (Requirement 1) -->
         <button
           @click="triggerNoteCopyLink"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
-          <span>复制便签链接</span>
+          <span>{{ t('sidebar.copyLink') }}</span>
         </button>
 
         <!-- 10. 信息 (Requirement 1) -->
         <button
           @click="triggerNoteInfo"
-          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 hover:text-syno-blue flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>信息</span>
+          <span>{{ t('sidebar.noteInfo') }}</span>
         </button>
 
-        <div class="h-px bg-slate-100 my-1"></div>
+        <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
         <!-- 11. 删除 -->
         <button
           @click="triggerNoteDelete"
-          class="w-full px-3 py-1.5 text-left hover:bg-red-50 text-rose-600 flex items-center space-x-2 transition cursor-pointer"
+          class="w-full px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
         >
           <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
-          <span>删除</span>
+          <span>{{ t('common.delete') }}</span>
         </button>
       </template>
     </div>
@@ -1884,13 +1884,13 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="closeNotebookModal"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-800 flex items-center">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+        <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center">
             <svg class="w-4 h-4 mr-1.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-            {{ notebookModal.mode === 'create' ? '新建笔记本' : '重命名笔记本' }}
+            {{ notebookModal.mode === 'create' ? t('sidebar.addNotebook') : t('sidebar.editNotebook') }}
           </h3>
           <button
             @click="closeNotebookModal"
@@ -1904,13 +1904,13 @@
 
         <form @submit.prevent="submitNotebookModal" class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">笔记本名称</label>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('sidebar.notebookName') }}</label>
             <input
               ref="titleInputRef"
               v-model="notebookModal.title"
               type="text"
-              placeholder="请输入笔记本名称..."
-              class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition"
+              :placeholder="t('sidebar.notebookNamePlaceholder')"
+              class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition placeholder:text-slate-400 dark:placeholder:text-slate-500"
               required
             />
           </div>
@@ -1919,14 +1919,14 @@
             {{ notebookModal.error }}
           </div>
 
-          <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="closeNotebookModal"
               :disabled="notebookModal.loading"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
@@ -1937,7 +1937,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ notebookModal.loading ? '保存中...' : '确定' }}</span>
+              <span>{{ notebookModal.loading ? t('common.saving') : t('common.confirm') }}</span>
             </button>
           </div>
         </form>
@@ -1950,13 +1950,13 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="closeMoveNoteModal"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-800 flex items-center">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+        <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center">
             <svg class="w-4 h-4 mr-1.5 text-syno-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
-            移动到..
+            {{ t('sidebar.moveNoteTo') }}
           </h3>
           <button
             @click="closeMoveNoteModal"
@@ -1970,26 +1970,26 @@
 
         <form @submit.prevent="submitMoveNoteModal" class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">当前便签</label>
-            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs font-semibold text-slate-800 truncate">
-              {{ moveNoteModal.targetNote?.title || '无标题便签' }}
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ t('sidebar.currentNote') }}</label>
+            <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
+              {{ moveNoteModal.targetNote?.title || t('editor.untitledNote') }}
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">选择目标笔记本</label>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('sidebar.selectTargetNotebook') }}</label>
             <select
               v-model="moveNoteModal.targetNotebookId"
-              class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition cursor-pointer"
+              class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-syno-blue/30 focus:border-syno-blue transition cursor-pointer"
               required
             >
-              <option value="" disabled>请选择目标笔记本...</option>
+              <option value="" disabled>{{ t('sidebar.pleaseSelectTarget') }}</option>
               <option
                 v-for="nb in availableTargetNotebooks"
                 :key="nb.object_id"
                 :value="nb.object_id"
               >
-                {{ nb.title || '默认笔记本' }} ({{ noteStore.getNotebookNoteCount(nb) }} 篇)
+                {{ nb.title || t('sidebar.notebooks') }} ({{ noteStore.getNotebookNoteCount(nb) }} {{ t('sidebar.noteCountSuffix') }})
               </option>
             </select>
           </div>
@@ -1998,14 +1998,14 @@
             {{ moveNoteModal.error }}
           </div>
 
-          <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="closeMoveNoteModal"
               :disabled="moveNoteModal.loading"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
@@ -2016,7 +2016,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ moveNoteModal.loading ? '正在移动...' : '确认移动' }}</span>
+              <span>{{ moveNoteModal.loading ? t('sidebar.moving') : t('sidebar.confirmMove') }}</span>
             </button>
           </div>
         </form>
@@ -2029,7 +2029,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="closeDeleteModal"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
         <div class="p-5">
           <div class="flex items-start space-x-3">
             <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
@@ -2038,12 +2038,12 @@
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-bold text-slate-800">删除笔记本</h3>
-              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                确定要删除笔记本【<b class="text-slate-800">{{ deleteModal.targetNotebook?.title }}</b>】吗？
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('sidebar.deleteNotebookTitle') }}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                {{ t('sidebar.deleteNotebookConfirm', { title: deleteModal.targetNotebook?.title || '' }) }}
               </p>
               <p class="text-[11px] text-amber-600 mt-2 bg-amber-50 p-2 rounded-md border border-amber-200/60">
-                ⚠️ 注意：删除笔记本会同时删除其内部包含的所有便签，此操作不可撤销！
+                {{ t('sidebar.deleteNotebookWarning') }}
               </p>
             </div>
           </div>
@@ -2052,14 +2052,14 @@
             {{ deleteModal.error }}
           </div>
 
-          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="closeDeleteModal"
               :disabled="deleteModal.loading"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -2071,7 +2071,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ deleteModal.loading ? '正在删除...' : '确认删除' }}</span>
+              <span>{{ deleteModal.loading ? t('editor.deleting') : t('common.delete') }}</span>
             </button>
           </div>
         </div>
@@ -2084,7 +2084,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="closeDeleteNoteModal"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
         <div class="p-5">
           <div class="flex items-start space-x-3">
             <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
@@ -2093,9 +2093,9 @@
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-bold text-slate-800">移至废纸篓</h3>
-              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                确定要将便签【<b class="text-slate-800">{{ deleteNoteModal.targetNote?.title || '无标题便签' }}</b>】移至废纸篓吗？
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('sidebar.deleteNoteTitle') }}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                {{ t('sidebar.deleteNotePrompt', { title: deleteNoteModal.targetNote?.title || t('editor.untitledNote') }) }}
               </p>
             </div>
           </div>
@@ -2104,14 +2104,14 @@
             {{ deleteNoteModal.error }}
           </div>
 
-          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="closeDeleteNoteModal"
               :disabled="deleteNoteModal.loading"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -2123,7 +2123,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ deleteNoteModal.loading ? '正在删除...' : '确认移至废纸篓' }}</span>
+              <span>{{ deleteNoteModal.loading ? t('editor.deleting') : t('sidebar.deleteNoteTitle') }}</span>
             </button>
           </div>
         </div>
@@ -2136,7 +2136,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       @click.self="closePermanentDeleteModal"
     >
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
         <div class="p-5">
           <div class="flex items-start space-x-3">
             <div class="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0">
@@ -2145,12 +2145,12 @@
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-bold text-slate-800">彻底删除便签</h3>
-              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                确定要彻底删除便签【<b class="text-slate-800">{{ permanentDeleteNoteModal.targetNote?.title || '无标题便签' }}</b>】吗？
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('sidebar.permDeleteNoteTitle') }}</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                {{ t('sidebar.permDeleteNotePrompt', { title: permanentDeleteNoteModal.targetNote?.title || t('editor.untitledNote') }) }}
               </p>
               <p class="text-xs text-rose-500 mt-1 font-medium">
-                ⚠️ 彻底删除后此便签将无法找回，不可撤销！
+                {{ t('sidebar.permDeleteWarning') }}
               </p>
             </div>
           </div>
@@ -2159,14 +2159,14 @@
             {{ permanentDeleteNoteModal.error }}
           </div>
 
-          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-end space-x-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               @click="closePermanentDeleteModal"
               :disabled="permanentDeleteNoteModal.loading"
-              class="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer"
+              class="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -2178,7 +2178,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ permanentDeleteNoteModal.loading ? '正在彻底删除...' : '确认彻底删除' }}</span>
+              <span>{{ permanentDeleteNoteModal.loading ? t('editor.deleting') : t('sidebar.permDelete') }}</span>
             </button>
           </div>
         </div>
@@ -2200,6 +2200,7 @@ import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } 
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { t } from '@/i18n';
 import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 import { showToast } from '@/utils/toast';
@@ -2322,7 +2323,7 @@ const groupedNotes = computed<NoteMonthGroup[]>(() => {
 
   for (const note of sorted) {
     const rawTime = note.mtime || note.ctime || 0;
-    let label = '更早或未记录时间';
+    let label = '—';
     let key = 'earlier';
 
     if (rawTime > 0) {
@@ -2331,7 +2332,7 @@ const groupedNotes = computed<NoteMonthGroup[]>(() => {
       const y = d.getFullYear();
       const m = d.getMonth() + 1;
       key = `${y}-${m.toString().padStart(2, '0')}`;
-      label = `${y}年${m.toString().padStart(2, '0')}月`;
+      label = `${y}-${m.toString().padStart(2, '0')}`;
     }
 
     if (!groupMap.has(key)) {
@@ -2369,7 +2370,7 @@ async function handleCreateNoteInPanel(targetNotebookId: string) {
         await noteStore.selectNotebook(firstNb.object_id);
       }
     }
-    await noteStore.createNote('新便签', '# 新便签\n\n在此开始编写 Markdown...');
+    await noteStore.createNote(t('sidebar.newNote'), `# ${t('sidebar.newNote')}\n\n`);
   } catch (e: any) {
     console.error('Failed to create note', e);
   }
@@ -2600,7 +2601,7 @@ async function triggerNoteToggleFavorite() {
   try {
     const wasFavorite = noteStore.isFavorite(note.object_id);
     await noteStore.toggleFavorite(note.object_id);
-    showToast(wasFavorite ? '已从收藏夹删除' : '已添加到收藏夹', 'success');
+    showToast(wasFavorite ? t('sidebar.removeFromFavorites') : t('sidebar.addToFavorites'), 'success');
   } catch (e: any) {
     showToast(`操作收藏夹失败: ${e?.message || e}`, 'error');
   }
@@ -2620,7 +2621,7 @@ function triggerNoteCopyLink() {
   if (!note) return;
   const link = `notestation://remote/self/${note.object_id}`;
   navigator.clipboard.writeText(link);
-  showToast('便签链接已复制到剪贴板', 'success');
+  showToast(t('sidebar.linkCopied'), 'success');
 }
 
 function triggerNoteInfo() {
@@ -2728,7 +2729,7 @@ function closeNotebookModal() {
 async function submitNotebookModal() {
   const title = notebookModal.title.trim();
   if (!title) {
-    notebookModal.error = '笔记本名称不能为空';
+    notebookModal.error = t('sidebar.newNotebookPrompt');
     return;
   }
 
@@ -2845,7 +2846,7 @@ async function confirmPermanentDeleteNote() {
     await noteStore.permanentlyDeleteNote(permanentDeleteNoteModal.targetNote.object_id);
     permanentDeleteNoteModal.isOpen = false;
     permanentDeleteNoteModal.targetNote = null;
-    showToast('便签已彻底删除', 'success');
+    showToast(t('sidebar.permDelete'), 'success');
   } catch (e: any) {
     permanentDeleteNoteModal.error = `彻底删除便签失败: ${e?.message || e}`;
   } finally {
@@ -2875,7 +2876,7 @@ function closeMoveNoteModal() {
 
 async function submitMoveNoteModal() {
   if (!moveNoteModal.targetNote || !moveNoteModal.targetNotebookId) {
-    moveNoteModal.error = '请选择目标笔记本';
+    moveNoteModal.error = t('sidebar.pleaseSelectTarget');
     return;
   }
 

@@ -7,7 +7,7 @@
 
   <div
     v-else
-    class="h-screen w-screen flex flex-col bg-white overflow-hidden select-none font-sans"
+    class="h-screen w-screen flex flex-col bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden select-none font-sans transition-colors duration-150"
     @dragover.prevent
     @drop.prevent="handleWindowDrop"
   >
@@ -156,6 +156,8 @@
 import { ref, onMounted, watch } from 'vue';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useNoteStore } from '@/stores/noteStore';
+import { useThemeStore } from '@/stores/themeStore';
+import { initLocale } from '@/i18n';
 import { ServerProfile } from '@/types/synology';
 import { PinManager } from '@/services/pinManager';
 import { toasts, removeToast } from '@/utils/toast';
@@ -176,6 +178,7 @@ import type { SynoNote } from '@/types/synology';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
+const themeStore = useThemeStore();
 
 // PIN Protection states
 const isPinSet = ref(PinManager.isPinConfigured());
@@ -261,6 +264,9 @@ function handlePinUpdated() {
 }
 
 onMounted(async () => {
+  themeStore.initTheme();
+  initLocale();
+
   // Confirmation before closing when running in plain browser mode
   window.addEventListener('beforeunload', (e) => {
     if (!window.electronAPI) {
