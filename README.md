@@ -69,6 +69,20 @@ pnpm build:win
 
 ---
 
+## 📖 开发者与 AI 智能体上下文 (Developer & Agent Context)
+
+如果你是在其他设备或开发端接手、协同开发的开发者或 AI 智能体，请首先查阅：
+👉 **[项目全量上下文与开发备忘录 (docs/PROJECT_CONTEXT.md)](./docs/PROJECT_CONTEXT.md)**
+
+该文档详细整理了：
+- 系统架构拓扑与核心模块（Pinia Stores / Services / API Clients）；
+- 群晖 Note Station Web API 攻坚避坑指南（包括 `SYNO.NoteStation.Notebook` 的 `set` 重命名、便签分页 `total` 批次陷阱、标签 JSON 持久化规范等）；
+- 关键算法实现（Markdown 隐式注释双向无损转换协议、跨服务标签同步协同器、启动 PIN 本地高强度加密与锁定机制）；
+- 完整命令备忘录与针对真实群晖 NAS 的端到端 API 联调测试指南；
+- 协同智能体开发规范与 Git 提交约束。
+
+---
+
 ## 📄 开源许可证
 MIT License.
 
