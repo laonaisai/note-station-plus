@@ -18,6 +18,7 @@
       @edit-server="openEditServerModal"
       @open-pin-settings="isPinSettingsModalOpen = true"
       @lock-screen="handleLockScreen"
+      @open-about="isAboutModalOpen = true"
     />
 
     <!-- Main 2-Column Content Layout (Unified Sidebar + Markdown Editor) -->
@@ -79,6 +80,11 @@
       :note-title="selectedHistoryNoteTitle"
       @close="isHistoryModalOpen = false"
       @restored="handleNoteRestored"
+    />
+
+    <AboutModal
+      :is-open="isAboutModalOpen"
+      @close="isAboutModalOpen = false"
     />
 
     <!-- Global Toast Notifications -->
@@ -153,6 +159,7 @@ import ShareModal from '@/components/ShareModal.vue';
 import HistoryModal from '@/components/HistoryModal.vue';
 import PinVerifyScreen from '@/components/PinVerifyScreen.vue';
 import PinSettingsModal from '@/components/PinSettingsModal.vue';
+import AboutModal from '@/components/AboutModal.vue';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
@@ -178,6 +185,8 @@ const selectedShareNoteTitle = ref<string>('');
 const isHistoryModalOpen = ref(false);
 const selectedHistoryNoteId = ref<string | null>(null);
 const selectedHistoryNoteTitle = ref<string>('');
+
+const isAboutModalOpen = ref(false);
 
 function openShareModal(noteId: string, noteTitle?: string) {
   selectedShareNoteId.value = noteId;
