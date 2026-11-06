@@ -334,7 +334,6 @@ function handleCopyNoteLink() {
 function handleOpenHistory() {
   if (!props.targetNote) return;
   emit('open-history', props.targetNote.object_id);
-  close();
 }
 
 function close() {

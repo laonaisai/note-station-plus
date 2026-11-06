@@ -598,6 +598,7 @@ const emit = defineEmits<{
   (e: 'open-import', noteId?: string | null): void;
   (e: 'open-share', noteId: string): void;
   (e: 'open-history', noteId: string): void;
+  (e: 'open-print', note: any, notebookTitle?: string, markdownOverride?: string): void;
 }>();
 
 const noteStore = useNoteStore();
@@ -871,7 +872,7 @@ function triggerPrint() {
   if (!noteStore.activeNote) return;
   isMoreMenuOpen.value = false;
   const parentNb = noteStore.notebooks.find(nb => nb.object_id === noteStore.activeNote?.parent_id);
-  printNote(noteStore.activeNote, parentNb?.title);
+  emit('open-print', noteStore.activeNote, parentNb?.title, editMarkdown.value);
 }
 
 function triggerCopyLink() {

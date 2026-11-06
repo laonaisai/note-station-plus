@@ -62,6 +62,69 @@ ipcMain.handle('safeStorage:decryptString', (_event, cipherBase64: string) => {
   return null;
 });
 
+// IPC handlers for note printing and PDF export
+ipcMain.handle('print:toPdf', async (_event, { html, title }: { html: string; title: string }) => {
+  if (!mainWindow) return { success: false, error: '主窗口未就绪' };
+  try {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: '导出便签为 PDF 文档',
+      defaultPath: `${(title || '便签').replace(/[\\/:*?"<>|]/g, '_')}.pdf`,
+      filters: [{ name: 'PDF 文档 (*.pdf)', extensions: ['pdf'] }]
+    });
+    if (canceled || !filePath) return { success: false, canceled: true };
+
+    const printWin = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    const pdfBuffer = await printWin.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: {
+        marginType: 'custom',
+        top: 0.8,
+        bottom: 0.8,
+        left: 0.8,
+        right: 0.8
+      }
+    });
+    printWin.destroy();
+    fs.writeFileSync(filePath, pdfBuffer);
+    return { success: true, filePath };
+  } catch (err: any) {
+    console.error('[print:toPdf] failed:', err);
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('print:direct', async (_event, { html }: { html: string }) => {
+  try {
+    const printWin = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    printWin.webContents.print({ silent: false, printBackground: true }, (_success, _failureReason) => {
+      try {
+        if (!printWin.isDestroyed()) printWin.destroy();
+      } catch {}
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error('[print:direct] failed:', err);
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 

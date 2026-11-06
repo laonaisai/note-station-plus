@@ -28,6 +28,7 @@
         @open-import="openImportModal(null)"
         @open-share="openShareModal"
         @open-history="openHistoryModal"
+        @open-print="openPrintModal"
         @open-sync="isSyncModalOpen = true"
       />
 
@@ -38,6 +39,7 @@
         @open-import="openImportModal"
         @open-share="openShareModal"
         @open-history="openHistoryModal"
+        @open-print="openPrintModal"
       />
     </div>
 
@@ -86,6 +88,14 @@
     <AboutModal
       :is-open="isAboutModalOpen"
       @close="isAboutModalOpen = false"
+    />
+
+    <PrintModal
+      :is-open="isPrintModalOpen"
+      :note="printingNote"
+      :notebook-title="printingNotebookTitle"
+      :markdown-content-override="printingMarkdownContent"
+      @close="isPrintModalOpen = false"
     />
 
     <!-- Global Toast Notifications -->
@@ -161,6 +171,8 @@ import HistoryModal from '@/components/HistoryModal.vue';
 import PinVerifyScreen from '@/components/PinVerifyScreen.vue';
 import PinSettingsModal from '@/components/PinSettingsModal.vue';
 import AboutModal from '@/components/AboutModal.vue';
+import PrintModal from '@/components/PrintModal.vue';
+import type { SynoNote } from '@/types/synology';
 
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
@@ -188,6 +200,18 @@ const selectedHistoryNoteId = ref<string | null>(null);
 const selectedHistoryNoteTitle = ref<string>('');
 
 const isAboutModalOpen = ref(false);
+
+const isPrintModalOpen = ref(false);
+const printingNote = ref<SynoNote | null>(null);
+const printingNotebookTitle = ref<string>('');
+const printingMarkdownContent = ref<string>('');
+
+function openPrintModal(note: SynoNote, notebookTitle?: string, markdownOverride?: string) {
+  printingNote.value = note;
+  printingNotebookTitle.value = notebookTitle || noteStore.notebooks.find(nb => nb.object_id === note.parent_id)?.title || '';
+  printingMarkdownContent.value = markdownOverride || '';
+  isPrintModalOpen.value = true;
+}
 
 function openShareModal(noteId: string, noteTitle?: string) {
   selectedShareNoteId.value = noteId;

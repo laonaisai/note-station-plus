@@ -2212,6 +2212,7 @@ const emit = defineEmits<{
   (e: 'open-share', noteId: string, noteTitle?: string): void;
   (e: 'open-history', noteId: string, noteTitle?: string): void;
   (e: 'open-sync'): void;
+  (e: 'open-print', note: SynoNote, notebookTitle?: string): void;
 }>();
 
 const noteStore = useNoteStore();
@@ -2610,7 +2611,7 @@ function triggerNotePrint() {
   closeNoteContextMenu();
   if (!note) return;
   const parentNb = noteStore.notebooks.find(nb => nb.object_id === note.parent_id);
-  printNote(note, parentNb?.title);
+  emit('open-print', note, parentNb?.title);
 }
 
 function triggerNoteCopyLink() {
