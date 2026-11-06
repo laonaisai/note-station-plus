@@ -313,14 +313,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-white border-syno-blue/40 shadow-sm ring-1 ring-syno-blue/30'
+                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
                     : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
                     {{ note.title || '无标题便签' }}
                   </h4>
@@ -328,8 +328,15 @@
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
                   <button
                     @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
-                    :class="noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id ? '!opacity-100 bg-slate-200 text-slate-700' : ''"
+                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
+                    :class="[
+                      noteStore.activeNoteId === note.object_id
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
+                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                        : ''
+                    ]"
                     title="便签操作菜单"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -343,10 +350,11 @@
                   <span
                     v-for="t in note.tag"
                     :key="t"
-                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium leading-none bg-blue-50 text-syno-blue border border-blue-100 max-w-[100px] truncate"
+                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium leading-none max-w-[100px] truncate"
+                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
                     :title="t"
                   >
-                    <span class="mr-0.5 text-blue-400">#</span>
+                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
                     <span class="truncate">{{ t }}</span>
                   </span>
                 </div>
@@ -654,14 +662,14 @@
                 :class="[
                   'group relative p-2 rounded-lg cursor-pointer transition border',
                   noteStore.activeNoteId === note.object_id
-                    ? 'bg-white border-syno-blue/40 shadow-sm ring-1 ring-syno-blue/30'
+                    ? 'bg-slate-800 border-slate-700 shadow-md text-white'
                     : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
                 ]"
               >
                 <div class="flex items-start justify-between">
                   <h4
                     class="text-xs font-semibold truncate flex-1 pr-1"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue' : 'text-slate-800'"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'"
                   >
                     {{ note.title || '无标题便签' }}
                   </h4>
@@ -669,8 +677,15 @@
                   <!-- Note Menu Button (点击显示操作下拉菜单) -->
                   <button
                     @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
-                    :class="noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id ? '!opacity-100 bg-slate-200 text-slate-700' : ''"
+                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
+                    :class="[
+                      noteStore.activeNoteId === note.object_id
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
+                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                        : ''
+                    ]"
                     title="便签操作菜单"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -684,10 +699,11 @@
                   <span
                     v-for="t in note.tag"
                     :key="t"
-                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium leading-none bg-blue-50 text-syno-blue border border-blue-100 max-w-[100px] truncate"
+                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium leading-none max-w-[100px] truncate"
+                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
                     :title="t"
                   >
-                    <span class="mr-0.5 text-blue-400">#</span>
+                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
                     <span class="truncate">{{ t }}</span>
                   </span>
                 </div>

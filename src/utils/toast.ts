@@ -36,3 +36,4 @@ export function removeToast(id: string): void {
 export function clearToasts(): void {
   toasts.value = [];
 }
+
