@@ -20,13 +20,10 @@
       @lock-screen="handleLockScreen"
     />
 
-    <!-- Main 3-Column Content Layout -->
+    <!-- Main 2-Column Content Layout (Unified Sidebar + Markdown Editor) -->
     <div class="flex-1 flex overflow-hidden">
-      <!-- Left Column: Notebooks Sidebar -->
-      <NotebookSidebar />
-
-      <!-- Middle Column: Notes List -->
-      <NoteList
+      <!-- Left Column: Unified Notebook & Note Accordion Sidebar -->
+      <NotebookSidebar
         @open-import="openImportModal(null)"
         @open-share="openShareModal"
         @open-history="openHistoryModal"
@@ -94,7 +91,6 @@ import { PinManager } from '@/services/pinManager';
 
 import TabBar from '@/components/TabBar.vue';
 import NotebookSidebar from '@/components/NotebookSidebar.vue';
-import NoteList from '@/components/NoteList.vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import ServerModal from '@/components/ServerModal.vue';
 import SyncModal from '@/components/SyncModal.vue';

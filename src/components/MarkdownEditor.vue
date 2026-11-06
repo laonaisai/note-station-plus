@@ -2,21 +2,13 @@
   <div class="flex-1 h-full bg-white flex flex-col overflow-hidden">
     <!-- Note Empty State -->
     <div v-if="!noteStore.activeNote" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
-      <!-- Distraction-free recovery bar if sidebars are collapsed while empty -->
-      <div v-if="layoutStore.isSidebarCollapsed || layoutStore.isNoteListCollapsed" class="mb-4 flex items-center space-x-2">
+      <!-- Distraction-free recovery bar if sidebar is collapsed while empty -->
+      <div v-if="layoutStore.isSidebarCollapsed" class="mb-4 flex items-center space-x-2">
         <button
-          v-if="layoutStore.isSidebarCollapsed"
           @click="layoutStore.toggleSidebar"
-          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition"
+          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition cursor-pointer"
         >
-          » 展开目录
-        </button>
-        <button
-          v-if="layoutStore.isNoteListCollapsed"
-          @click="layoutStore.toggleNoteList"
-          class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center transition"
-        >
-          » 展开便签列表
+          » 展开笔记本与便签
         </button>
       </div>
 
@@ -37,36 +29,23 @@
             <button
               @click="layoutStore.toggleSidebar"
               :class="[
-                'p-1.5 rounded-md transition text-xs flex items-center',
+                'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
                 layoutStore.isSidebarCollapsed ? 'bg-blue-50 text-syno-blue' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
               ]"
-              :title="layoutStore.isSidebarCollapsed ? '展开笔记本目录' : '折叠笔记本目录'"
+              :title="layoutStore.isSidebarCollapsed ? '展开笔记本与便签' : '折叠笔记本与便签'"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </button>
-
-            <button
-              @click="layoutStore.toggleNoteList"
-              :class="[
-                'p-1.5 rounded-md transition text-xs flex items-center',
-                layoutStore.isNoteListCollapsed ? 'bg-blue-50 text-syno-blue' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-              ]"
-              :title="layoutStore.isNoteListCollapsed ? '展开便签列表' : '折叠便签列表'"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
               </svg>
             </button>
 
             <button
               @click="layoutStore.toggleFocusMode"
               :class="[
-                'p-1.5 rounded-md transition text-xs flex items-center',
-                layoutStore.isSidebarCollapsed && layoutStore.isNoteListCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
+                layoutStore.isSidebarCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
               ]"
-              :title="layoutStore.isSidebarCollapsed && layoutStore.isNoteListCollapsed ? '退出专注模式 (恢复侧边栏)' : '开启专注全屏模式 (最大化编辑空间)'"
+              :title="layoutStore.isSidebarCollapsed ? '退出专注模式 (恢复侧边栏)' : '开启专注全屏模式 (最大化编辑空间)'"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -356,7 +335,7 @@
           ]"
         >
           <div
-            class="prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue"
+            class="markdown-preview prose prose-sm max-w-none prose-slate prose-headings:font-bold prose-a:text-syno-blue"
             v-html="renderedPreviewHtml"
           ></div>
         </div>
@@ -565,19 +544,37 @@ function insertMarkdown(prefix: string, suffix = '') {
   const textarea = textareaRef.value;
   if (!textarea) return;
 
+  textarea.focus();
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
-  const text = editMarkdown.value;
+  const text = textarea.value;
   const selected = text.substring(start, end);
-
   const replacement = prefix + selected + suffix;
-  editMarkdown.value = text.substring(0, start) + replacement + text.substring(end);
 
+  // Use document.execCommand('insertText') to preserve browser native Undo/Redo history (Ctrl+Z)
+  let success = false;
+  try {
+    success = document.execCommand('insertText', false, replacement);
+  } catch {
+    success = false;
+  }
+
+  if (!success) {
+    textarea.setRangeText(replacement, start, end, 'end');
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  editMarkdown.value = textarea.value;
   onContentChanged();
 
+  // Position cursor/selection inside the inserted wrappers
   setTimeout(() => {
     textarea.focus();
-    textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    if (selected.length > 0) {
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    } else {
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+    }
   }, 0);
 }
 

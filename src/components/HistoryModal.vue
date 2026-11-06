@@ -155,7 +155,7 @@
               <!-- Rendered Preview Mode -->
               <div
                 v-if="viewMode === 'preview'"
-                class="prose prose-sm prose-slate max-w-none text-slate-800 leading-relaxed"
+                class="markdown-preview prose prose-sm prose-slate max-w-none text-slate-800 leading-relaxed"
                 v-html="renderedContent"
               />
 
