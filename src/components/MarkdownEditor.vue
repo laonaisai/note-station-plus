@@ -398,13 +398,13 @@
 
         <div
           v-for="att in noteStore.activeNote.attachment"
-          :key="att.id"
+          :key="att.file_id || att.id"
           class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-white border border-slate-200 text-slate-700 shadow-2xs group hover:border-syno-blue transition"
         >
           <span class="truncate max-w-[150px] font-medium mr-1">{{ att.name }}</span>
           <span class="text-slate-400 text-[10px] mr-1.5">({{ formatFileSize(att.size) }})</span>
           <a
-            :href="getAttachmentDownloadUrl(att.id, att.name)"
+            :href="getAttachmentDownloadUrl(att.file_id || att.id, att.name)"
             target="_blank"
             download
             class="text-syno-blue hover:text-blue-700 font-medium text-[10px] hover:underline"
@@ -412,6 +412,15 @@
           >
             下载
           </a>
+          <button
+            v-if="isImageAttachment(att) && !isRecycledNote"
+            type="button"
+            @click="insertImageAttachment(att)"
+            class="ml-1.5 text-slate-400 hover:text-syno-blue font-medium text-[10px] hover:underline cursor-pointer"
+            title="将此图片插入到便签正文"
+          >
+            插入
+          </button>
         </div>
       </div>
 
@@ -581,6 +590,7 @@ import { exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 import { showToast } from '@/utils/toast';
 import { isNoteShared } from '@/utils/shareUtils';
 import { printNote } from '@/utils/printNote';
+import { healLegacyImagePlaceholders } from '@/utils/markdown';
 import NoteInfoModal from '@/components/NoteInfoModal.vue';
 
 const emit = defineEmits<{
@@ -649,7 +659,17 @@ const suggestedTags = computed(() => {
 });
 
 const renderedPreviewHtml = computed(() => {
-  return md.render(editMarkdown.value || '');
+  let content = editMarkdown.value || '';
+  if (noteStore.activeNote?.attachment && noteStore.activeNote.attachment.length > 0) {
+    const client = sessionStore.activeClient;
+    if (client) {
+      content = healLegacyImagePlaceholders(content, {
+        attachments: noteStore.activeNote.attachment,
+        getAttachmentUrl: (fileId, filename) => client.getAttachmentDownloadUrl(noteStore.activeNote!.object_id, fileId, filename)
+      });
+    }
+  }
+  return md.render(content);
 });
 
 const isCopied = ref(false);
@@ -872,6 +892,19 @@ function getAttachmentDownloadUrl(fileId: string, filename?: string): string {
   const client = sessionStore.activeClient;
   if (!client || !noteStore.activeNote) return '#';
   return client.getAttachmentDownloadUrl(noteStore.activeNote.object_id, fileId, filename);
+}
+
+function isImageAttachment(att: any): boolean {
+  if (att?.type?.startsWith('image/')) return true;
+  return /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(att?.name || '');
+}
+
+function insertImageAttachment(att: any) {
+  const fileId = att?.file_id || att?.id;
+  if (!fileId) return;
+  const url = getAttachmentDownloadUrl(fileId, att?.name);
+  const markdownImg = `\n![${att?.name || '图片'}](${url})\n`;
+  insertMarkdown(markdownImg);
 }
 
 function formatFileSize(bytes?: number): string {

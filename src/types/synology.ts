@@ -49,6 +49,16 @@ export interface SynoNotebook {
   };
 }
 
+export interface SynoAttachment {
+  id: string;
+  file_id?: string;
+  name: string;
+  size: number;
+  type: string;
+  md5?: string;
+  ref?: string;
+}
+
 export interface SynoNote {
   object_id: string;
   parent_id: string; // notebook object_id
@@ -72,14 +82,7 @@ export interface SynoNote {
   latitude?: number;
   longitude?: number;
   location?: string;
-  attachment?: Array<{
-    id: string;
-    name: string;
-    size: number;
-    type: string;
-    md5?: string;
-    ref?: string;
-  }>;
+  attachment?: SynoAttachment[];
 }
 
 export interface SynoShortcut {

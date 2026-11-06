@@ -95,21 +95,22 @@ export const useNoteStore = defineStore('notes', () => {
   function getNotebookNoteCount(nb: SynoNotebook): number {
     const targetId = String(nb.object_id || nb.notebook_id || '');
     if (targetId === '__all_notes__') {
-      return notes.value.length;
+      return notes.value.filter(n => !n.recycle).length;
     }
     if (targetId === '__shared_notes__') {
-      return notes.value.filter(n => isNoteShared(n)).length;
+      return notes.value.filter(n => !n.recycle && isNoteShared(n)).length;
     }
     if (targetId === '__favorites__') {
-      return notes.value.filter(n => shortcutIds.value.has(n.object_id)).length;
+      return notes.value.filter(n => !n.recycle && shortcutIds.value.has(n.object_id)).length;
     }
     if (targetId === '__recycle_bin__') {
-      return recycledNotes.value.length;
+      return recycledNotes.value.filter(n => Boolean(n.recycle)).length;
     }
     const itemSet = new Set(nb.items?.map(i => String(i)) || []);
 
     if (notes.value.length > 0) {
       const count = notes.value.filter(n => {
+        if (n.recycle) return false;
         const pId = String(n.parent_id || '');
         const nbId = String((n as any).notebook_id || '');
         const oId = String(n.object_id || '');
@@ -126,17 +127,18 @@ export const useNoteStore = defineStore('notes', () => {
     // Filter by active notebook (if '__all_notes__' is selected, display all notes; if '__shared_notes__', display only shared notes; if '__favorites__', display favorite notes; if '__recycle_bin__', display recycled notes)
     if (activeNotebookId.value && activeNotebookId.value !== '__all_notes__') {
       if (activeNotebookId.value === '__recycle_bin__') {
-        list = recycledNotes.value;
+        list = recycledNotes.value.filter(n => Boolean(n.recycle));
       } else if (activeNotebookId.value === '__favorites__') {
-        list = favoriteNotes.value;
+        list = favoriteNotes.value.filter(n => !n.recycle);
       } else if (activeNotebookId.value === '__shared_notes__') {
-        list = list.filter(n => isNoteShared(n));
+        list = list.filter(n => !n.recycle && isNoteShared(n));
       } else {
         const targetId = String(activeNotebookId.value);
         const targetNb = notebooks.value.find(nb => String(nb.object_id) === targetId || String(nb.notebook_id || '') === targetId);
         const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
 
         list = list.filter(n => {
+          if (n.recycle) return false;
           const noteParentId = String(n.parent_id || '');
           const noteNbId = String((n as any).notebook_id || '');
           const noteId = String(n.object_id || '');
@@ -148,6 +150,8 @@ export const useNoteStore = defineStore('notes', () => {
           );
         });
       }
+    } else {
+      list = list.filter(n => !n.recycle);
     }
 
     // Filter by selected tags (multi-select intersection)
@@ -372,7 +376,7 @@ export const useNoteStore = defineStore('notes', () => {
 
     try {
       const res = await client.listAllRecycleNotes();
-      recycledNotes.value = res.notes;
+      recycledNotes.value = res.notes.filter(n => Boolean(n.recycle));
     } catch (e) {
       console.error('Failed to fetch recycled notes', e);
     }

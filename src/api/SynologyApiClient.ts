@@ -5,6 +5,7 @@ import {
   SynoAuthData,
   SynoNotebook,
   SynoNote,
+  SynoAttachment,
   SynoTag,
   SynoShortcut,
   NoteVersion,
@@ -331,6 +332,7 @@ export class SynologyApiClient {
 
       return {
         ...n,
+        recycle: Boolean(n.recycle),
         object_id: noteId,
         parent_id: nbId,
         notebook_id: nbId,
@@ -402,10 +404,11 @@ export class SynologyApiClient {
       offset += res.notes.length;
     }
 
-    // Filter notes if parentId was requested
+    // Filter notes if parentId was requested, and ALWAYS filter out recycled notes
+    const activeNotes = allNotes.filter(n => !n.recycle);
     const filteredNotes = parentId && parentId.trim()
-      ? allNotes.filter(n => n.parent_id === parentId.trim() || (n as any).notebook_id === parentId.trim())
-      : allNotes;
+      ? activeNotes.filter(n => n.parent_id === parentId.trim() || (n as any).notebook_id === parentId.trim())
+      : activeNotes;
 
     return {
       notes: filteredNotes,
@@ -448,12 +451,15 @@ export class SynologyApiClient {
 
       let newNotesCount = 0;
       for (const n of rawNotes) {
+        // Strictly filter: only keep notes that are actually marked as recycled
+        if (!n.recycle) continue;
         const noteId = String(n.object_id || n.note_id || '');
         if (seenIds.has(noteId)) continue;
         seenIds.add(noteId);
         newNotesCount++;
         allNotes.push({
           ...n,
+          recycle: true,
           object_id: noteId,
           parent_id: String(n.parent_id || n.notebook_id || ''),
           notebook_id: String(n.parent_id || n.notebook_id || ''),
@@ -464,13 +470,14 @@ export class SynologyApiClient {
         });
       }
 
-      if (newNotesCount === 0 || rawNotes.length < pageSize) break;
+      if (rawNotes.length < pageSize) break;
       offset += rawNotes.length;
     }
 
+    const recycledOnly = allNotes.filter(n => Boolean(n.recycle));
     return {
-      notes: allNotes,
-      total: allNotes.length
+      notes: recycledOnly,
+      total: recycledOnly.length
     };
   }
 
@@ -545,7 +552,29 @@ export class SynologyApiClient {
     }
 
     const note = res.data.data;
-    note.markdownContent = note.content ? noteHtmlToMarkdown(note.content) : '';
+
+    // Normalize attachments from dictionary or array into standard SynoAttachment[]
+    const normalizedAttachments: SynoAttachment[] = [];
+    if (Array.isArray(note.attachment)) {
+      normalizedAttachments.push(...note.attachment);
+    } else if (note.attachment && typeof note.attachment === 'object') {
+      for (const [fileId, att] of Object.entries(note.attachment)) {
+        normalizedAttachments.push({
+          id: fileId,
+          file_id: fileId,
+          ...(att as any)
+        });
+      }
+    }
+    note.attachment = normalizedAttachments;
+
+    note.markdownContent = note.content
+      ? noteHtmlToMarkdown(note.content, {
+          objectId: note.object_id,
+          attachments: normalizedAttachments,
+          getAttachmentUrl: (fileId, filename) => this.getAttachmentDownloadUrl(note.object_id, fileId, filename)
+        })
+      : '';
     return note;
   }
 
@@ -799,11 +828,15 @@ export class SynologyApiClient {
   getAttachmentDownloadUrl(objectId: string, fileId: string, filename?: string): string {
     const sid = this.sid || '';
     const cleanBaseUrl = this.profile.serverUrl.replace(/\/+$/, '');
-    let url = `${cleanBaseUrl}/webapi/entry.cgi?api=SYNO.NoteStation.Note&version=3&method=download&object_id=${encodeURIComponent(objectId)}&file_id=${encodeURIComponent(fileId)}&format=raw&_sid=${encodeURIComponent(sid)}`;
+    const isBrowser = typeof window !== 'undefined' && !(window as any).electronAPI;
+    let path = `/webapi/entry.cgi?api=SYNO.NoteStation.Note&version=3&method=download&object_id=${encodeURIComponent(objectId)}&file_id=${encodeURIComponent(fileId)}&format=raw&_sid=${encodeURIComponent(sid)}`;
     if (filename) {
-      url += `&filename=${encodeURIComponent(filename)}`;
+      path += `&filename=${encodeURIComponent(filename)}`;
     }
-    return url;
+    if (isBrowser) {
+      return `/syno-proxy?target=${encodeURIComponent(cleanBaseUrl + path)}`;
+    }
+    return `${cleanBaseUrl}${path}`;
   }
 
   /**
