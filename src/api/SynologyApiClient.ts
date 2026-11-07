@@ -54,12 +54,21 @@ export class SynologyApiClient {
       }
     });
 
-    if (isBrowser) {
-      this.http.interceptors.request.use((config) => {
+    this.http.interceptors.request.use((config) => {
+      if (isBrowser) {
         config.headers['X-Syno-Target'] = this.profile.serverUrl.replace(/\/+$/, '');
-        return config;
-      });
-    }
+      }
+      // Anti-cache headers and timestamp for all GET requests to prevent stale responses
+      if (config.method?.toLowerCase() === 'get') {
+        config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+        config.headers['Pragma'] = 'no-cache';
+        config.params = config.params || {};
+        if (!config.params._t) {
+          config.params._t = String(Date.now());
+        }
+      }
+      return config;
+    });
 
     // Handle self-signed certificates in Node / Electron environment
     if (typeof process !== 'undefined' && process.env) {

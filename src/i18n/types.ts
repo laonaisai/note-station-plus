@@ -164,6 +164,10 @@ export interface TranslationMessages {
     restore: string;
     permDelete: string;
     sync: string;
+    syncToOtherServer: string;
+    syncWithServer: string;
+    syncWithServerSuccess: string;
+    syncWithServerFailed: string;
     more: string;
     importMd: string;
     exportMd: string;

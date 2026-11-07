@@ -15,8 +15,21 @@ const turndown = new TurndownService({
   codeBlockStyle: 'fenced'
 });
 
-const MD_COMMENT_PREFIX = '<!-- note-station-plus:markdown\n';
+const MD_COMMENT_PREFIX = '<!-- note-station-plus:markdown';
 const MD_COMMENT_SUFFIX = '\n-->';
+
+/**
+ * Fast deterministic DJB2 hash for verifying HTML body integrity against external edits.
+ */
+export function hashHtmlBody(html: string): string {
+  if (!html) return '';
+  const normalized = html.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+  let hash = 5381;
+  for (let i = 0; i < normalized.length; i++) {
+    hash = (hash * 33) ^ normalized.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+}
 
 export interface HtmlToMarkdownOptions {
   objectId?: string;
@@ -240,7 +253,8 @@ export function markdownToNoteHtml(markdown: string, options?: MarkdownToNoteHtm
     });
 
     const encodedRaw = toBase64(markdown || '');
-    const comment = `${MD_COMMENT_PREFIX}${encodedRaw}${MD_COMMENT_SUFFIX}`;
+    const bodyHash = hashHtmlBody(renderedHtml);
+    const comment = `${MD_COMMENT_PREFIX} hash="${bodyHash}"\n${encodedRaw}${MD_COMMENT_SUFFIX}`;
     return `${renderedHtml}\n${comment}`;
   } catch (err) {
     console.error('Error in markdownToNoteHtml:', err);
@@ -250,34 +264,73 @@ export function markdownToNoteHtml(markdown: string, options?: MarkdownToNoteHtm
 
 /**
  * Converts Note Station HTML into Markdown:
- * 1. If lossless hidden comment exists, decodes and returns it directly (100% loss-free).
- * 2. Otherwise (legacy HTML note), uses Turndown to convert HTML to Markdown.
+ * 1. If lossless hidden comment exists and passes hash/integrity check, returns it directly (100% loss-free).
+ * 2. If the note was edited externally in official Synology clients, the hash mismatch triggers Turndown to parse latest HTML!
  * 3. Resolves official Synology embedded image objects into actual images.
  */
 export function noteHtmlToMarkdown(html: string, options?: HtmlToMarkdownOptions): string {
   if (!html || typeof html !== 'string') return '';
 
   try {
-    const commentRegex = /<!-- note-station-plus:markdown\n([\s\S]*?)\n-->/;
+    const commentRegex = /<!-- note-station-plus:markdown(?:\s+hash=["']([0-9a-fA-F]+)["'])?\n([\s\S]*?)\n-->/;
     const match = html.match(commentRegex);
+    const cleanHtmlWithoutComment = html.replace(commentRegex, '').trim();
 
-    if (match && match[1]) {
-      try {
-        const decodedMarkdown = fromBase64(match[1].trim());
-        if (decodedMarkdown) {
-          // Check if decoded markdown contains legacy placeholders or needs url refresh
-          if (options?.getAttachmentUrl && options.attachments && options.attachments.length > 0) {
-            return healLegacyImagePlaceholders(decodedMarkdown, options);
-          }
-          return decodedMarkdown;
+    if (match) {
+      const recordedHash = match[1];
+      const encodedMarkdown = match[2];
+
+      let isCommentValid = false;
+      if (recordedHash) {
+        // Hash exists: strictly verify if HTML body was modified in official Synology clients or elsewhere
+        const currentHash = hashHtmlBody(cleanHtmlWithoutComment);
+        if (currentHash === recordedHash) {
+          isCommentValid = true;
         }
-      } catch (e) {
-        console.warn('Failed to decode embedded markdown comment, falling back to turndown', e);
+      } else {
+        // Older comment without hash: compare content and image counts to detect external edits
+        try {
+          const legacyDecoded = fromBase64(encodedMarkdown.trim());
+          if (legacyDecoded) {
+            const cleanText = cleanHtmlWithoutComment.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+            const renderedText = md.render(legacyDecoded).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+            const cleanImgCount = (cleanHtmlWithoutComment.match(/<img\b/gi) || []).length;
+            const decodedImgCount = (legacyDecoded.match(/!\[.*?\]\(.*?\)/g) || []).length;
+            if (cleanText === renderedText && cleanImgCount === decodedImgCount) {
+              isCommentValid = true;
+            }
+          }
+        } catch {}
+      }
+
+      if (isCommentValid) {
+        try {
+          const decodedMarkdown = fromBase64(encodedMarkdown.trim());
+          if (decodedMarkdown) {
+            if (options?.getAttachmentUrl && options.attachments && options.attachments.length > 0) {
+              return healLegacyImagePlaceholders(decodedMarkdown, options);
+            }
+            return decodedMarkdown;
+          }
+        } catch (e) {
+          console.warn('Failed to decode embedded markdown comment, falling back to turndown', e);
+        }
+      } else {
+        console.info('Note Station HTML was modified externally in official client, using Turndown to convert latest content.');
       }
     }
 
     // Fallback for legacy notes or notes edited in official client
-    let cleanHtml = html.replace(commentRegex, '');
+    let cleanHtml = cleanHtmlWithoutComment;
+
+    // Filter image attachments for matching
+    const imgAtts = options?.attachments?.filter(a => {
+      if (!a) return false;
+      const aType = a.type || '';
+      const aName = a.name || '';
+      return aType.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(aName);
+    }) || [];
+    let imgCounter = 0;
 
     // Pre-process official Synology Note Station embedded image objects
     // e.g. <img class="syno-notestation-image-object" src="webman/3rdparty/NoteStation/images/transparent.gif" ref="..." />
@@ -290,15 +343,29 @@ export function noteHtmlToMarkdown(html: string, options?: HtmlToMarkdownOptions
           return `<img src="${dataSrcMatch[1]}" alt="${altMatch ? altMatch[1] : '图片'}" />`;
         }
 
-        // 2. Official Synology image object: extract ref
+        // 2. Official Synology image object: extract ref, data-ref, or file_id
         const isOfficialSynoImg = imgTag.includes('syno-notestation-image-object') || imgTag.includes('transparent.gif');
-        const refMatch = imgTag.match(/ref=["']([^"']+)["']/i);
-        const ref = refMatch ? refMatch[1] : '';
-        const cleanName = safeExtractImageName(ref);
+        const refMatch = imgTag.match(/(?:ref|data-ref|file_id)=["']([^"']+)["']/i);
+        let ref = refMatch ? refMatch[1] : '';
 
-        if (isOfficialSynoImg || ref) {
+        // If no explicit ref attr, check if src contains file_id
+        if (!ref) {
+          const srcMatch = imgTag.match(/src=["']([^"']+)["']/i);
+          if (srcMatch && srcMatch[1]) {
+            const fileIdMatch = srcMatch[1].match(/(?:[?&]|%26)file_id(?:=|%3D)([^&"'>\s%]+)/i);
+            if (fileIdMatch && fileIdMatch[1]) {
+              ref = fileIdMatch[1];
+            }
+          }
+        }
+
+        const altMatch = imgTag.match(/alt=["']([^"']*)["']/i);
+        const altText = altMatch ? altMatch[1] : '';
+        const cleanName = safeExtractImageName(ref) || altText || '图片';
+
+        if (isOfficialSynoImg || ref || (imgAtts.length > 0 && imgTag.includes('syno-notestation'))) {
           if (options?.getAttachmentUrl) {
-            let matchedAtt: any;
+            let matchedAtt: any = null;
             if (options.attachments && options.attachments.length > 0) {
               matchedAtt = options.attachments.find(a => {
                 if (!a) return false;
@@ -306,26 +373,26 @@ export function noteHtmlToMarkdown(html: string, options?: HtmlToMarkdownOptions
                 const aRef = a.ref || '';
                 const aId = a.file_id || a.id || '';
                 return (
-                  (aRef && aRef === ref) ||
-                  (aId && aId === ref) ||
-                  (aName && cleanName && (aName === cleanName || cleanName.includes(aName) || aName.includes(cleanName)))
+                  (ref && aRef && aRef === ref) ||
+                  (ref && aId && aId === ref) ||
+                  (altText && aName && (aName === altText || aName.startsWith(altText) || altText.startsWith(aName))) ||
+                  (cleanName && aName && (aName === cleanName || cleanName.includes(aName) || aName.includes(cleanName)))
                 );
               });
+
+              // Fallback to single image or N-th image in attachments
               if (!matchedAtt) {
-                const imgAtts = options.attachments.filter(a => {
-                  if (!a) return false;
-                  const aType = a.type || '';
-                  const aName = a.name || '';
-                  return aType.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(aName);
-                });
                 if (imgAtts.length === 1) {
                   matchedAtt = imgAtts[0];
+                } else if (imgCounter < imgAtts.length) {
+                  matchedAtt = imgAtts[imgCounter];
                 }
               }
             }
 
+            imgCounter++;
             const fileId = matchedAtt ? (matchedAtt.file_id || matchedAtt.id || ref) : ref;
-            const filename = matchedAtt?.name || cleanName || 'image.png';
+            const filename = matchedAtt?.name || altText || cleanName || 'image.png';
             if (fileId) {
               const url = options.getAttachmentUrl(fileId, filename);
               return `<img src="${url}" alt="${filename}" />`;

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
-import { SynoNote } from '@/types/synology';
+import { SynoNote, SynoNotebook } from '@/types/synology';
 
 describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', () => {
   beforeEach(() => {
@@ -1138,6 +1138,84 @@ describe('NoteStore & NoteList: 笔记本过滤、分页与年月分组验证', 
     expect(noteStore.notes.length).toBe(2);
     expect(noteStore.notes[0].object_id).toBe('copy_1');
     expect(noteStore.activeNoteId).toBe('copy_1');
+  });
+
+  it('需求: syncWithServer 完整触发服务端笔记本、便签列表与当前活跃便签强刷同步', async () => {
+    const sessionStore = useSessionStore();
+    const noteStore = useNoteStore();
+
+    sessionStore.sessionStates['srv_1'] = {
+      serverId: 'srv_1',
+      isLoggedIn: true,
+      isConnecting: false
+    };
+    sessionStore.activeProfileId = 'srv_1';
+
+    const refreshedNotebooks: SynoNotebook[] = [
+      {
+        object_id: 'nb_sync_1',
+        title: '云端同步笔记本',
+        category: 'notebook',
+        ctime: 1700000000,
+        mtime: 1700000000,
+        ver: '1',
+        preset: false,
+        stack: ''
+      }
+    ];
+
+    const refreshedNotes: SynoNote[] = [
+      {
+        object_id: 'note_sync_1',
+        parent_id: 'nb_sync_1',
+        title: '云端最新便签',
+        brief: '云端最新便签',
+        content: '<p>云端同步正文最新版</p>',
+        ctime: 1700000000,
+        mtime: 1700000100,
+        ver: 'v2',
+        tag: ['云端同步']
+      }
+    ];
+
+    const refreshedFullNote: SynoNote = {
+      object_id: 'note_sync_1',
+      parent_id: 'nb_sync_1',
+      title: '云端最新便签',
+      brief: '云端最新便签',
+      ctime: 1700000000,
+      mtime: 1700000100,
+      ver: 'v2',
+      tag: ['云端同步'],
+      content: '<p>云端同步正文最新版</p>',
+      markdownContent: '云端同步正文最新版'
+    };
+
+    const mockListNotebooks = vi.fn().mockResolvedValue(refreshedNotebooks);
+    const mockListAllNotes = vi.fn().mockResolvedValue({ notes: refreshedNotes, total: 1 });
+    const mockGetNote = vi.fn().mockResolvedValue(refreshedFullNote);
+
+    const mockClient = {
+      listNotebooks: mockListNotebooks,
+      listAllNotes: mockListAllNotes,
+      getNote: mockGetNote
+    };
+    vi.spyOn(sessionStore, 'activeClient', 'get').mockReturnValue(mockClient as any);
+
+    noteStore.activeNotebookId = 'nb_sync_1';
+    noteStore.activeNoteId = 'note_sync_1';
+
+    const syncPromise = noteStore.syncWithServer();
+    expect(noteStore.isSyncingWithServer).toBe(true);
+
+    const ok = await syncPromise;
+    expect(ok).toBe(true);
+    expect(noteStore.isSyncingWithServer).toBe(false);
+
+    expect(mockListNotebooks).toHaveBeenCalled();
+    expect(mockListAllNotes).toHaveBeenCalled();
+    expect(mockGetNote).toHaveBeenCalledWith('note_sync_1');
+    expect(noteStore.activeNote?.markdownContent).toBe('云端同步正文最新版');
   });
 });
 

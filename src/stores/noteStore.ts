@@ -89,6 +89,7 @@ export const useNoteStore = defineStore('notes', () => {
     }
   });
   const isLoading = ref<boolean>(false);
+  const isSyncingWithServer = ref<boolean>(false);
   const isCreating = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
   const lastSaveTime = ref<number | null>(null);
@@ -446,10 +447,12 @@ export const useNoteStore = defineStore('notes', () => {
       // Filter notes for the active notebook
       const currentNotebookNotes = filteredNotes.value;
 
-      // Auto-select first note if available
+      // Auto-select first note if available, or force refresh currently active note
       if (currentNotebookNotes.length > 0) {
         if (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value)) {
           await selectNote(currentNotebookNotes[0].object_id);
+        } else if (forceRefresh && activeNoteId.value) {
+          await selectNote(activeNoteId.value, true);
         }
       } else {
         activeNoteId.value = null;
@@ -462,7 +465,7 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
-  async function selectNote(noteId: string) {
+  async function selectNote(noteId: string, force = false) {
     const client = sessionStore.activeClient;
     if (!client || !noteId || !sessionStore.activeSessionState?.isLoggedIn) return;
 
@@ -483,6 +486,34 @@ export const useNoteStore = defineStore('notes', () => {
       if (cached) {
         activeNote.value = { ...cached };
       }
+    }
+  }
+
+  /**
+   * Synchronizes data with the Synology Note Station server:
+   * 1. Fetches latest notebooks from server.
+   * 2. Forces re-fetching all notes in the active notebook.
+   * 3. Pulls latest active note details from the server to guarantee fresh content.
+   */
+  async function syncWithServer(): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !sessionStore.activeSessionState?.isLoggedIn) {
+      throw new Error('未连接服务器');
+    }
+
+    isSyncingWithServer.value = true;
+    try {
+      await fetchNotebooks();
+      await fetchNotes(activeNotebookId.value, true);
+      if (activeNoteId.value) {
+        await selectNote(activeNoteId.value, true);
+      }
+      return true;
+    } catch (e) {
+      console.error('Failed to sync with server', e);
+      throw e;
+    } finally {
+      isSyncingWithServer.value = false;
     }
   }
 
@@ -1026,6 +1057,7 @@ export const useNoteStore = defineStore('notes', () => {
     searchQuery,
     isSearchingServer,
     isLoading,
+    isSyncingWithServer,
     isCreating,
     isSaving,
     lastSaveTime,
@@ -1036,6 +1068,7 @@ export const useNoteStore = defineStore('notes', () => {
     fetchNotebooks,
     selectNotebook,
     fetchNotes,
+    syncWithServer,
     fetchRecycledNotes,
     fetchShortcuts,
     isFavorite,

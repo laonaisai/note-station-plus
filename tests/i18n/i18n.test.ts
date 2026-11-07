@@ -42,6 +42,8 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('common.save')).toBe('保存');
     expect(t('sidebar.allNotes')).toBe('全部便签');
     expect(t('about.appName')).toBe('应用名称');
+    expect(t('editor.syncToOtherServer')).toBe('同步到其他服务');
+    expect(t('editor.syncWithServer')).toBe('同步服务端');
     expect(t('editor.saveFailed', { err: '网络超时' })).toBe('保存便签失败: 网络超时');
   });
 
@@ -52,6 +54,8 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('sidebar.allNotes')).toBe('全部便箋');
     expect(t('sidebar.favorites')).toBe('我的最愛');
     expect(t('about.appName')).toBe('應用程式名稱');
+    expect(t('editor.syncToOtherServer')).toBe('同步至其他服務');
+    expect(t('editor.syncWithServer')).toBe('同步伺服器端');
   });
 
   it('4. 英语翻译正确切换', () => {
@@ -61,6 +65,8 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('sidebar.allNotes')).toBe('All Notes');
     expect(t('sidebar.favorites')).toBe('Favorites');
     expect(t('about.appName')).toBe('Application Name');
+    expect(t('editor.syncToOtherServer')).toBe('Sync to Other Server');
+    expect(t('editor.syncWithServer')).toBe('Sync with Server');
   });
 
   it('5. 日语翻译正确切换', () => {
@@ -70,6 +76,8 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('sidebar.allNotes')).toBe('すべてのノート');
     expect(t('sidebar.favorites')).toBe('お気に入り');
     expect(t('about.appName')).toBe('アプリ名');
+    expect(t('editor.syncToOtherServer')).toBe('他のサーバーへ同期');
+    expect(t('editor.syncWithServer')).toBe('サーバーと同期');
   });
 
   it('6. 缺失键应安全优雅回退至简体中文，避免界面白屏或空白', () => {

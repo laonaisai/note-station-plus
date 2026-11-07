@@ -156,16 +156,29 @@
               {{ t('common.save') }}
             </button>
 
-            <!-- Sync to other servers button (REQ-3) -->
+            <!-- Sync with server button (同步服务端: 获取最新便签版本，保存新版到服务) -->
+            <button
+              @click="handleSyncWithServer"
+              :disabled="isSyncingWithServer || noteStore.isLoading || noteStore.isSyncingWithServer"
+              class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
+              :title="t('editor.syncWithServer')"
+            >
+              <svg :class="['w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400', (isSyncingWithServer || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {{ t('editor.syncWithServer') }}
+            </button>
+
+            <!-- Sync to other servers button (同步到其他服务) -->
             <button
               @click="handleOpenSync"
               class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
-              :title="t('editor.sync')"
+              :title="t('editor.syncToOtherServer')"
             >
               <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              {{ t('editor.sync') }}
+              {{ t('editor.syncToOtherServer') }}
             </button>
 
             <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
@@ -904,6 +917,26 @@ function exportCurrentNote() {
     showToast(t('editor.exportSuccess', { title: currentNote.title }), 'success');
   } catch (e: any) {
     showToast(t('editor.exportFailed', { error: e?.message || e }), 'error');
+  }
+}
+
+const isSyncingWithServer = ref(false);
+
+async function handleSyncWithServer() {
+  if (isSyncingWithServer.value || noteStore.isSyncingWithServer) return;
+  isSyncingWithServer.value = true;
+  try {
+    // 1. If currently modified, save local modifications to server first
+    if (isModified.value) {
+      await saveNote(false);
+    }
+    // 2. Sync latest data from server (notebooks, notes list, and active note details)
+    await noteStore.syncWithServer();
+    showToast(t('editor.syncWithServerSuccess'), 'success');
+  } catch (err: any) {
+    showToast(t('editor.syncWithServerFailed') + (err?.message ? `: ${err.message}` : ''), 'error');
+  } finally {
+    isSyncingWithServer.value = false;
   }
 }
 

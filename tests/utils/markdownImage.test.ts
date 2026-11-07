@@ -104,5 +104,40 @@ describe('Markdown Image Conversion & Legacy Healing', () => {
       getAttachmentUrl: (id) => `http://syno/${id}`
     })).not.toThrow();
   });
+
+  it('detects external modifications made by official Synology clients and parses latest content with Turndown', () => {
+    // 1. Initial note saved in Note Station Plus
+    const originalMd = '## 原始标题\n\n这是原始便签内容';
+    const htmlFromPlus = markdownToNoteHtml(originalMd);
+    expect(htmlFromPlus).toContain('hash=');
+
+    // 2. Official Synology client edits note: modifies HTML text and inserts an image, while preserving comment
+    const officialEditedHtml = `<p>这是官方客户端修改后的新正文</p><p><img class="syno-notestation-image-object" src="webman/3rdparty/NoteStation/images/transparent.gif" ref="MTcwOTk1OTU0ODc4M3NjcmVlbnNob3QucG5n" alt="new_shot.png" /></p>\n` +
+      htmlFromPlus.substring(htmlFromPlus.indexOf('<!-- note-station-plus:markdown'));
+
+    const attachments = [
+      {
+        id: 'file_777',
+        file_id: 'file_777',
+        name: 'new_shot.png',
+        ref: 'MTcwOTk1OTU0ODc4M3NjcmVlbnNob3QucG5n',
+        size: 2048,
+        type: 'image/png'
+      }
+    ];
+
+    const getAttachmentUrl = (fileId: string, filename?: string) => `https://nas/download?file_id=${fileId}&name=${filename}`;
+
+    const parsedMd = noteHtmlToMarkdown(officialEditedHtml, {
+      attachments,
+      getAttachmentUrl
+    });
+
+    // Should NOT return the old markdown ("这是原始便签内容")
+    expect(parsedMd).not.toContain('这是原始便签内容');
+    // Should contain official client's edited text and newly inserted image
+    expect(parsedMd).toContain('这是官方客户端修改后的新正文');
+    expect(parsedMd).toContain('![new_shot.png](https://nas/download?file_id=file_777&name=new_shot.png)');
+  });
 });
 

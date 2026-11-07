@@ -292,7 +292,7 @@ async function reconnectActive() {
   if (sessionStore.activeProfileId) {
     const ok = await sessionStore.loginServer(sessionStore.activeProfileId);
     if (ok) {
-      await noteStore.fetchNotebooks();
+      await noteStore.syncWithServer();
     }
   }
 }
