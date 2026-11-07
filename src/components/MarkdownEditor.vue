@@ -1,7 +1,48 @@
 <template>
   <div class="flex-1 h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+    <!-- Note Loading Skeleton State -->
+    <div v-if="noteStore.isLoadingNote" class="flex-1 flex flex-col h-full overflow-hidden select-none animate-in fade-in duration-150">
+      <!-- Loading Top Bar Skeleton -->
+      <div class="h-14 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
+        <div class="flex items-center space-x-3 flex-1 min-w-0">
+          <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+          <div class="h-5 w-48 sm:w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <div class="h-6 w-14 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
+          <div class="h-6 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
+        </div>
+      </div>
+
+      <!-- Loading Main Body: Spinner & Document Skeleton -->
+      <div class="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50/50 dark:bg-slate-950/50">
+        <div class="flex flex-col items-center max-w-md w-full">
+          <!-- Animated Spinner -->
+          <div class="mb-4 flex items-center justify-center">
+            <svg class="animate-spin w-10 h-10 text-syno-blue" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+              <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </div>
+
+          <!-- Loading Tip Text -->
+          <p class="text-sm font-medium text-slate-600 dark:text-slate-300 mb-6 tracking-wide">
+            {{ t('editor.loadingNote') }}
+          </p>
+
+          <!-- Skeleton Text Bars Preview -->
+          <div class="w-full space-y-3 px-4 opacity-50">
+            <div class="h-3.5 bg-slate-200 dark:bg-slate-800 rounded-full w-3/4 animate-pulse"></div>
+            <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded-full w-full animate-pulse"></div>
+            <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded-full w-5/6 animate-pulse"></div>
+            <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded-full w-2/3 animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Note Empty State -->
-    <div v-if="!noteStore.activeNote" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
+    <div v-else-if="!noteStore.activeNote" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
       <!-- Distraction-free recovery bar if sidebar is collapsed while empty -->
       <div v-if="layoutStore.isSidebarCollapsed" class="mb-4 flex items-center space-x-2">
         <button
@@ -700,6 +741,14 @@ const newTagText = ref('');
 const tagInputRef = ref<HTMLInputElement | null>(null);
 
 let saveTimer: any = null;
+
+// Clear pending auto-save when switching active note
+watch(
+  () => noteStore.activeNoteId,
+  () => {
+    clearTimeout(saveTimer);
+  }
+);
 
 // Watch for active note changes
 watch(

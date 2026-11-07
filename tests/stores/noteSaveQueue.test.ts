@@ -28,6 +28,9 @@ describe('NoteStore: Save Serialization Queue & Concurrency Mutex', () => {
       parent_id: 'notebook_1',
       title: '初始标题',
       markdownContent: '初始内容',
+      brief: '初始内容',
+      content: '<p>初始内容</p>',
+      tag: [],
       ver: 'ver_v1',
       ctime: 1000,
       mtime: 1000

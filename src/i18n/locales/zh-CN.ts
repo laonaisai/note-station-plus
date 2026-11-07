@@ -130,6 +130,7 @@ export const zhCN: TranslationMessages = {
     titlePlaceholder: '便签标题...',
     restoredSuccess: '便签已成功恢复至原始笔记本！',
     saveNote: '保存便签',
+    loadingNote: '正在加载便签内容...',
     modeEdit: '编辑',
     modePreview: '预览',
     modeSplit: '分屏',

@@ -130,6 +130,7 @@ export const enUS: TranslationMessages = {
     titlePlaceholder: 'Note title...',
     restoredSuccess: 'Note restored to its original notebook successfully!',
     saveNote: 'Save Note',
+    loadingNote: 'Loading note content...',
     modeEdit: 'Edit',
     modePreview: 'Preview',
     modeSplit: 'Split View',

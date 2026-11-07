@@ -241,6 +241,18 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
+                    <!-- Loading Spinner (便签内容加载中) -->
+                    <svg
+                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                      class="animate-spin w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
                       v-if="noteStore.isFavorite(note.object_id)"
@@ -579,6 +591,18 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
+                    <!-- Loading Spinner (便签内容加载中) -->
+                    <svg
+                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                      class="animate-spin w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
                       v-if="noteStore.isFavorite(note.object_id)"
@@ -912,6 +936,18 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
+                    <!-- Loading Spinner (便签内容加载中) -->
+                    <svg
+                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                      class="animate-spin w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
                       v-if="noteStore.isFavorite(note.object_id)"
@@ -1206,6 +1242,18 @@
                 <!-- Title Row & Menu Button -->
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-1.5 flex-1 min-w-0 pr-1">
+                    <!-- Loading Spinner (便签内容加载中) -->
+                    <svg
+                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                      class="animate-spin w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
                       v-if="noteStore.isFavorite(note.object_id)"
@@ -1585,6 +1633,18 @@
                     class="text-xs font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
                     :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
                   >
+                    <!-- Loading Spinner (便签内容加载中) -->
+                    <svg
+                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                      class="animate-spin w-3.5 h-3.5 shrink-0"
+                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+
                     <!-- Favorite Icon (已收藏图标) -->
                     <svg
                       v-if="noteStore.isFavorite(note.object_id)"

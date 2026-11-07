@@ -23,6 +23,9 @@ export const useNoteStore = defineStore('notes', () => {
   const shortcutIds = ref<Set<string>>(new Set());
   const activeNoteId = ref<string | null>(null);
   const activeNote = ref<SynoNote | null>(null);
+  const isLoadingNote = ref<boolean>(false);
+  let currentSelectNoteSeq = 0;
+  const noteContentCache = new Map<string, SynoNote>();
 
   const favoriteNotes = computed(() => {
     return notes.value.filter(n => shortcutIds.value.has(n.object_id));
@@ -470,9 +473,25 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client || !noteId || !sessionStore.activeSessionState?.isLoggedIn) return;
 
+    const seq = ++currentSelectNoteSeq;
     activeNoteId.value = noteId;
+
+    // Use memory cache for instant response if available and not forced
+    if (!force && noteContentCache.has(noteId)) {
+      const cached = noteContentCache.get(noteId)!;
+      activeNote.value = { ...cached };
+      isLoadingNote.value = false;
+      return;
+    }
+
+    isLoadingNote.value = true;
     try {
       const fullNote = await client.getNote(noteId);
+      // Guard against race conditions if user clicked another note while loading
+      if (seq !== currentSelectNoteSeq || activeNoteId.value !== noteId) {
+        return;
+      }
+      noteContentCache.set(noteId, { ...fullNote });
       activeNote.value = fullNote;
 
       // Ensure tags in notes list are up to date
@@ -481,11 +500,18 @@ export const useNoteStore = defineStore('notes', () => {
         item.tag = [...fullNote.tag];
       }
     } catch (e) {
+      if (seq !== currentSelectNoteSeq || activeNoteId.value !== noteId) {
+        return;
+      }
       console.error('Failed to get note details', e);
-      // Fallback: If getNote fails on recycled note, check recycledNotes cache
-      const cached = recycledNotes.value.find(n => n.object_id === noteId);
+      // Fallback: If getNote fails on recycled note, check recycledNotes cache or content cache
+      const cached = recycledNotes.value.find(n => n.object_id === noteId) || noteContentCache.get(noteId);
       if (cached) {
         activeNote.value = { ...cached };
+      }
+    } finally {
+      if (seq === currentSelectNoteSeq) {
+        isLoadingNote.value = false;
       }
     }
   }
@@ -600,6 +626,7 @@ export const useNoteStore = defineStore('notes', () => {
       // Immediately set as active note and prepend to note list for instant responsiveness
       activeNoteId.value = newNote.object_id;
       activeNote.value = newNote;
+      noteContentCache.set(newNote.object_id, { ...newNote });
       notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
       logger.info('note', 'create', `创建新便签: ${newNote.title}`, { noteId: newNote.object_id, notebookId: targetNbId });
 
@@ -632,6 +659,7 @@ export const useNoteStore = defineStore('notes', () => {
         activeNote.value.title = options.title;
         activeNote.value.markdownContent = options.markdownContent;
         if (options.tags) activeNote.value.tag = options.tags;
+        noteContentCache.set(options.updateObjectId, { ...activeNote.value });
       }
       const item = notes.value.find(n => n.object_id === options.updateObjectId);
       if (item) {
@@ -648,6 +676,7 @@ export const useNoteStore = defineStore('notes', () => {
         const newNote = await client.createNote(options.targetNotebookId, options.title, options.markdownContent, options.tags || []);
         activeNoteId.value = newNote.object_id;
         activeNote.value = newNote;
+        noteContentCache.set(newNote.object_id, { ...newNote });
         notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
         fetchNotes(options.targetNotebookId).catch(console.error);
         logger.info('note', 'create', `创建新便签: ${newNote.title}`, {
@@ -700,6 +729,7 @@ export const useNoteStore = defineStore('notes', () => {
       if (tags !== undefined) {
         activeNote.value.tag = [...tags];
       }
+      noteContentCache.set(activeNote.value.object_id, { ...activeNote.value });
 
       // Update in note list cache
       const item = notes.value.find(n => n.object_id === noteId);
@@ -804,6 +834,7 @@ export const useNoteStore = defineStore('notes', () => {
       const nbId = activeNotebookId.value;
       activeNoteId.value = null;
       activeNote.value = null;
+      noteContentCache.delete(targetId);
       await fetchNotes(nbId);
       fetchRecycledNotes().catch(console.error);
       logger.info('note', 'delete', '删除当前便签至回收站', { noteId: targetId });
@@ -820,6 +851,7 @@ export const useNoteStore = defineStore('notes', () => {
 
     try {
       await client.deleteNote(noteId);
+      noteContentCache.delete(noteId);
       if (activeNoteId.value === noteId) {
         activeNoteId.value = null;
         activeNote.value = null;
@@ -840,6 +872,7 @@ export const useNoteStore = defineStore('notes', () => {
 
     try {
       await client.restoreNote(noteId);
+      noteContentCache.delete(noteId);
       recycledNotes.value = recycledNotes.value.filter(n => n.object_id !== noteId);
       if (activeNoteId.value === noteId) {
         activeNoteId.value = null;
@@ -862,6 +895,7 @@ export const useNoteStore = defineStore('notes', () => {
 
     try {
       await client.permanentlyDeleteNote(noteId);
+      noteContentCache.delete(noteId);
       recycledNotes.value = recycledNotes.value.filter(n => n.object_id !== noteId);
       if (activeNoteId.value === noteId) {
         activeNoteId.value = null;
@@ -921,6 +955,7 @@ export const useNoteStore = defineStore('notes', () => {
       notes.value = [newNote, ...notes.value];
       activeNoteId.value = newNote.object_id;
       activeNote.value = newNote;
+      noteContentCache.set(newNote.object_id, { ...newNote });
 
       // Update notebooks in background
       fetchNotebooks().catch(console.error);
@@ -1063,6 +1098,7 @@ export const useNoteStore = defineStore('notes', () => {
       if (activeNote.value && activeNote.value.object_id === targetNoteId) {
         activeNote.value.attachment = result.allAttachments;
         activeNote.value.ver = result.newVer;
+        noteContentCache.set(targetNoteId, { ...activeNote.value });
       }
 
       // Also update in notes list
@@ -1108,6 +1144,7 @@ export const useNoteStore = defineStore('notes', () => {
         if (activeNote.value && activeNote.value.object_id === targetNoteId) {
           activeNote.value.attachment = (activeNote.value.attachment || []).filter(a => (a.file_id || a.id) !== fileId);
           activeNote.value.ver = res.newVer;
+          noteContentCache.set(targetNoteId, { ...activeNote.value });
         }
         const listItem = notes.value.find(n => n.object_id === targetNoteId);
         if (listItem) {
@@ -1141,6 +1178,9 @@ export const useNoteStore = defineStore('notes', () => {
     }
     selectedTags.value = [];
     isLoading.value = false;
+    isLoadingNote.value = false;
+    currentSelectNoteSeq = 0;
+    noteContentCache.clear();
     isCreating.value = false;
     isSaving.value = false;
     lastSaveTime.value = null;
@@ -1165,6 +1205,7 @@ export const useNoteStore = defineStore('notes', () => {
     filteredNotes,
     activeNoteId,
     activeNote,
+    isLoadingNote,
     searchQuery,
     isSearchingServer,
     isLoading,

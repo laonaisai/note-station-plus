@@ -143,6 +143,7 @@ export interface TranslationMessages {
     titlePlaceholder: string;
     restoredSuccess: string;
     saveNote: string;
+    loadingNote: string;
     modeEdit: string;
     modePreview: string;
     modeSplit: string;

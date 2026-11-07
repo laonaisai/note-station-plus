@@ -130,6 +130,7 @@ export const zhTW: TranslationMessages = {
     titlePlaceholder: '便箋標題...',
     restoredSuccess: '便箋已成功還原至原始筆記本！',
     saveNote: '儲存便箋',
+    loadingNote: '正在載入便箋內容...',
     modeEdit: '編輯',
     modePreview: '預覽',
     modeSplit: '分割檢視',

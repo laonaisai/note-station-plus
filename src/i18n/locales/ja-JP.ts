@@ -130,6 +130,7 @@ export const jaJP: TranslationMessages = {
     titlePlaceholder: 'ノートのタイトル...',
     restoredSuccess: '元のノートブックに正常に復元されました！',
     saveNote: 'ノートを保存',
+    loadingNote: 'ノート内容を読み込み中...',
     modeEdit: '編集',
     modePreview: 'プレビュー',
     modeSplit: '分割表示',
