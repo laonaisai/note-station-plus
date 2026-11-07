@@ -280,6 +280,7 @@ export const zhTW: TranslationMessages = {
   },
   about: {
     modalTitle: '關於 Note Station Plus',
+    appName: '應用程式名稱',
     version: '目前版本',
     desc: '專為群暉 Synology Note Station 打造的增強型現代化跨平台用戶端，提供完整原生 Markdown 支援、多帳號多服務標籤頁無縫切換、離線同步與現代編輯體驗。',
     featuresTitle: '核心功能',

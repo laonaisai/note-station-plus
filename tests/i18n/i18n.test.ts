@@ -41,6 +41,7 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     setLocale('zh-CN');
     expect(t('common.save')).toBe('保存');
     expect(t('sidebar.allNotes')).toBe('全部便签');
+    expect(t('about.appName')).toBe('应用名称');
     expect(t('editor.saveFailed', { err: '网络超时' })).toBe('保存便签失败: 网络超时');
   });
 
@@ -50,6 +51,7 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('common.save')).toBe('儲存');
     expect(t('sidebar.allNotes')).toBe('全部便箋');
     expect(t('sidebar.favorites')).toBe('我的最愛');
+    expect(t('about.appName')).toBe('應用程式名稱');
   });
 
   it('4. 英语翻译正确切换', () => {
@@ -58,6 +60,7 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('common.save')).toBe('Save');
     expect(t('sidebar.allNotes')).toBe('All Notes');
     expect(t('sidebar.favorites')).toBe('Favorites');
+    expect(t('about.appName')).toBe('Application Name');
   });
 
   it('5. 日语翻译正确切换', () => {
@@ -66,6 +69,7 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('common.save')).toBe('保存');
     expect(t('sidebar.allNotes')).toBe('すべてのノート');
     expect(t('sidebar.favorites')).toBe('お気に入り');
+    expect(t('about.appName')).toBe('アプリ名');
   });
 
   it('6. 缺失键应安全优雅回退至简体中文，避免界面白屏或空白', () => {

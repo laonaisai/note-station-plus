@@ -280,6 +280,7 @@ export const enUS: TranslationMessages = {
   },
   about: {
     modalTitle: 'About Note Station Plus',
+    appName: 'Application Name',
     version: 'Current Version',
     desc: 'An enhanced, modern cross-platform desktop client tailored for Synology Note Station, featuring full native Markdown support, seamless multi-server tabs, offline synchronization, and modern writing tools.',
     featuresTitle: 'Key Features',

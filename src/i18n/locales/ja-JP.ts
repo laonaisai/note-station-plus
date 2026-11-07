@@ -280,6 +280,7 @@ export const jaJP: TranslationMessages = {
   },
   about: {
     modalTitle: 'Note Station Plus について',
+    appName: 'アプリ名',
     version: '現在のバージョン',
     desc: 'Synology Note Station に特化したモダンなクロスプラットフォームデスクトップクライアント。ネイティブ Markdown 対応、マルチサーバーの瞬時切り替え、オフライン同期、快適な執筆体験を提供します。',
     featuresTitle: '主な機能',

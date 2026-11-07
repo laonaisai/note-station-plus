@@ -293,6 +293,7 @@ export interface TranslationMessages {
   };
   about: {
     modalTitle: string;
+    appName: string;
     version: string;
     desc: string;
     featuresTitle: string;
