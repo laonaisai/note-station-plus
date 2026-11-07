@@ -156,7 +156,7 @@
               {{ t('common.save') }}
             </button>
 
-            <!-- Sync with server button (同步服务端: 获取最新便签版本，保存新版到服务) -->
+            <!-- Sync with server button (同步当前NAS: 获取最新便签版本，保存新版到服务) -->
             <button
               @click="handleSyncWithServer"
               :disabled="isSyncingWithServer || noteStore.isLoading || noteStore.isSyncingWithServer"
@@ -169,7 +169,7 @@
               {{ t('editor.syncWithServer') }}
             </button>
 
-            <!-- Sync to other servers button (同步到其他服务) -->
+            <!-- Sync to other servers button (同步到其他NAS) -->
             <button
               @click="handleOpenSync"
               class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
@@ -827,28 +827,44 @@ function onContentChanged() {
   }, 2500);
 }
 
-async function saveNote(isManual = false) {
-  if (isRecycledNote.value) return;
+let pendingManualToast = false;
+let lastSaveToastTime = 0;
+
+async function saveNote(isManual = false): Promise<boolean> {
+  if (isRecycledNote.value) return false;
   if (noteStore.isUploadingAttachment) {
     if (isManual) {
       showToast(t('editor.uploadingWait'), 'info');
     }
-    return;
+    return false;
   }
   clearTimeout(saveTimer);
-  if (!noteStore.activeNoteId) return;
+  if (!noteStore.activeNoteId) return false;
+
+  if (isManual) {
+    pendingManualToast = true;
+  }
 
   const title = editTitle.value.trim() || t('common.untitled');
   try {
     const success = await noteStore.updateActiveNote(title, editMarkdown.value, editTags.value);
     if (success) {
       isModified.value = false;
-      if (isManual) {
-        showToast(t('editor.saved'), 'success');
+      if (pendingManualToast) {
+        pendingManualToast = false;
+        const now = Date.now();
+        if (now - lastSaveToastTime > 1500) {
+          lastSaveToastTime = now;
+          showToast(t('editor.saved'), 'success');
+        }
       }
+      return true;
     }
+    return false;
   } catch (err: any) {
+    pendingManualToast = false;
     showToast(t('editor.saveFailed', { error: err?.message || err }), 'error');
+    return false;
   }
 }
 
@@ -928,7 +944,10 @@ async function handleSyncWithServer() {
   try {
     // 1. If currently modified, save local modifications to server first
     if (isModified.value) {
-      await saveNote(false);
+      const saved = await saveNote(false);
+      if (!saved && isModified.value) {
+        return;
+      }
     }
     // 2. Sync latest data from server (notebooks, notes list, and active note details)
     await noteStore.syncWithServer();

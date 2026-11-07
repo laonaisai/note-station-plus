@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { ServerProfile, SessionState } from '@/types/synology';
 import { ConfigManager } from '@/services/configManager';
 import { SynologyApiClient } from '@/api/SynologyApiClient';
+import { logger } from '@/services/logger';
 
 export const useSessionStore = defineStore('session', () => {
   const profiles = ref<ServerProfile[]>([]);
@@ -99,6 +100,11 @@ export const useSessionStore = defineStore('session', () => {
             isLoggedIn: true,
             isConnecting: false
           };
+          logger.info('auth', 'login_success', `登录群晖 NAS 成功: ${profile.alias || profile.serverUrl}`, {
+            serverId: profileId,
+            account: profile.account,
+            serverUrl: profile.serverUrl
+          });
           return true;
         } catch (err: any) {
           lastErr = err;
@@ -117,6 +123,11 @@ export const useSessionStore = defineStore('session', () => {
         isConnecting: false,
         lastError: lastErr?.message || '连接失败'
       };
+      logger.error('auth', 'login_failed', `登录群晖 NAS 失败: ${profile.alias || profile.serverUrl}`, lastErr, {
+        serverId: profileId,
+        account: profile.account,
+        serverUrl: profile.serverUrl
+      });
       return false;
     })().finally(() => {
       pendingLogins.delete(profileId);
@@ -148,23 +159,27 @@ export const useSessionStore = defineStore('session', () => {
     }
     activeProfileId.value = profileId;
     ConfigManager.setActiveProfileId(profileId);
+    logger.info('auth', 'switch_server', '切换当前NAS标签页', { profileId });
   }
 
   async function addProfile(profile: ServerProfile) {
     ConfigManager.upsertProfile(profile);
     profiles.value = ConfigManager.getProfiles();
+    logger.info('auth', 'add_server', `添加新NAS服务器: ${profile.alias || profile.serverUrl}`, { profileId: profile.id });
     await setActiveProfile(profile.id);
   }
 
   async function updateProfile(profile: ServerProfile) {
     ConfigManager.upsertProfile(profile);
     profiles.value = ConfigManager.getProfiles();
+    logger.info('auth', 'update_server', `更新NAS服务器配置: ${profile.alias || profile.serverUrl}`, { profileId: profile.id });
     clients.delete(profile.id); // Reset client instance
     delete sessionStates.value[profile.id];
     await loginServer(profile.id);
   }
 
   async function removeProfile(profileId: string) {
+    logger.warn('auth', 'remove_server', '移除NAS服务器配置', { profileId });
     ConfigManager.deleteProfile(profileId);
     clients.delete(profileId);
     delete sessionStates.value[profileId];

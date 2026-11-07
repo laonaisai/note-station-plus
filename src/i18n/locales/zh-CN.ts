@@ -43,6 +43,7 @@ export const zhCN: TranslationMessages = {
     clearDataTitle: '清除本地配置与缓存',
     aboutTitle: '关于 Note Station Plus',
     aboutBtn: '关于',
+    viewLogs: '运行日志',
     themeLight: '浅色主题',
     themeDark: '深色主题',
     themeToggle: '切换主题方案 (浅色/深色)',
@@ -150,11 +151,11 @@ export const zhCN: TranslationMessages = {
     recycledTip: '便签处于回收站中，仅供查看，恢复后可重新编辑',
     restore: '恢复',
     permDelete: '彻底删除',
-    sync: '同步到其他服务',
-    syncToOtherServer: '同步到其他服务',
-    syncWithServer: '同步服务端',
-    syncWithServerSuccess: '已成功与服务端同步最新数据',
-    syncWithServerFailed: '同步服务端失败',
+    sync: '同步到其他NAS',
+    syncToOtherServer: '同步到其他NAS',
+    syncWithServer: '同步当前NAS',
+    syncWithServerSuccess: '已成功与当前NAS同步最新数据',
+    syncWithServerFailed: '同步当前NAS失败',
     more: '更多',
     importMd: '导入 Markdown (.md)',
     exportMd: '导出为 Markdown (.md)',
@@ -298,7 +299,8 @@ export const zhCN: TranslationMessages = {
     sourceUrl: '源码地址',
     copySourceUrl: '复制源码地址',
     sourceCopied: '已复制源码地址到剪贴板',
-    copyFailed: '复制失败，请手动选中复制'
+    copyFailed: '复制失败，请手动选中复制',
+    viewLogs: '查看运行日志'
   },
   sync: {
     modalTitle: '跨服务便签同步',
@@ -352,5 +354,22 @@ export const zhCN: TranslationMessages = {
     keyboardTip: '支持直接键盘键入或点击数字键盘',
     forgotPin: '忘记 PIN 码？',
     verifying: '正在验证...'
+  },
+  logs: {
+    modalTitle: '应用运行日志',
+    clear: '清空日志',
+    clearConfirm: '确定要清空所有本地运行日志吗？',
+    exportText: '复制全部日志',
+    download: '导出日志文件',
+    empty: '暂无日志记录',
+    level: '级别',
+    category: '分类',
+    searchPlaceholder: '搜索日志关键词...',
+    allLevels: '全部级别',
+    allCategories: '全部分类',
+    copyAll: '一键复制',
+    copied: '已复制日志到剪贴板',
+    totalCount: '共 {count} 条记录',
+    refresh: '刷新'
   }
 };

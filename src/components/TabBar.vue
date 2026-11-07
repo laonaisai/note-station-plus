@@ -181,6 +181,20 @@
 
       <span class="w-[1px] h-3.5 bg-slate-800 mx-0.5"></span>
 
+      <!-- Logs Button (运行日志) -->
+      <button
+        @click="$emit('open-logs')"
+        class="flex items-center space-x-1 px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+        :title="t('tabBar.viewLogs')"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="text-xs font-medium">{{ t('tabBar.viewLogs') }}</span>
+      </button>
+
+      <span class="w-[1px] h-3.5 bg-slate-800 mx-0.5"></span>
+
       <!-- About Button (关于) -->
       <button
         @click="$emit('open-about')"
@@ -213,7 +227,7 @@ const props = withDefaults(
   }
 );
 
-const emit = defineEmits(['add-server', 'edit-server', 'open-pin-settings', 'lock-screen', 'open-about']);
+const emit = defineEmits(['add-server', 'edit-server', 'open-pin-settings', 'lock-screen', 'open-about', 'open-logs']);
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
 const themeStore = useThemeStore();

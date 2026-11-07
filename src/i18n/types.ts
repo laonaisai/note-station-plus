@@ -56,6 +56,7 @@ export interface TranslationMessages {
     clearDataTitle: string;
     aboutTitle: string;
     aboutBtn: string;
+    viewLogs: string;
     themeLight: string;
     themeDark: string;
     themeToggle: string;
@@ -312,6 +313,7 @@ export interface TranslationMessages {
     copySourceUrl: string;
     sourceCopied: string;
     copyFailed: string;
+    viewLogs: string;
   };
   sync: {
     modalTitle: string;
@@ -365,5 +367,22 @@ export interface TranslationMessages {
     keyboardTip: string;
     forgotPin: string;
     verifying: string;
+  };
+  logs: {
+    modalTitle: string;
+    clear: string;
+    clearConfirm: string;
+    exportText: string;
+    download: string;
+    empty: string;
+    level: string;
+    category: string;
+    searchPlaceholder: string;
+    allLevels: string;
+    allCategories: string;
+    copyAll: string;
+    copied: string;
+    totalCount: string;
+    refresh: string;
   };
 }

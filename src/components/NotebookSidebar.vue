@@ -1797,7 +1797,7 @@
           <span>{{ t('editor.shareManage') }}</span>
         </button>
 
-        <!-- 5. 同步到其他服务 (跨服务便签同步) -->
+        <!-- 5. 同步到其他NAS (跨NAS便签同步) -->
         <button
           @click="triggerNoteSync"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"

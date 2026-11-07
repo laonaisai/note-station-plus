@@ -43,6 +43,7 @@ export const zhTW: TranslationMessages = {
     clearDataTitle: '清除本機設定與快取',
     aboutTitle: '關於 Note Station Plus',
     aboutBtn: '關於',
+    viewLogs: '執行日誌',
     themeLight: '淺色主題',
     themeDark: '深色主題',
     themeToggle: '切換主題方案 (淺色/深色)',
@@ -150,11 +151,11 @@ export const zhTW: TranslationMessages = {
     recycledTip: '此便箋位於資源回收筒中，僅供檢視，還原後即可重新編輯',
     restore: '還原',
     permDelete: '徹底刪除',
-    sync: '同步至其他服務',
-    syncToOtherServer: '同步至其他服務',
-    syncWithServer: '同步伺服器端',
-    syncWithServerSuccess: '已成功與伺服器端同步最新資料',
-    syncWithServerFailed: '同步伺服器端失敗',
+    sync: '同步至其他NAS',
+    syncToOtherServer: '同步至其他NAS',
+    syncWithServer: '同步當前NAS',
+    syncWithServerSuccess: '已成功與當前NAS同步最新資料',
+    syncWithServerFailed: '同步當前NAS失敗',
     more: '更多',
     importMd: '匯入 Markdown (.md)',
     exportMd: '匯出為 Markdown (.md)',
@@ -298,7 +299,8 @@ export const zhTW: TranslationMessages = {
     sourceUrl: '原始碼網址',
     copySourceUrl: '複製原始碼網址',
     sourceCopied: '已複製原始碼網址至剪貼簿',
-    copyFailed: '複製失敗，請手動選取複製'
+    copyFailed: '複製失敗，請手動選取複製',
+    viewLogs: '檢視執行日誌'
   },
   sync: {
     modalTitle: '跨服務便箋同步',
@@ -352,5 +354,22 @@ export const zhTW: TranslationMessages = {
     keyboardTip: '支援直接鍵盤輸入或點選數字鍵盤',
     forgotPin: '忘記 PIN 碼？',
     verifying: '正在驗證...'
+  },
+  logs: {
+    modalTitle: '應用程式執行日誌',
+    clear: '清空日誌',
+    clearConfirm: '確定要清空所有本機執行日誌嗎？',
+    exportText: '複製全部日誌',
+    download: '匯出日誌檔案',
+    empty: '暫無日誌記錄',
+    level: '級別',
+    category: '分類',
+    searchPlaceholder: '搜尋日誌關鍵字...',
+    allLevels: '全部級別',
+    allCategories: '全部分類',
+    copyAll: '一鍵複製',
+    copied: '已複製日誌至剪貼簿',
+    totalCount: '共 {count} 條記錄',
+    refresh: '重新整理'
   }
 };

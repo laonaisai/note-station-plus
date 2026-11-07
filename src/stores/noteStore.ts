@@ -10,6 +10,7 @@ import {
 } from '@/types/synology';
 import { useSessionStore } from './sessionStore';
 import { isNoteShared } from '@/utils/shareUtils';
+import { logger } from '@/services/logger';
 
 export const useNoteStore = defineStore('notes', () => {
   const sessionStore = useSessionStore();
@@ -508,9 +509,10 @@ export const useNoteStore = defineStore('notes', () => {
       if (activeNoteId.value) {
         await selectNote(activeNoteId.value, true);
       }
+      logger.info('sync', 'current_nas', '与当前NAS同步数据成功');
       return true;
     } catch (e) {
-      console.error('Failed to sync with server', e);
+      logger.error('sync', 'current_nas', '与当前NAS同步数据失败', e);
       throw e;
     } finally {
       isSyncingWithServer.value = false;
@@ -525,9 +527,10 @@ export const useNoteStore = defineStore('notes', () => {
       const created = await client.createNotebook(title);
       await fetchNotebooks();
       await selectNotebook(created.object_id);
+      logger.info('notebook', 'create', `创建笔记本成功: ${title}`, { notebookId: created.object_id });
       return created;
     } catch (e) {
-      console.error('Failed to create notebook', e);
+      logger.error('notebook', 'create', `创建笔记本失败: ${title}`, e);
       throw e;
     }
   }
@@ -544,9 +547,10 @@ export const useNoteStore = defineStore('notes', () => {
       if (target) {
         target.title = trimmed;
       }
+      logger.info('notebook', 'rename', `重命名笔记本成功: ${trimmed}`, { notebookId });
       return true;
     } catch (e) {
-      console.error('Failed to rename notebook', e);
+      logger.error('notebook', 'rename', `重命名笔记本失败: ${trimmed}`, e, { notebookId });
       throw e;
     }
   }
@@ -574,9 +578,10 @@ export const useNoteStore = defineStore('notes', () => {
 
       await fetchNotebooks();
       await fetchNotes(undefined, true);
+      logger.warn('notebook', 'delete', `删除笔记本`, { notebookId });
       return true;
     } catch (e) {
-      console.error('Failed to delete notebook', e);
+      logger.error('notebook', 'delete', `删除笔记本失败`, e, { notebookId });
       throw e;
     }
   }
@@ -596,6 +601,7 @@ export const useNoteStore = defineStore('notes', () => {
       activeNoteId.value = newNote.object_id;
       activeNote.value = newNote;
       notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
+      logger.info('note', 'create', `创建新便签: ${newNote.title}`, { noteId: newNote.object_id, notebookId: targetNbId });
 
       // Background refresh to synchronize all metadata
       fetchNotes(activeNotebookId.value).catch(console.error);
@@ -644,6 +650,10 @@ export const useNoteStore = defineStore('notes', () => {
         activeNote.value = newNote;
         notes.value = [newNote, ...notes.value.filter(n => n.object_id !== newNote.object_id)];
         fetchNotes(options.targetNotebookId).catch(console.error);
+        logger.info('note', 'create', `创建新便签: ${newNote.title}`, {
+          noteId: newNote.object_id,
+          notebookId: options.targetNotebookId
+        });
         return newNote;
       } finally {
         isCreating.value = false;
@@ -651,18 +661,31 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
-  async function updateActiveNote(title: string, markdownContent: string, tags?: string[]): Promise<boolean> {
-    const client = sessionStore.activeClient;
-    if (!client || !activeNote.value || !activeNoteId.value) return false;
+  interface PendingSaveRequest {
+    noteId: string;
+    title: string;
+    markdownContent: string;
+    tags?: string[];
+    resolvers: Array<(val: boolean) => void>;
+    rejecters: Array<(err: any) => void>;
+  }
 
-    if (isUploadingAttachment.value) {
-      throw new Error('正在上传附件中，请稍候保存');
-    }
+  let activeSavePromise: Promise<boolean> | null = null;
+  let pendingSaveRequest: PendingSaveRequest | null = null;
+
+  async function executeSingleSave(
+    noteId: string,
+    title: string,
+    markdownContent: string,
+    tags?: string[]
+  ): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !activeNote.value || activeNote.value.object_id !== noteId) return false;
 
     isSaving.value = true;
     try {
       await client.updateNote(
-        activeNoteId.value,
+        noteId,
         title,
         markdownContent,
         tags,
@@ -679,7 +702,7 @@ export const useNoteStore = defineStore('notes', () => {
       }
 
       // Update in note list cache
-      const item = notes.value.find(n => n.object_id === activeNoteId.value);
+      const item = notes.value.find(n => n.object_id === noteId);
       if (item) {
         item.title = title;
         item.mtime = Math.floor(Date.now() / 1000);
@@ -692,13 +715,83 @@ export const useNoteStore = defineStore('notes', () => {
       }
 
       lastSaveTime.value = Date.now();
+      logger.info('note', 'update', `便签保存成功: ${title}`, {
+        noteId,
+        ver: client.lastUpdatedVer
+      });
       return true;
-    } catch (e) {
-      console.error('Failed to save note', e);
+    } catch (e: any) {
+      logger.error('note', 'update', `便签保存失败: ${title}`, e, { noteId });
       throw e;
-    } finally {
-      isSaving.value = false;
     }
+  }
+
+  async function runSaveLoop(
+    targetNoteId: string,
+    title: string,
+    markdownContent: string,
+    tags?: string[]
+  ): Promise<boolean> {
+    try {
+      return await executeSingleSave(targetNoteId, title, markdownContent, tags);
+    } finally {
+      if (pendingSaveRequest) {
+        const next = pendingSaveRequest;
+        pendingSaveRequest = null;
+        if (activeNoteId.value === next.noteId && activeNote.value) {
+          runSaveLoop(next.noteId, next.title, next.markdownContent, next.tags)
+            .then(res => {
+              next.resolvers.forEach(r => r(res));
+            })
+            .catch(err => {
+              next.rejecters.forEach(rj => rj(err));
+            });
+        } else {
+          next.resolvers.forEach(r => r(true));
+          isSaving.value = false;
+          activeSavePromise = null;
+        }
+      } else {
+        isSaving.value = false;
+        activeSavePromise = null;
+      }
+    }
+  }
+
+  async function updateActiveNote(title: string, markdownContent: string, tags?: string[]): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !activeNote.value || !activeNoteId.value) return false;
+
+    if (isUploadingAttachment.value) {
+      throw new Error('正在上传附件中，请稍候保存');
+    }
+
+    const currentNoteId = activeNoteId.value;
+
+    // Concurrency queue: if an update is already executing over the wire, queue this save
+    if (activeSavePromise) {
+      return new Promise<boolean>((resolve, reject) => {
+        if (pendingSaveRequest && pendingSaveRequest.noteId === currentNoteId) {
+          pendingSaveRequest.title = title;
+          pendingSaveRequest.markdownContent = markdownContent;
+          if (tags !== undefined) pendingSaveRequest.tags = tags;
+          pendingSaveRequest.resolvers.push(resolve);
+          pendingSaveRequest.rejecters.push(reject);
+        } else {
+          pendingSaveRequest = {
+            noteId: currentNoteId,
+            title,
+            markdownContent,
+            tags,
+            resolvers: [resolve],
+            rejecters: [reject]
+          };
+        }
+      });
+    }
+
+    activeSavePromise = runSaveLoop(currentNoteId, title, markdownContent, tags);
+    return activeSavePromise;
   }
 
   async function deleteActiveNote(): Promise<boolean> {
@@ -707,14 +800,16 @@ export const useNoteStore = defineStore('notes', () => {
 
     try {
       await client.deleteNote(activeNoteId.value);
+      const targetId = activeNoteId.value;
       const nbId = activeNotebookId.value;
       activeNoteId.value = null;
       activeNote.value = null;
       await fetchNotes(nbId);
       fetchRecycledNotes().catch(console.error);
+      logger.info('note', 'delete', '删除当前便签至回收站', { noteId: targetId });
       return true;
     } catch (e) {
-      console.error('Failed to delete note', e);
+      logger.error('note', 'delete', '删除当前便签失败', e, { noteId: activeNoteId.value });
       throw e;
     }
   }
@@ -731,9 +826,10 @@ export const useNoteStore = defineStore('notes', () => {
       }
       await fetchNotes(activeNotebookId.value);
       fetchRecycledNotes().catch(console.error);
+      logger.info('note', 'delete', '删除便签至回收站', { noteId });
       return true;
     } catch (e) {
-      console.error('Failed to delete note', e);
+      logger.error('note', 'delete', '删除便签失败', e, { noteId });
       throw e;
     }
   }
@@ -752,9 +848,10 @@ export const useNoteStore = defineStore('notes', () => {
       // Re-fetch notes and notebooks to reflect restored note in its notebook
       await fetchNotes(undefined, true);
       await fetchNotebooks();
+      logger.info('note', 'restore', '从回收站还原便签成功', { noteId });
       return true;
     } catch (e) {
-      console.error('Failed to restore note', e);
+      logger.error('note', 'restore', '还原便签失败', e, { noteId });
       throw e;
     }
   }
@@ -770,9 +867,10 @@ export const useNoteStore = defineStore('notes', () => {
         activeNoteId.value = null;
         activeNote.value = null;
       }
+      logger.warn('note', 'perm_delete', '彻底删除便签', { noteId });
       return true;
     } catch (e) {
-      console.error('Failed to permanently delete note', e);
+      logger.error('note', 'perm_delete', '彻底删除便签失败', e, { noteId });
       throw e;
     }
   }
@@ -805,9 +903,10 @@ export const useNoteStore = defineStore('notes', () => {
         console.warn('Failed to refresh notebooks after moveNote', e);
       }
 
+      logger.info('note', 'move', '移动便签至新笔记本成功', { noteId, targetNotebookId });
       return true;
     } catch (e) {
-      console.error('Failed to move note', e);
+      logger.error('note', 'move', '移动便签失败', e, { noteId, targetNotebookId });
       throw e;
     }
   }
@@ -825,9 +924,10 @@ export const useNoteStore = defineStore('notes', () => {
 
       // Update notebooks in background
       fetchNotebooks().catch(console.error);
+      logger.info('note', 'copy', `复制便签成功: ${newNote.title}`, { sourceNoteId: noteId, newNoteId: newNote.object_id });
       return newNote;
     } catch (e) {
-      console.error('Failed to copy note', e);
+      logger.error('note', 'copy', '复制便签失败', e, { noteId });
       throw e;
     }
   }
@@ -976,11 +1076,21 @@ export const useNoteStore = defineStore('notes', () => {
       const downloadUrl = client.getAttachmentDownloadUrl(targetNoteId, fileId, result.attachment.name);
       const isImage = result.attachment.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(result.attachment.name);
 
+      logger.info('attachment', 'upload', `上传附件成功: ${filename}`, {
+        noteId: targetNoteId,
+        fileId,
+        filename,
+        isImage
+      });
+
       return {
         attachment: result.attachment,
         url: downloadUrl,
         isImage
       };
+    } catch (e: any) {
+      logger.error('attachment', 'upload', `上传附件失败: ${filename}`, e, { noteId: targetNoteId, filename });
+      throw e;
     } finally {
       isUploadingAttachment.value = false;
       uploadProgress.value = 0;
@@ -1004,11 +1114,12 @@ export const useNoteStore = defineStore('notes', () => {
           listItem.attachment = (listItem.attachment || []).filter(a => (a.file_id || a.id) !== fileId);
           listItem.ver = res.newVer;
         }
+        logger.info('attachment', 'delete', '删除附件成功', { noteId: targetNoteId, fileId });
         return true;
       }
       return false;
     } catch (e: any) {
-      console.error('Failed to delete attachment', e);
+      logger.error('attachment', 'delete', '删除附件失败', e, { noteId: targetNoteId, fileId });
       throw e;
     }
   }

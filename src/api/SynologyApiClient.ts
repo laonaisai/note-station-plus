@@ -669,7 +669,21 @@ export class SynologyApiClient {
     const data = new URLSearchParams(payload);
     let res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', data.toString());
 
-    // If version 3 fails for any reason, fallback to version 1
+    // If version 3 fails (e.g. Code 100/103 version mismatch), fetch latest note version from server and retry once
+    if (!res.data.success && useV3) {
+      try {
+        const latestServerNote = await this.getNote(objectId);
+        if (latestServerNote.ver && latestServerNote.ver !== ver) {
+          payload['ver'] = latestServerNote.ver;
+          const retryData = new URLSearchParams(payload);
+          res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', retryData.toString());
+        }
+      } catch (retryErr) {
+        // Ignore getNote error and proceed to v1 fallback
+      }
+    }
+
+    // If version 3 still fails, fallback to version 1
     if (!res.data.success && useV3) {
       delete payload['ver'];
       delete payload['commit_msg'];

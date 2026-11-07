@@ -19,6 +19,7 @@
       @open-pin-settings="isPinSettingsModalOpen = true"
       @lock-screen="handleLockScreen"
       @open-about="isAboutModalOpen = true"
+      @open-logs="isLogsModalOpen = true"
     />
 
     <!-- Main 2-Column Content Layout (Unified Sidebar + Markdown Editor) -->
@@ -88,6 +89,12 @@
     <AboutModal
       :is-open="isAboutModalOpen"
       @close="isAboutModalOpen = false"
+      @open-logs="isAboutModalOpen = false; isLogsModalOpen = true"
+    />
+
+    <LogsModal
+      :is-open="isLogsModalOpen"
+      @close="isLogsModalOpen = false"
     />
 
     <PrintModal
@@ -173,6 +180,7 @@ import HistoryModal from '@/components/HistoryModal.vue';
 import PinVerifyScreen from '@/components/PinVerifyScreen.vue';
 import PinSettingsModal from '@/components/PinSettingsModal.vue';
 import AboutModal from '@/components/AboutModal.vue';
+import LogsModal from '@/components/LogsModal.vue';
 import PrintModal from '@/components/PrintModal.vue';
 import type { SynoNote } from '@/types/synology';
 
@@ -203,6 +211,7 @@ const selectedHistoryNoteId = ref<string | null>(null);
 const selectedHistoryNoteTitle = ref<string>('');
 
 const isAboutModalOpen = ref(false);
+const isLogsModalOpen = ref(false);
 
 const isPrintModalOpen = ref(false);
 const printingNote = ref<SynoNote | null>(null);

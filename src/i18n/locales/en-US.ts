@@ -43,6 +43,7 @@ export const enUS: TranslationMessages = {
     clearDataTitle: 'Clear local config and cache',
     aboutTitle: 'About Note Station Plus',
     aboutBtn: 'About',
+    viewLogs: 'Logs',
     themeLight: 'Light Theme',
     themeDark: 'Dark Theme',
     themeToggle: 'Toggle Theme (Light / Dark)',
@@ -150,11 +151,11 @@ export const enUS: TranslationMessages = {
     recycledTip: 'This note is in the recycle bin for read-only view. Restore it to edit.',
     restore: 'Restore',
     permDelete: 'Delete Permanently',
-    sync: 'Sync to Other Server',
-    syncToOtherServer: 'Sync to Other Server',
-    syncWithServer: 'Sync with Server',
-    syncWithServerSuccess: 'Successfully synced latest data with server',
-    syncWithServerFailed: 'Failed to sync with server',
+    sync: 'Sync to Other NAS',
+    syncToOtherServer: 'Sync to Other NAS',
+    syncWithServer: 'Sync Current NAS',
+    syncWithServerSuccess: 'Successfully synced latest data with current NAS',
+    syncWithServerFailed: 'Failed to sync with current NAS',
     more: 'More',
     importMd: 'Import Markdown (.md)',
     exportMd: 'Export as Markdown (.md)',
@@ -298,7 +299,8 @@ export const enUS: TranslationMessages = {
     sourceUrl: 'Source Code',
     copySourceUrl: 'Copy Source URL',
     sourceCopied: 'Source URL copied to clipboard',
-    copyFailed: 'Failed to copy, please select and copy manually'
+    copyFailed: 'Failed to copy, please select and copy manually',
+    viewLogs: 'View Logs'
   },
   sync: {
     modalTitle: 'Cross-Server Note Sync',
@@ -352,5 +354,22 @@ export const enUS: TranslationMessages = {
     keyboardTip: 'Type directly with keyboard or use numpad',
     forgotPin: 'Forgot PIN?',
     verifying: 'Verifying...'
+  },
+  logs: {
+    modalTitle: 'Application Logs',
+    clear: 'Clear Logs',
+    clearConfirm: 'Are you sure you want to clear all local logs?',
+    exportText: 'Copy All Logs',
+    download: 'Export Log File',
+    empty: 'No log entries found',
+    level: 'Level',
+    category: 'Category',
+    searchPlaceholder: 'Search logs...',
+    allLevels: 'All Levels',
+    allCategories: 'All Categories',
+    copyAll: 'Copy All',
+    copied: 'Logs copied to clipboard',
+    totalCount: '{count} total records',
+    refresh: 'Refresh'
   }
 };

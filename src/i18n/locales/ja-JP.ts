@@ -43,6 +43,7 @@ export const jaJP: TranslationMessages = {
     clearDataTitle: 'ローカル設定とキャッシュを消去',
     aboutTitle: 'Note Station Plus について',
     aboutBtn: '情報',
+    viewLogs: 'ログ',
     themeLight: 'ライトテーマ',
     themeDark: 'ダークテーマ',
     themeToggle: 'テーマ切り替え (ライト / ダーク)',
@@ -150,11 +151,11 @@ export const jaJP: TranslationMessages = {
     recycledTip: 'このノートはごみ箱にあります。閲覧のみ可能で、復元すると編集できます。',
     restore: '復元',
     permDelete: '完全に削除',
-    sync: '他のサーバーへ同期',
-    syncToOtherServer: '他のサーバーへ同期',
-    syncWithServer: 'サーバーと同期',
-    syncWithServerSuccess: 'サーバーと最新データを同期しました',
-    syncWithServerFailed: 'サーバーとの同期に失敗しました',
+    sync: '他のNASへ同期',
+    syncToOtherServer: '他のNASへ同期',
+    syncWithServer: '現在のNASと同期',
+    syncWithServerSuccess: '現在のNASと最新データを同期しました',
+    syncWithServerFailed: '現在のNASとの同期に失敗しました',
     more: 'その他',
     importMd: 'Markdownをインポート (.md)',
     exportMd: 'Markdownとしてエクスポート (.md)',
@@ -298,7 +299,8 @@ export const jaJP: TranslationMessages = {
     sourceUrl: 'ソースコード',
     copySourceUrl: 'ソースコードURLをコピー',
     sourceCopied: 'ソースコードのURLをクリップボードにコピーしました',
-    copyFailed: 'コピーに失敗しました。手動でコピーしてください'
+    copyFailed: 'コピーに失敗しました。手動でコピーしてください',
+    viewLogs: 'ログを確認'
   },
   sync: {
     modalTitle: 'サーバー間ノート同期',
@@ -352,5 +354,22 @@ export const jaJP: TranslationMessages = {
     keyboardTip: 'キーボードでの直接入力または画面テンキーをタップ',
     forgotPin: 'PINコードをお忘れですか？',
     verifying: '検証中...'
+  },
+  logs: {
+    modalTitle: 'アプリケーション実行ログ',
+    clear: 'ログをクリア',
+    clearConfirm: 'すべてのローカル実行ログをクリアしてもよろしいですか？',
+    exportText: '全ログをコピー',
+    download: 'ログファイルを書き出す',
+    empty: 'ログ記録はありません',
+    level: 'レベル',
+    category: '分類',
+    searchPlaceholder: 'ログを検索...',
+    allLevels: 'すべてのレベル',
+    allCategories: 'すべての分類',
+    copyAll: '一括コピー',
+    copied: 'ログをクリップボードにコピーしました',
+    totalCount: '全 {count} 件',
+    refresh: '更新'
   }
 };

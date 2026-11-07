@@ -127,7 +127,7 @@ describe('2. 服务1 (172.28.10.180) 真实环境 API 联调测试', () => {
   it('能通过 SYNO.NoteStation.FTS 全文检索接口成功搜索到便签正文关键词', async () => {
     expect(createdNoteId).toBeTruthy();
     let matched = false;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
       const searchResults = await client.searchNotes('已完成更新');
       if (Array.isArray(searchResults) && searchResults.some(n => n.object_id === createdNoteId)) {
         matched = true;
@@ -136,7 +136,7 @@ describe('2. 服务1 (172.28.10.180) 真实环境 API 联调测试', () => {
       await new Promise(r => setTimeout(r, 1000));
     }
     expect(matched).toBe(true);
-  }, 10000);
+  }, 15000);
 
   it('能成功删除该测试便签', async () => {
     expect(createdNoteId).toBeTruthy();
