@@ -692,16 +692,20 @@ let saveTimer: any = null;
 watch(
   () => noteStore.activeNote,
   (note) => {
-    if (note) {
-      editTitle.value = note.title || '';
-      editMarkdown.value = note.markdownContent || '';
-      editTags.value = [...(note.tag || [])];
-      isModified.value = false;
-    } else {
-      editTitle.value = '';
-      editMarkdown.value = '';
-      editTags.value = [];
-      isModified.value = false;
+    try {
+      if (note) {
+        editTitle.value = note.title || '';
+        editMarkdown.value = note.markdownContent || '';
+        editTags.value = Array.isArray(note.tag) ? [...note.tag] : [];
+        isModified.value = false;
+      } else {
+        editTitle.value = '';
+        editMarkdown.value = '';
+        editTags.value = [];
+        isModified.value = false;
+      }
+    } catch (err) {
+      console.error('Error handling active note change in editor:', err);
     }
     isAddingTag.value = false;
     newTagText.value = '';
@@ -720,17 +724,22 @@ const suggestedTags = computed(() => {
 });
 
 const renderedPreviewHtml = computed(() => {
-  let content = editMarkdown.value || '';
-  if (noteStore.activeNote?.attachment && noteStore.activeNote.attachment.length > 0) {
-    const client = sessionStore.activeClient;
-    if (client) {
-      content = healLegacyImagePlaceholders(content, {
-        attachments: noteStore.activeNote.attachment,
-        getAttachmentUrl: (fileId, filename) => client.getAttachmentDownloadUrl(noteStore.activeNote!.object_id, fileId, filename)
-      });
+  try {
+    let content = editMarkdown.value || '';
+    if (noteStore.activeNote?.attachment && noteStore.activeNote.attachment.length > 0) {
+      const client = sessionStore.activeClient;
+      if (client) {
+        content = healLegacyImagePlaceholders(content, {
+          attachments: noteStore.activeNote.attachment,
+          getAttachmentUrl: (fileId, filename) => client.getAttachmentDownloadUrl(noteStore.activeNote!.object_id, fileId, filename)
+        });
+      }
     }
+    return md.render(content);
+  } catch (err) {
+    console.error('Failed to render markdown preview:', err);
+    return `<div class="p-3 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono whitespace-pre-wrap">${editMarkdown.value || ''}</div>`;
   }
-  return md.render(content);
 });
 
 const isCopied = ref(false);

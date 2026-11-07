@@ -635,7 +635,8 @@ export const useNoteStore = defineStore('notes', () => {
         title,
         markdownContent,
         tags,
-        activeNote.value.ver
+        activeNote.value.ver,
+        activeNote.value.attachment
       );
       activeNote.value.title = title;
       activeNote.value.markdownContent = markdownContent;

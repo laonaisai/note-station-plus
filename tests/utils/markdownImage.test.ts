@@ -67,5 +67,42 @@ describe('Markdown Image Conversion & Legacy Healing', () => {
     const roundTrip = noteHtmlToMarkdown(html);
     expect(roundTrip).toBe(mdText);
   });
+
+  it('converts Synology image URLs in Markdown to official native Synology image objects on save', () => {
+    const mdText = `## 包含图片的便签\n\n![测试图片](http://172.28.10.180:5000/webapi/entry.cgi?api=SYNO.NoteStation.Note&version=3&method=download&object_id=note_123&file_id=file_999&format=raw&_sid=TEMP_SID_XYZ)\n\n后续正文`;
+    const attachments = [
+      {
+        id: 'file_999',
+        file_id: 'file_999',
+        name: '测试图片.png',
+        ref: 'MTcwOTk1OTU0ODc4M3NjcmVlbnNob3QucG5n'
+      }
+    ];
+
+    const html = markdownToNoteHtml(mdText, {
+      objectId: 'note_123',
+      attachments
+    });
+
+    // Verify official Synology image object was created
+    expect(html).toContain('class="syno-notestation-image-object"');
+    expect(html).toContain('src="webman/3rdparty/NoteStation/images/transparent.gif"');
+    expect(html).toContain('ref="MTcwOTk1OTU0ODc4M3NjcmVlbnNob3QucG5n"');
+    // Ensure temporary local server IP and _sid are stripped from rendered HTML for official client compatibility
+    expect(html.split('<!-- note-station-plus:markdown')[0]).not.toContain('172.28.10.180');
+    expect(html.split('<!-- note-station-plus:markdown')[0]).not.toContain('TEMP_SID_XYZ');
+  });
+
+  it('handles malformed base64 and special character test content safely without throwing', () => {
+    // Malformed base64 that would otherwise crash atob/decodeURIComponent
+    const badRef = '%%%invalid-base64%%%';
+    expect(() => safeExtractImageName(badRef)).not.toThrow();
+
+    const brokenMarkdown = `测试正文\n\n🖼️ [图片: %%%bad_name%%%]\n\n🖼️ [图片: ]`;
+    expect(() => healLegacyImagePlaceholders(brokenMarkdown, {
+      attachments: [{ id: '1', file_id: '1', name: '' } as any],
+      getAttachmentUrl: (id) => `http://syno/${id}`
+    })).not.toThrow();
+  });
 });
 

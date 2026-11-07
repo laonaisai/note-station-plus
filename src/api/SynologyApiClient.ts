@@ -630,10 +630,11 @@ export class SynologyApiClient {
     title: string,
     markdownContent: string,
     tags?: string[],
-    ver?: string
+    ver?: string,
+    attachments?: SynoAttachment[]
   ): Promise<boolean> {
     const sid = this.requireSid();
-    const htmlContent = markdownToNoteHtml(markdownContent);
+    const htmlContent = markdownToNoteHtml(markdownContent, { objectId, attachments });
 
     // If a valid 40-char SHA1 hash is provided for ver, use version: 3 matching DSM official client
     const useV3 = Boolean(ver && ver.length === 40);
