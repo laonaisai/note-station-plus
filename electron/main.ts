@@ -43,6 +43,78 @@ ipcMain.handle('app:getVersion', () => {
   return app.getVersion();
 });
 
+// Localized strings for main process dialogs and menus
+type AppLocale = 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP';
+
+const quitDialogMessages: Record<AppLocale, { title: string; message: string; detail: string; confirm: string; cancel: string }> = {
+  'zh-CN': {
+    title: '退出应用确认',
+    message: '确定要关闭并退出 Note Station Plus 吗？',
+    detail: '退出前请确保已完成当前便签编辑。',
+    confirm: '确认退出',
+    cancel: '取消'
+  },
+  'zh-TW': {
+    title: '結束應用程式確認',
+    message: '確定要關閉並結束 Note Station Plus 嗎？',
+    detail: '結束前請確認已完成目前便箋編輯。',
+    confirm: '確認結束',
+    cancel: '取消'
+  },
+  'en-US': {
+    title: 'Exit Confirmation',
+    message: 'Are you sure you want to close and exit Note Station Plus?',
+    detail: 'Please make sure your note edits are saved before exiting.',
+    confirm: 'Exit',
+    cancel: 'Cancel'
+  },
+  'ja-JP': {
+    title: 'アプリ終了の確認',
+    message: 'Note Station Plus を終了してもよろしいですか？',
+    detail: '終了する前にノートの編集が保存されていることを確認してください。',
+    confirm: '終了する',
+    cancel: 'キャンセル'
+  }
+};
+
+const contextMenuMessages: Record<AppLocale, {
+  copy: string;
+  cut: string;
+  paste: string;
+  selectAll: string;
+  undo: string;
+  redo: string;
+}> = {
+  'zh-CN': { copy: '复制', cut: '剪切', paste: '粘贴', selectAll: '全选', undo: '撤销', redo: '重做' },
+  'zh-TW': { copy: '複製', cut: '剪下', paste: '貼上', selectAll: '全選', undo: '復原', redo: '重做' },
+  'en-US': { copy: 'Copy', cut: 'Cut', paste: 'Paste', selectAll: 'Select All', undo: 'Undo', redo: 'Redo' },
+  'ja-JP': { copy: 'コピー', cut: '切り取り', paste: '貼り付け', selectAll: 'すべて選択', undo: '元に戻す', redo: 'やり直し' }
+};
+
+function normalizeLocale(rawLocale?: string): AppLocale {
+  if (!rawLocale) return 'zh-CN';
+  const lower = rawLocale.toLowerCase();
+  if (lower.startsWith('zh-tw') || lower.startsWith('zh-hk') || lower.startsWith('zh-mo') || lower.startsWith('zh-hant')) {
+    return 'zh-TW';
+  }
+  if (lower.startsWith('zh')) {
+    return 'zh-CN';
+  }
+  if (lower.startsWith('ja')) {
+    return 'ja-JP';
+  }
+  if (lower.startsWith('en')) {
+    return 'en-US';
+  }
+  return 'zh-CN';
+}
+
+let currentAppLocale: AppLocale = 'zh-CN';
+
+ipcMain.on('app:setLocale', (_event, locale: string) => {
+  currentAppLocale = normalizeLocale(locale);
+});
+
 // IPC handlers for local safeStorage DPAPI encryption
 ipcMain.handle('safeStorage:isAvailable', () => {
   try {
@@ -206,22 +278,23 @@ const createWindow = () => {
   // Register context menu for text selection, copy, paste, etc.
   mainWindow.webContents.on('context-menu', (_event, params) => {
     const menu = new Menu();
+    const cm = contextMenuMessages[currentAppLocale] || contextMenuMessages['zh-CN'];
 
     if (params.selectionText && params.selectionText.trim().length > 0) {
-      menu.append(new MenuItem({ label: '复制', role: 'copy' }));
+      menu.append(new MenuItem({ label: cm.copy, role: 'copy' }));
       menu.append(new MenuItem({ type: 'separator' }));
     }
 
     if (params.isEditable) {
-      menu.append(new MenuItem({ label: '撤销', role: 'undo' }));
-      menu.append(new MenuItem({ label: '重做', role: 'redo' }));
+      menu.append(new MenuItem({ label: cm.undo, role: 'undo' }));
+      menu.append(new MenuItem({ label: cm.redo, role: 'redo' }));
       menu.append(new MenuItem({ type: 'separator' }));
-      menu.append(new MenuItem({ label: '剪切', role: 'cut' }));
-      menu.append(new MenuItem({ label: '复制', role: 'copy' }));
-      menu.append(new MenuItem({ label: '粘贴', role: 'paste' }));
-      menu.append(new MenuItem({ label: '全选', role: 'selectAll' }));
+      menu.append(new MenuItem({ label: cm.cut, role: 'cut' }));
+      menu.append(new MenuItem({ label: cm.copy, role: 'copy' }));
+      menu.append(new MenuItem({ label: cm.paste, role: 'paste' }));
+      menu.append(new MenuItem({ label: cm.selectAll, role: 'selectAll' }));
     } else if (params.selectionText && params.selectionText.trim().length > 0) {
-      menu.append(new MenuItem({ label: '全选', role: 'selectAll' }));
+      menu.append(new MenuItem({ label: cm.selectAll, role: 'selectAll' }));
     }
 
     if (menu.items.length > 0) {
@@ -243,14 +316,15 @@ const createWindow = () => {
 
     e.preventDefault();
 
+    const texts = quitDialogMessages[currentAppLocale] || quitDialogMessages['zh-CN'];
     const choice = dialog.showMessageBoxSync(mainWindow!, {
       type: 'question',
-      buttons: ['确认退出', '取消'],
+      buttons: [texts.confirm, texts.cancel],
       defaultId: 0,
       cancelId: 1,
-      title: '退出应用确认',
-      message: '确定要关闭并退出 Note Station Plus 吗？',
-      detail: '退出前请确保已完成当前便签编辑。',
+      title: texts.title,
+      message: texts.message,
+      detail: texts.detail,
       noLink: true
     });
 
@@ -275,6 +349,7 @@ if (gotTheLock) {
   });
 
   app.whenReady().then(() => {
+    currentAppLocale = normalizeLocale(app.getLocale());
     createWindow();
 
     app.on('activate', () => {

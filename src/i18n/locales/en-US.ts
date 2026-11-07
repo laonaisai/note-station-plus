@@ -110,7 +110,12 @@ export const enUS: TranslationMessages = {
     noShared: 'No shared notes yet',
     notesList: 'Notes List',
     recycledNotes: 'Notes in Recycle Bin',
-    clearSearch: 'Clear Search'
+    clearSearch: 'Clear Search',
+    copySuccess: 'Note copied as "{title}"',
+    copyFailed: 'Failed to copy note: {err}',
+    noNotesToExport: 'No notes to export in notebook "{title}"',
+    exportNotebookSuccess: 'Successfully exported {count} notes from notebook "{title}"!',
+    exportNotebookFailed: 'Failed to export notebook: {err}'
   },
   editor: {
     emptySelectTip: 'Select a note from the left sidebar or create a new note to start editing',
@@ -180,7 +185,23 @@ export const enUS: TranslationMessages = {
     permDeleteModalWarning: '⚠️ Once permanently deleted, this note cannot be recovered!',
     confirmPermDelete: 'Confirm Permanent Delete',
     deleting: 'Deleting...',
-    untitledNote: 'Untitled Note'
+    untitledNote: 'Untitled Note',
+    contentEmpty: 'Note content is empty',
+    copySelectedSuccess: 'Selected text copied!',
+    copyFailed: 'Copy failed, please use Ctrl+C / Cmd+C',
+    restoreFailed: 'Failed to restore note: {err}',
+    permDeleteSuccess: 'Note permanently deleted',
+    permDeleteFailed: 'Failed to permanently delete note: {err}',
+    uploadingWait: 'Uploading attachments, please wait until upload finishes before saving',
+    exportSuccess: 'Note "{title}" exported as Markdown successfully!',
+    exportFailed: 'Failed to export note: {err}',
+    favoriteFailed: 'Failed to update favorites: {err}',
+    uploadingFile: 'Uploading "{name}" to Synology NAS...',
+    uploadInsertSuccess: '"{name}" uploaded and inserted into note!',
+    uploadFileFailed: 'Failed to upload "{name}": {err}',
+    attachmentInserted: 'Inserted "{name}" into note',
+    attachmentDeleted: 'Attachment "{name}" deleted from note',
+    deleteAttachmentFailed: 'Failed to delete attachment: {err}'
   },
   import: {
     title: 'Import Markdown Note',
@@ -227,7 +248,8 @@ export const enUS: TranslationMessages = {
     mtime: 'Modified',
     size: 'Content Size',
     version: 'Version Hash',
-    viewHistory: 'Version History'
+    viewHistory: 'Version History',
+    infoUpdated: 'Note info updated'
   },
   history: {
     modalTitle: 'Note Version History',
@@ -252,7 +274,9 @@ export const enUS: TranslationMessages = {
     enableShare: 'Enable Public Sharing',
     disableShare: 'Disable Sharing',
     copyShareUrl: 'Copy Share Link',
-    shareCopied: 'Share link copied to clipboard!'
+    shareCopied: 'Share link copied to clipboard!',
+    shareSaved: 'Share settings successfully saved!',
+    shareSaveFailed: 'Failed to save share settings: {error}'
   },
   about: {
     modalTitle: 'About Note Station Plus',
@@ -263,7 +287,13 @@ export const enUS: TranslationMessages = {
     feature2: 'Multi-server concurrent tabs with instantaneous switching',
     feature3: 'Seamless light and dark theme switching',
     feature4: 'Multi-encoding import (Big5, Shift_JIS, GBK) and full internationalization',
-    copyright: '© 2026 Note Station Plus. MIT License.'
+    copyright: '© 2026 Note Station Plus. MIT License.',
+    developer: 'Developer',
+    developerName: 'laonaisai',
+    sourceUrl: 'Source Code',
+    copySourceUrl: 'Copy Source URL',
+    sourceCopied: 'Source URL copied to clipboard',
+    copyFailed: 'Failed to copy, please select and copy manually'
   },
   sync: {
     modalTitle: 'Cross-Server Note Sync',

@@ -269,12 +269,12 @@ async function handleExportPdf() {
         title: props.note.title || '便签'
       });
       if (res.success) {
-        showToast('便签已成功导出为 PDF 文档！', 'success');
+        showToast(t('print.exportSuccess'), 'success');
       } else if (!res.canceled) {
-        showToast(`导出 PDF 失败: ${res.error || '未知错误'}`, 'error');
+        showToast(t('print.exportFailed', { error: res.error || '' }), 'error');
       }
     } catch (e: any) {
-      showToast(`导出 PDF 发生异常: ${e?.message || e}`, 'error');
+      showToast(t('print.exportFailed', { error: e?.message || String(e) }), 'error');
     } finally {
       isExportingPdf.value = false;
     }

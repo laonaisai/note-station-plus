@@ -2393,10 +2393,10 @@ async function quickExportNote(note: SynoNote) {
   )?.title || noteStore.activeNotebook?.title;
   try {
     exportSingleNoteAsMarkdown(noteToExport, nbTitle);
-    showToast(`便签【${noteToExport.title || '无标题便签'}】已成功导出为 Markdown 文件！`, 'success');
+    showToast(t('editor.exportSuccess', { title: noteToExport.title || t('common.untitled') }), 'success');
   } catch (e: any) {
     console.error('Failed to export note', e);
-    showToast(`导出便签失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.exportFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -2587,10 +2587,10 @@ async function triggerNoteCopy() {
   try {
     const copied = await noteStore.copyNote(note.object_id);
     if (copied) {
-      showToast(`便签已成功复制为【${copied.title || '无标题便签'}】`, 'success');
+      showToast(t('sidebar.copySuccess', { title: copied.title || t('common.untitled') }), 'success');
     }
   } catch (e: any) {
-    showToast(`复制便签失败: ${e?.message || e}`, 'error');
+    showToast(t('sidebar.copyFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -2603,7 +2603,7 @@ async function triggerNoteToggleFavorite() {
     await noteStore.toggleFavorite(note.object_id);
     showToast(wasFavorite ? t('sidebar.removeFromFavorites') : t('sidebar.addToFavorites'), 'success');
   } catch (e: any) {
-    showToast(`操作收藏夹失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.favoriteFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -2651,9 +2651,9 @@ async function triggerNoteRestore() {
   if (!note) return;
   try {
     await noteStore.restoreNote(note.object_id);
-    showToast(`便签【${note.title || '无标题便签'}】已成功恢复至原笔记本！`, 'success');
+    showToast(t('editor.restoreSuccess', { title: note.title || t('common.untitled') }), 'success');
   } catch (e: any) {
-    showToast(`恢复便签失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.restoreFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -2907,7 +2907,7 @@ async function handleExportNotebook(nb: SynoNotebook) {
   try {
     const res = await client.listAllNotes(nb.object_id);
     if (!res.notes || res.notes.length === 0) {
-      showToast(`笔记本【${nb.title || '默认笔记本'}】暂无便签可导出`, 'warning');
+      showToast(t('sidebar.noNotesToExport', { title: nb.title || t('sidebar.notebooks') }), 'warning');
       return;
     }
 
@@ -2922,11 +2922,11 @@ async function handleExportNotebook(nb: SynoNotebook) {
       })
     );
 
-    await exportNotebookAsZip(nb.title || '默认笔记本', fullNotes);
-    showToast(`笔记本【${nb.title || '默认笔记本'}】全部便签 (${fullNotes.length} 篇) 已成功打包导出！`, 'success');
+    await exportNotebookAsZip(nb.title || t('sidebar.notebooks'), fullNotes);
+    showToast(t('sidebar.exportNotebookSuccess', { title: nb.title || t('sidebar.notebooks'), count: fullNotes.length }), 'success');
   } catch (e: any) {
     console.error(`导出笔记本失败: ${e?.message || e}`);
-    showToast(`导出笔记本失败: ${e?.message || e}`, 'error');
+    showToast(t('sidebar.exportNotebookFailed', { error: e?.message || e }), 'error');
   }
 }
 

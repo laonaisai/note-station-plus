@@ -329,7 +329,7 @@ function getDownloadUrl(fileId: string, filename?: string): string {
 function handleCopyNoteLink() {
   if (!noteLinkUri.value) return;
   navigator.clipboard.writeText(noteLinkUri.value);
-  showToast('便签链接已复制到剪贴板', 'success');
+  showToast(t('sidebar.linkCopied'), 'success');
 }
 
 function handleOpenHistory() {
@@ -376,10 +376,10 @@ async function handleSave() {
       }
     }
 
-    showToast('便签信息已更新', 'success');
+    showToast(t('noteInfo.infoUpdated'), 'success');
     close();
   } catch (e: any) {
-    errorMessage.value = `保存失败: ${e?.message || e}`;
+    errorMessage.value = `${t('common.save')}: ${e?.message || e}`;
   } finally {
     isSaving.value = false;
   }

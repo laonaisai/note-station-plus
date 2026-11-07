@@ -2,6 +2,7 @@ export interface ElectronAPI {
   platform: string;
   version: string;
   getAppVersion?: () => Promise<string>;
+  setLocale?: (locale: string) => void;
   safeStorage?: {
     isAvailable: () => Promise<boolean>;
     encryptString: (plainText: string) => Promise<string | null>;

@@ -110,7 +110,12 @@ export const jaJP: TranslationMessages = {
     noShared: '共有ノートはありません',
     notesList: 'ノート一覧',
     recycledNotes: 'ごみ箱内のノート',
-    clearSearch: '検索をクリア'
+    clearSearch: '検索をクリア',
+    copySuccess: 'ノート「{title}」として複製しました',
+    copyFailed: 'ノートの複製に失敗しました: {err}',
+    noNotesToExport: 'ノートブック「{title}」にエクスポート可能なノートがありません',
+    exportNotebookSuccess: 'ノートブック「{title}」の全ノート ({count} 件) をエクスポートしました！',
+    exportNotebookFailed: 'ノートブックのエクスポートに失敗しました: {err}'
   },
   editor: {
     emptySelectTip: '左側のノートを選択するか、新しいノートを作成して編集を開始してください',
@@ -180,7 +185,23 @@ export const jaJP: TranslationMessages = {
     permDeleteModalWarning: '⚠️ 完全に削除すると、このノートを復元することはできません！',
     confirmPermDelete: '完全に削除する',
     deleting: '完全に削除中...',
-    untitledNote: '無題のノート'
+    untitledNote: '無題のノート',
+    contentEmpty: 'ノート内容が空です',
+    copySelectedSuccess: '選択したテキストをコピーしました！',
+    copyFailed: 'コピーに失敗しました。Ctrl+C / Cmd+C をお使いください',
+    restoreFailed: 'ノートの復元に失敗しました: {err}',
+    permDeleteSuccess: 'ノートを完全に削除しました',
+    permDeleteFailed: 'ノートの完全削除に失敗しました: {err}',
+    uploadingWait: '添付ファイルをアップロード中です。完了してから保存してください',
+    exportSuccess: 'ノート「{title}」を Markdown ファイルとしてエクスポートしました！',
+    exportFailed: 'ノートのエクスポートに失敗しました: {err}',
+    favoriteFailed: 'お気に入りの操作に失敗しました: {err}',
+    uploadingFile: '「{name}」をサーバーにアップロードしています...',
+    uploadInsertSuccess: '「{name}」のアップロードが完了し、ノートに挿入しました！',
+    uploadFileFailed: '「{name}」のアップロードに失敗しました: {err}',
+    attachmentInserted: '「{name}」をノートに挿入しました',
+    attachmentDeleted: '添付ファイル「{name}」をノートから削除しました',
+    deleteAttachmentFailed: '添付ファイルの削除に失敗しました: {err}'
   },
   import: {
     title: 'Markdown ノートをインポート',
@@ -227,7 +248,8 @@ export const jaJP: TranslationMessages = {
     mtime: '更新日時',
     size: '本文サイズ',
     version: 'バージョンハッシュ',
-    viewHistory: '履歴を表示'
+    viewHistory: '履歴を表示',
+    infoUpdated: 'ノート情報を更新しました'
   },
   history: {
     modalTitle: 'ノートのバージョン履歴',
@@ -252,7 +274,9 @@ export const jaJP: TranslationMessages = {
     enableShare: '公開共有を有効化',
     disableShare: '共有を無効化',
     copyShareUrl: 'リンクをコピー',
-    shareCopied: '共有リンクをクリップボードにコピーしました！'
+    shareCopied: '共有リンクをクリップボードにコピーしました！',
+    shareSaved: '共有設定が正常に保存されました！',
+    shareSaveFailed: '共有設定の保存に失敗しました: {error}'
   },
   about: {
     modalTitle: 'Note Station Plus について',
@@ -263,7 +287,13 @@ export const jaJP: TranslationMessages = {
     feature2: '複数サーバータブの同時接続とシームレスな切り替え',
     feature3: 'ライトとダークテーマのスムーズな切り替え',
     feature4: '繁体字、日本語(Shift_JIS/EUC-JP)、GBK 全文字コード対応と多言語サポート',
-    copyright: '© 2026 Note Station Plus. MIT License.'
+    copyright: '© 2026 Note Station Plus. MIT License.',
+    developer: '開発者',
+    developerName: '老衲是AI',
+    sourceUrl: 'ソースコード',
+    copySourceUrl: 'ソースコードURLをコピー',
+    sourceCopied: 'ソースコードのURLをクリップボードにコピーしました',
+    copyFailed: 'コピーに失敗しました。手動でコピーしてください'
   },
   sync: {
     modalTitle: 'サーバー間ノート同期',

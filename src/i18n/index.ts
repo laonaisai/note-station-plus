@@ -55,6 +55,9 @@ export function setLocale(locale: SupportedLocale) {
     if (typeof document !== 'undefined') {
       document.documentElement.lang = locale;
     }
+    if (typeof window !== 'undefined' && window.electronAPI?.setLocale) {
+      window.electronAPI.setLocale(locale);
+    }
   }
 }
 

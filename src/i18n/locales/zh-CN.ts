@@ -110,7 +110,12 @@ export const zhCN: TranslationMessages = {
     noShared: '当前暂无共享便签',
     notesList: '便签列表',
     recycledNotes: '回收站中的便签',
-    clearSearch: '清空搜索'
+    clearSearch: '清空搜索',
+    copySuccess: '便签已成功复制为【{title}】',
+    copyFailed: '复制便签失败: {err}',
+    noNotesToExport: '笔记本【{title}】暂无便签可导出',
+    exportNotebookSuccess: '笔记本【{title}】全部便签 ({count} 篇) 已成功打包导出！',
+    exportNotebookFailed: '导出笔记本失败: {err}'
   },
   editor: {
     emptySelectTip: '选择左侧便签或新建便签开始编辑',
@@ -180,7 +185,23 @@ export const zhCN: TranslationMessages = {
     permDeleteModalWarning: '⚠️ 彻底删除后此便签将无法找回，不可撤销！',
     confirmPermDelete: '确认彻底删除',
     deleting: '正在彻底删除...',
-    untitledNote: '无标题便签'
+    untitledNote: '无标题便签',
+    contentEmpty: '便签内容为空',
+    copySelectedSuccess: '已复制所选文字！',
+    copyFailed: '复制失败，请使用快捷键 Ctrl+C',
+    restoreFailed: '恢复便签失败: {err}',
+    permDeleteSuccess: '便签已彻底删除',
+    permDeleteFailed: '彻底删除便签失败: {err}',
+    uploadingWait: '正在上传附件中，请上传完成后再保存',
+    exportSuccess: '便签【{title}】已成功导出为 Markdown 文件！',
+    exportFailed: '导出便签失败: {err}',
+    favoriteFailed: '操作收藏夹失败: {err}',
+    uploadingFile: '正在上传【{name}】至群晖服务器...',
+    uploadInsertSuccess: '【{name}】上传成功并已插入便签！',
+    uploadFileFailed: '上传【{name}】失败: {err}',
+    attachmentInserted: '已插入【{name}】至便签',
+    attachmentDeleted: '附件【{name}】已成功从便签中删除',
+    deleteAttachmentFailed: '删除附件失败: {err}'
   },
   import: {
     title: '导入 Markdown 便签',
@@ -227,7 +248,8 @@ export const zhCN: TranslationMessages = {
     mtime: '最后修改',
     size: '正文大小',
     version: '版本哈希',
-    viewHistory: '查看版本记录'
+    viewHistory: '查看版本记录',
+    infoUpdated: '便签信息已更新'
   },
   history: {
     modalTitle: '便签历史版本记录',
@@ -252,7 +274,9 @@ export const zhCN: TranslationMessages = {
     enableShare: '开启便签公开共享',
     disableShare: '关闭便签共享',
     copyShareUrl: '复制分享链接',
-    shareCopied: '分享链接已复制到剪贴板！'
+    shareCopied: '分享链接已复制到剪贴板！',
+    shareSaved: '分享设置已成功保存！',
+    shareSaveFailed: '保存分享设置失败: {error}'
   },
   about: {
     modalTitle: '关于 Note Station Plus',
@@ -263,7 +287,13 @@ export const zhCN: TranslationMessages = {
     feature2: '多群晖服务标签页同时并发在线与即时切换',
     feature3: '浅色与深色主题双方案沉浸式切换',
     feature4: '繁体中文、日语、GBK 全字符集导入与国际化支持',
-    copyright: '© 2026 Note Station Plus. MIT License.'
+    copyright: '© 2026 Note Station Plus. MIT License.',
+    developer: '开发者',
+    developerName: '老衲是AI',
+    sourceUrl: '源码地址',
+    copySourceUrl: '复制源码地址',
+    sourceCopied: '已复制源码地址到剪贴板',
+    copyFailed: '复制失败，请手动选中复制'
   },
   sync: {
     modalTitle: '跨服务便签同步',

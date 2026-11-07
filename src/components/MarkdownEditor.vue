@@ -739,18 +739,18 @@ async function handleCopyPreviewText() {
   const selection = window.getSelection()?.toString().trim();
   const textToCopy = selection && selection.length > 0 ? selection : (editMarkdown.value || '');
   if (!textToCopy) {
-    showToast('便签内容为空', 'info');
+    showToast(t('editor.contentEmpty'), 'info');
     return;
   }
   try {
     await navigator.clipboard.writeText(textToCopy);
     isCopied.value = true;
-    showToast(selection && selection.length > 0 ? '已复制所选文字！' : '已复制便签全文！', 'success');
+    showToast(selection && selection.length > 0 ? t('editor.copySelectedSuccess') : t('editor.copySuccess'), 'success');
     setTimeout(() => {
       isCopied.value = false;
     }, 2000);
   } catch (err) {
-    showToast('复制失败，请使用快捷键 Ctrl+C', 'error');
+    showToast(t('editor.copyFailed'), 'error');
   }
 }
 
@@ -766,9 +766,9 @@ async function handleRestoreRecycledNote() {
   if (!note) return;
   try {
     await noteStore.restoreNote(note.object_id);
-    showToast(`便签【${note.title || '无标题便签'}】已成功恢复至原笔记本！`, 'success');
+    showToast(t('editor.restoreSuccess', { title: note.title || t('common.untitled') }), 'success');
   } catch (e: any) {
-    showToast(`恢复便签失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.restoreFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -785,9 +785,9 @@ async function confirmPermanentDelete() {
   try {
     await noteStore.permanentlyDeleteNote(note.object_id);
     isPermanentDeleteModalOpen.value = false;
-    showToast('便签已彻底删除', 'success');
+    showToast(t('editor.permDeleteSuccess'), 'success');
   } catch (e: any) {
-    showToast(`彻底删除便签失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.permDeleteFailed', { error: e?.message || e }), 'error');
   } finally {
     isPermanentDeleting.value = false;
   }
@@ -809,24 +809,24 @@ async function saveNote(isManual = false) {
   if (isRecycledNote.value) return;
   if (noteStore.isUploadingAttachment) {
     if (isManual) {
-      showToast('正在上传附件中，请上传完成后再保存', 'info');
+      showToast(t('editor.uploadingWait'), 'info');
     }
     return;
   }
   clearTimeout(saveTimer);
   if (!noteStore.activeNoteId) return;
 
-  const title = editTitle.value.trim() || '无标题便签';
+  const title = editTitle.value.trim() || t('common.untitled');
   try {
     const success = await noteStore.updateActiveNote(title, editMarkdown.value, editTags.value);
     if (success) {
       isModified.value = false;
       if (isManual) {
-        showToast('便签已保存', 'success');
+        showToast(t('editor.saved'), 'success');
       }
     }
   } catch (err: any) {
-    showToast(`保存便签失败: ${err?.message || err}`, 'error');
+    showToast(t('editor.saveFailed', { error: err?.message || err }), 'error');
   }
 }
 
@@ -886,15 +886,15 @@ function exportCurrentNote() {
   if (!noteStore.activeNote) return;
   const currentNote = {
     ...noteStore.activeNote,
-    title: editTitle.value.trim() || noteStore.activeNote.title || '无标题便签',
+    title: editTitle.value.trim() || noteStore.activeNote.title || t('common.untitled'),
     markdownContent: editMarkdown.value,
     tag: [...editTags.value]
   };
   try {
     exportSingleNoteAsMarkdown(currentNote, noteStore.activeNotebook?.title);
-    showToast(`便签【${currentNote.title}】已成功导出为 Markdown 文件！`, 'success');
+    showToast(t('editor.exportSuccess', { title: currentNote.title }), 'success');
   } catch (e: any) {
-    showToast(`导出便签失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.exportFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -935,9 +935,9 @@ async function toggleActiveFavorite() {
   try {
     const wasFav = noteStore.isFavorite(noteId);
     await noteStore.toggleFavorite(noteId);
-    showToast(wasFav ? '已从收藏夹删除' : '已添加到收藏夹', 'success');
+    showToast(wasFav ? t('sidebar.removeFromFavorites') : t('sidebar.addToFavorites'), 'success');
   } catch (e: any) {
-    showToast(`操作收藏夹失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.favoriteFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -953,7 +953,7 @@ function triggerCopyLink() {
   isMoreMenuOpen.value = false;
   const link = `notestation://remote/self/${noteStore.activeNote.object_id}`;
   navigator.clipboard.writeText(link);
-  showToast('便签链接已复制到剪贴板', 'success');
+  showToast(t('sidebar.linkCopied'), 'success');
 }
 
 function triggerInfo() {
@@ -1037,7 +1037,7 @@ async function uploadAndInsertFile(file: File) {
   insertMarkdown(placeholder);
 
   try {
-    showToast(`正在上传【${file.name}】至群晖服务器...`, 'info');
+    showToast(t('editor.uploadingFile', { name: file.name }), 'info');
     const result = await noteStore.uploadAttachmentToActiveNote(file, file.name, editMarkdown.value);
 
     const insertText = result.isImage
@@ -1058,7 +1058,7 @@ async function uploadAndInsertFile(file: File) {
     }
 
     onContentChanged();
-    showToast(`【${file.name}】上传成功并已插入便签！`, 'success');
+    showToast(t('editor.uploadInsertSuccess', { name: file.name }), 'success');
   } catch (err: any) {
     console.error('Failed to upload attachment', err);
     const cleanPlaceholder = placeholder.trim();
@@ -1070,7 +1070,7 @@ async function uploadAndInsertFile(file: File) {
     if (textareaRef.value) {
       textareaRef.value.value = editMarkdown.value;
     }
-    showToast(`上传【${file.name}】失败: ${err?.message || err}`, 'error');
+    showToast(t('editor.uploadFileFailed', { name: file.name, error: err?.message || err }), 'error');
   }
 }
 
@@ -1080,24 +1080,24 @@ function insertAttachmentToBody(att: any) {
   const url = getAttachmentDownloadUrl(fileId, att?.name);
   const isImage = isImageAttachment(att);
   const insertText = isImage
-    ? `\n![${att?.name || '图片'}](${url})\n`
-    : `\n[📎 ${att?.name || '附件'} (${formatFileSize(att?.size)})](${url})\n`;
+    ? `\n![${att?.name || t('editor.image')}](${url})\n`
+    : `\n[📎 ${att?.name || t('editor.attachments')} (${formatFileSize(att?.size)})](${url})\n`;
 
   insertMarkdown(insertText);
-  showToast(`已插入【${att?.name || '附件'}】至便签`, 'info');
+  showToast(t('editor.attachmentInserted', { name: att?.name || t('editor.attachments') }), 'info');
 }
 
 async function handleDeleteAttachment(att: any) {
   const fileId = att?.file_id || att?.id;
   if (!fileId) return;
-  const confirmed = confirm(`确定要从便签中删除附件【${att.name}】吗？此操作不可撤销。`);
+  const confirmed = confirm(t('editor.deleteAttachmentConfirm', { name: att.name }));
   if (!confirmed) return;
 
   try {
     await noteStore.deleteAttachmentFromActiveNote(fileId);
-    showToast(`附件【${att.name}】已成功从便签中删除`, 'success');
+    showToast(t('editor.attachmentDeleted', { name: att.name }), 'success');
   } catch (e: any) {
-    showToast(`删除附件失败: ${e?.message || e}`, 'error');
+    showToast(t('editor.deleteAttachmentFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -1116,7 +1116,7 @@ function insertImageAttachment(att: any) {
   const fileId = att?.file_id || att?.id;
   if (!fileId) return;
   const url = getAttachmentDownloadUrl(fileId, att?.name);
-  const markdownImg = `\n![${att?.name || '图片'}](${url})\n`;
+  const markdownImg = `\n![${att?.name || t('editor.image')}](${url})\n`;
   insertMarkdown(markdownImg);
 }
 

@@ -287,6 +287,7 @@
 import { ref, computed, watch } from 'vue';
 import { useNoteStore } from '@/stores/noteStore';
 import { t } from '@/i18n';
+import { showToast } from '@/utils/toast';
 import {
   parseImportMarkdown,
   detectAndDecodeText,
@@ -381,7 +382,7 @@ async function processFile(file: File) {
     // Auto-detect update mode
     decideInitialMode();
   } catch (err: any) {
-    alert(`解析 Markdown 文件失败: ${err?.message || err}`);
+    showToast(t('import.importFailed', { error: err?.message || err }), 'error');
   }
 }
 
@@ -469,7 +470,7 @@ async function executeImport() {
 
   const targetNbId = selectedNotebookId.value || noteStore.activeNotebookId;
   if (!targetNbId) {
-    alert('请选择目标笔记本');
+    showToast(t('sidebar.pleaseSelectTarget'), 'warning');
     return;
   }
 
@@ -491,7 +492,7 @@ async function executeImport() {
     emit('imported', resultNote);
     emit('close');
   } catch (err: any) {
-    alert(`导入失败: ${err?.message || err}`);
+    showToast(t('import.importFailed', { error: err?.message || err }), 'error');
   } finally {
     isImporting.value = false;
   }

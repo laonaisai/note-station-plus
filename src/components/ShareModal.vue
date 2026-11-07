@@ -265,6 +265,7 @@ import { ref, watch, computed } from 'vue';
 import { t } from '@/i18n';
 import { useNoteStore } from '@/stores/noteStore';
 import { SharedMember } from '@/types/synology';
+import { showToast } from '@/utils/toast';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -405,13 +406,13 @@ async function handleSave() {
       removedMembers
     });
 
-    feedbackMsg.value = '分享设置已成功保存！';
+    feedbackMsg.value = t('share.shareSaved');
     setTimeout(() => {
       emit('close');
     }, 800);
   } catch (err: any) {
     console.error('Save share settings failed', err);
-    alert('保存分享设置失败: ' + (err.message || '未知错误'));
+    showToast(t('share.shareSaveFailed', { error: err?.message || '' }), 'error');
   } finally {
     isSaving.value = false;
   }

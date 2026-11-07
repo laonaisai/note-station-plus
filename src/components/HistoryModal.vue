@@ -200,6 +200,7 @@ import { t } from '@/i18n';
 import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
 import { NoteVersion, SynoNote } from '@/types/synology';
+import { showToast } from '@/utils/toast';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -236,7 +237,7 @@ const isLatestSelected = computed(() => {
 });
 
 const renderedContent = computed(() => {
-  if (!previewNote.value?.markdownContent) return '<p class="text-slate-400 italic">空便签内容</p>';
+  if (!previewNote.value?.markdownContent) return `<p class="text-slate-400 italic">${t('editor.contentEmpty')}</p>`;
   return md.render(previewNote.value.markdownContent);
 });
 
@@ -289,7 +290,7 @@ async function confirmRestore() {
   if (!props.noteId || !selectedVersion.value || isLatestSelected.value) return;
 
   const verTime = formatTime(selectedVersion.value.mtime);
-  const confirmed = window.confirm(`确定要将当前便签还原至 ${verTime} 的历史版本吗？`);
+  const confirmed = window.confirm(t('history.restoreConfirm') + (verTime ? ` (${verTime})` : ''));
   if (!confirmed) return;
 
   isRestoring.value = true;
@@ -299,11 +300,11 @@ async function confirmRestore() {
       emit('restored', props.noteId);
       emit('close');
     } else {
-      alert('还原失败，请重试');
+      showToast(t('editor.restoreFailed', { error: '' }), 'error');
     }
   } catch (err: any) {
     console.error('Failed to restore note version', err);
-    alert('还原版本失败: ' + (err.message || '未知错误'));
+    showToast(t('editor.restoreFailed', { error: err?.message || '' }), 'error');
   } finally {
     isRestoring.value = false;
   }

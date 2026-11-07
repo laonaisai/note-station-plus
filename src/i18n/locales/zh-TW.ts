@@ -110,7 +110,12 @@ export const zhTW: TranslationMessages = {
     noShared: '目前尚無公開分享便箋',
     notesList: '便箋清單',
     recycledNotes: '資源回收筒中的便箋',
-    clearSearch: '清除搜尋'
+    clearSearch: '清除搜尋',
+    copySuccess: '便箋已成功複製為【{title}】',
+    copyFailed: '複製便箋失敗: {err}',
+    noNotesToExport: '筆記本【{title}】目前無便箋可匯出',
+    exportNotebookSuccess: '筆記本【{title}】全部便箋 ({count} 篇) 已成功打包匯出！',
+    exportNotebookFailed: '匯出筆記本失敗: {err}'
   },
   editor: {
     emptySelectTip: '請從左側選取便箋或新增便箋以開始編輯',
@@ -180,7 +185,23 @@ export const zhTW: TranslationMessages = {
     permDeleteModalWarning: '⚠️ 徹底刪除後此便箋將無法找回，不可撤銷！',
     confirmPermDelete: '確認徹底刪除',
     deleting: '正在徹底刪除...',
-    untitledNote: '無標題便箋'
+    untitledNote: '無標題便箋',
+    contentEmpty: '便箋內容為空',
+    copySelectedSuccess: '已複製選取文字！',
+    copyFailed: '複製失敗，請使用快捷鍵 Ctrl+C',
+    restoreFailed: '還原便箋失敗: {err}',
+    permDeleteSuccess: '便箋已徹底刪除',
+    permDeleteFailed: '徹底刪除便箋失敗: {err}',
+    uploadingWait: '正在上傳附件中，請上傳完成後再儲存',
+    exportSuccess: '便箋【{title}】已成功匯出為 Markdown 檔案！',
+    exportFailed: '匯出便箋失敗: {err}',
+    favoriteFailed: '操作我的最愛失敗: {err}',
+    uploadingFile: '正在上傳【{name}】至群暉伺服器...',
+    uploadInsertSuccess: '【{name}】上傳成功並已插入便箋！',
+    uploadFileFailed: '上傳【{name}】失敗: {err}',
+    attachmentInserted: '已插入【{name}】至便箋',
+    attachmentDeleted: '附件【{name}】已成功從便箋中刪除',
+    deleteAttachmentFailed: '刪除附件失敗: {err}'
   },
   import: {
     title: '匯入 Markdown 便箋',
@@ -227,7 +248,8 @@ export const zhTW: TranslationMessages = {
     mtime: '最後修改',
     size: '內文大小',
     version: '版本雜湊',
-    viewHistory: '檢視版本歷程記錄'
+    viewHistory: '檢視版本歷程記錄',
+    infoUpdated: '便箋資訊已更新'
   },
   history: {
     modalTitle: '便箋版本歷程記錄',
@@ -252,7 +274,9 @@ export const zhTW: TranslationMessages = {
     enableShare: '開啟便箋公開分享',
     disableShare: '關閉便箋分享',
     copyShareUrl: '複製分享連結',
-    shareCopied: '分享連結已複製至剪貼簿！'
+    shareCopied: '分享連結已複製至剪貼簿！',
+    shareSaved: '分享設定已成功儲存！',
+    shareSaveFailed: '儲存分享設定失敗: {error}'
   },
   about: {
     modalTitle: '關於 Note Station Plus',
@@ -263,7 +287,13 @@ export const zhTW: TranslationMessages = {
     feature2: '多群暉服務標籤頁同時連線與即時切換',
     feature3: '淺色與深色主題雙方案沉浸式切換',
     feature4: '繁體中文、日語、GBK 全字元集匯入與多國語言支援',
-    copyright: '© 2026 Note Station Plus. MIT License.'
+    copyright: '© 2026 Note Station Plus. MIT License.',
+    developer: '開發者',
+    developerName: '老衲是AI',
+    sourceUrl: '原始碼網址',
+    copySourceUrl: '複製原始碼網址',
+    sourceCopied: '已複製原始碼網址至剪貼簿',
+    copyFailed: '複製失敗，請手動選取複製'
   },
   sync: {
     modalTitle: '跨服務便箋同步',

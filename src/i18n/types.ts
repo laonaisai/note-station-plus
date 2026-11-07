@@ -124,6 +124,11 @@ export interface TranslationMessages {
     notesList: string;
     recycledNotes: string;
     clearSearch: string;
+    copySuccess: string;
+    copyFailed: string;
+    noNotesToExport: string;
+    exportNotebookSuccess: string;
+    exportNotebookFailed: string;
   };
   editor: {
     emptySelectTip: string;
@@ -194,6 +199,22 @@ export interface TranslationMessages {
     confirmPermDelete: string;
     deleting: string;
     untitledNote: string;
+    contentEmpty: string;
+    copySelectedSuccess: string;
+    copyFailed: string;
+    restoreFailed: string;
+    permDeleteSuccess: string;
+    permDeleteFailed: string;
+    uploadingWait: string;
+    exportSuccess: string;
+    exportFailed: string;
+    favoriteFailed: string;
+    uploadingFile: string;
+    uploadInsertSuccess: string;
+    uploadFileFailed: string;
+    attachmentInserted: string;
+    attachmentDeleted: string;
+    deleteAttachmentFailed: string;
   };
   import: {
     title: string;
@@ -241,6 +262,7 @@ export interface TranslationMessages {
     size: string;
     version: string;
     viewHistory: string;
+    infoUpdated: string;
   };
   history: {
     modalTitle: string;
@@ -266,6 +288,8 @@ export interface TranslationMessages {
     disableShare: string;
     copyShareUrl: string;
     shareCopied: string;
+    shareSaved: string;
+    shareSaveFailed: string;
   };
   about: {
     modalTitle: string;
@@ -277,6 +301,12 @@ export interface TranslationMessages {
     feature3: string;
     feature4: string;
     copyright: string;
+    developer: string;
+    developerName: string;
+    sourceUrl: string;
+    copySourceUrl: string;
+    sourceCopied: string;
+    copyFailed: string;
   };
   sync: {
     modalTitle: string;
