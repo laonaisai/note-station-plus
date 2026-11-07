@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
-import { useNoteStore } from '../../src/stores/noteStore';
-import { useSessionStore } from '../../src/stores/sessionStore';
-import type { SynoNote } from '../../src/types';
+import { useNoteStore } from '@/stores/noteStore';
+import { useSessionStore } from '@/stores/sessionStore';
+import type { SynoNote } from '@/types/synology';
 
 describe('便签加载状态 (isLoadingNote) 与防竞态测试', () => {
   let noteStore: ReturnType<typeof useNoteStore>;
@@ -14,19 +14,6 @@ describe('便签加载状态 (isLoadingNote) 与防竞态测试', () => {
     setActivePinia(createPinia());
     sessionStore = useSessionStore();
     noteStore = useNoteStore();
-
-    sessionStore.activeSessionId = 'test_session';
-    sessionStore.sessions = [
-      {
-        id: 'test_session',
-        name: 'Test',
-        serverUrl: 'http://localhost:5000',
-        account: 'admin',
-        isLoggedIn: true,
-        autoLogin: false,
-        deviceUuid: 'uuid-123'
-      }
-    ];
 
     mockGetNote = vi.fn();
     mockClient = {
