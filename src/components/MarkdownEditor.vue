@@ -587,7 +587,7 @@
             ref="textareaRef"
             v-model="editMarkdown"
             @input="onContentChanged"
-            @keydown="handleKeydown"
+            @keydown="handleTextareaKeydown"
             @paste="handlePaste"
             @dragover.prevent
             @drop.prevent="handleDrop"
@@ -1282,13 +1282,16 @@ function insertMarkdown(prefix: string, suffix = '') {
   }, 0);
 }
 
-function handleKeydown(e: KeyboardEvent) {
+function handleGlobalKeydown(e: KeyboardEvent) {
   // Ctrl+S or Cmd+S to save
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault();
     saveNote(true);
   }
-  // Tab key indents by 2 spaces
+}
+
+function handleTextareaKeydown(e: KeyboardEvent) {
+  // Tab key indents by 2 spaces ONLY inside markdown textarea
   if (e.key === 'Tab') {
     e.preventDefault();
     insertMarkdown('  ');
@@ -1296,12 +1299,12 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('keydown', handleGlobalKeydown);
   document.addEventListener('click', onDocumentClick);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('keydown', handleGlobalKeydown);
   document.removeEventListener('click', onDocumentClick);
   clearTimeout(saveTimer);
 });

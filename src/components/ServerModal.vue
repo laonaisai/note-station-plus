@@ -20,8 +20,10 @@
         <div>
           <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('server.alias') }}</label>
           <input
+            ref="aliasInputRef"
             v-model="form.alias"
             type="text"
+            tabindex="1"
             required
             :placeholder="t('server.aliasPlaceholder')"
             class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition text-slate-800 dark:text-slate-100"
@@ -34,6 +36,7 @@
           <input
             v-model="form.serverUrl"
             type="url"
+            tabindex="2"
             required
             :placeholder="t('server.serverUrlPlaceholder')"
             class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition text-slate-800 dark:text-slate-100"
@@ -46,6 +49,7 @@
           <input
             v-model="form.account"
             type="text"
+            tabindex="3"
             required
             :placeholder="t('server.accountPlaceholder')"
             class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition text-slate-800 dark:text-slate-100"
@@ -58,6 +62,7 @@
           <input
             v-model="form.password"
             type="password"
+            tabindex="4"
             required
             :placeholder="t('server.passwordPlaceholder')"
             class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-syno-blue/20 focus:border-syno-blue outline-none transition text-slate-800 dark:text-slate-100"
@@ -67,7 +72,7 @@
         <!-- Options -->
         <div class="flex items-center justify-between pt-1">
           <label class="flex items-center text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
-            <input v-model="form.allowInsecureSSL" type="checkbox" class="rounded text-syno-blue mr-2 focus:ring-0 cursor-pointer" />
+            <input v-model="form.allowInsecureSSL" type="checkbox" tabindex="5" class="rounded text-syno-blue mr-2 focus:ring-0 cursor-pointer" />
             {{ t('server.allowInsecureSSL') }}
           </label>
         </div>
@@ -87,6 +92,7 @@
         <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
+            tabindex="6"
             @click="handleTestConnection"
             :disabled="isTesting"
             class="px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition flex items-center cursor-pointer"
@@ -101,6 +107,7 @@
           <div class="flex space-x-2">
             <button
               type="button"
+              tabindex="7"
               @click="close"
               class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
@@ -108,6 +115,7 @@
             </button>
             <button
               type="submit"
+              tabindex="8"
               class="px-4 py-1.5 text-xs text-white bg-syno-blue hover:bg-blue-600 rounded-lg shadow-sm font-medium transition cursor-pointer"
             >
               {{ t('server.saveServer') }}
@@ -120,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { t } from '@/i18n';
 import { ServerProfile } from '@/types/synology';
 import { SynologyApiClient } from '@/api/SynologyApiClient';
@@ -135,6 +143,7 @@ const emit = defineEmits(['close', 'save']);
 const isEdit = ref(false);
 const isTesting = ref(false);
 const testResult = ref<{ success: boolean; message: string } | null>(null);
+const aliasInputRef = ref<HTMLInputElement | null>(null);
 
 const form = reactive<ServerProfile>({
   id: '',
@@ -146,6 +155,17 @@ const form = reactive<ServerProfile>({
   autoLogin: true,
   createdAt: 0
 });
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      nextTick(() => {
+        aliasInputRef.value?.focus();
+      });
+    }
+  }
+);
 
 watch(
   () => props.profile,
@@ -175,6 +195,20 @@ function close() {
   testResult.value = null;
   emit('close');
 }
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.isOpen) {
+    close();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
 
 async function handleTestConnection() {
   if (!form.serverUrl || !form.account || !form.password) {
