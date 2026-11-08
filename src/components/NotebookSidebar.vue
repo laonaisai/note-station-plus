@@ -15,37 +15,42 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.allNotes'), noteStore.notes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__all_notes__'
-              ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
+              ? 'h-[160px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-9 h-9">
+            <svg class="w-9 h-9 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
 
-          <!-- 便签数量 (未激活与激活态均展示在图标下方) -->
+          <!-- 便签数量 (未激活与激活态均展示在图标下方，字体 12px) -->
           <div
             :class="[
-              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__all_notes__'
-                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
             {{ noteStore.notes.length }}
           </div>
 
+          <!-- 激活态竖排文字 (顶端对齐，字体 1rem) -->
           <div
             v-if="activeTabId === '__all_notes__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
-            style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5"
           >
-            {{ formatVerticalTitle(t('sidebar.allNotes')) }}
+            <span
+              class="text-[1rem] font-semibold tracking-wider text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.allNotes')) }}
+            </span>
           </div>
         </button>
 
@@ -55,36 +60,42 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.favorites'), noteStore.favoriteNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__favorites__'
-              ? 'h-[160px] bg-amber-500 text-white shadow-sm'
-              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
+              ? 'h-[160px] bg-amber-500 text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-9 h-9">
+            <svg class="w-9 h-9 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           </div>
 
+          <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__favorites__'
-                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
             {{ noteStore.favoriteNotes.length }}
           </div>
 
+          <!-- 激活态竖排文字 (顶端对齐，字体 1rem) -->
           <div
             v-if="activeTabId === '__favorites__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
-            style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5"
           >
-            {{ formatVerticalTitle(t('sidebar.favorites')) }}
+            <span
+              class="text-[1rem] font-semibold tracking-wider text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.favorites')) }}
+            </span>
           </div>
         </button>
 
@@ -94,36 +105,42 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.sharedNotes'), sharedNotesCount)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__shared_notes__'
-              ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              ? 'h-[160px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-9 h-9">
+            <svg class="w-9 h-9 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </div>
 
+          <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__shared_notes__'
-                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
             {{ sharedNotesCount }}
           </div>
 
+          <!-- 激活态竖排文字 (顶端对齐，字体 1rem) -->
           <div
             v-if="activeTabId === '__shared_notes__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
-            style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5"
           >
-            {{ formatVerticalTitle(t('sidebar.sharedNotes')) }}
+            <span
+              class="text-[1rem] font-semibold tracking-wider text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.sharedNotes')) }}
+            </span>
           </div>
         </button>
 
@@ -133,36 +150,42 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.recycleBin'), noteStore.recycledNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__recycle_bin__'
-              ? 'h-[160px] bg-rose-600 text-white shadow-sm'
-              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
+              ? 'h-[160px] bg-rose-600 text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-9 h-9">
+            <svg class="w-9 h-9 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
 
+          <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__recycle_bin__'
-                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
             {{ noteStore.recycledNotes.length }}
           </div>
 
+          <!-- 激活态竖排文字 (顶端对齐，字体 1rem) -->
           <div
             v-if="activeTabId === '__recycle_bin__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
-            style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5"
           >
-            {{ formatVerticalTitle(t('sidebar.recycleBin')) }}
+            <span
+              class="text-[1rem] font-semibold tracking-wider text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.recycleBin')) }}
+            </span>
           </div>
         </button>
       </div>
@@ -180,23 +203,23 @@
           @mouseenter="handleTabMouseEnter($event, nb.title || t('sidebar.notebooks'), getNotebookCount(nb))"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === nb.object_id
-              ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              ? 'h-[160px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
         >
-          <!-- 图标 + 右下角首字角标 (图标 32*32, 首字 12px) -->
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <!-- 图标 + 右下角首字角标 (图标 36*36 视觉放大, 首字 12px) -->
+          <div class="relative shrink-0 flex items-center justify-center w-9 h-9">
+            <svg class="w-9 h-9 shrink-0" fill="none" viewBox="2 4 20 16.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746-0.332-4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
 
             <!-- 首字角标 (Badge: 字体 12px) -->
             <span
               :class="[
-                'absolute -bottom-0.5 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full text-[12px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
+                'absolute -bottom-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full text-[12px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
                 activeTabId === nb.object_id
                   ? 'bg-white text-syno-blue border border-blue-200'
                   : 'bg-white dark:bg-slate-800 text-syno-blue dark:text-sky-400 border border-slate-200 dark:border-slate-700'
@@ -206,25 +229,29 @@
             </span>
           </div>
 
-          <!-- 图标底下：便签数量 (字体 8px) -->
+          <!-- 图标底下：便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === nb.object_id
-                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
             {{ getNotebookCount(nb) }}
           </div>
 
-          <!-- 激活态竖排文字 -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 1rem) -->
           <div
             v-if="activeTabId === nb.object_id"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
-            style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5"
           >
-            {{ formatVerticalTitle(nb.title) }}
+            <span
+              class="text-[1rem] font-semibold tracking-wider text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(nb.title) }}
+            </span>
           </div>
         </button>
       </div>
@@ -238,10 +265,10 @@
           @click="openCreateModal"
           @mouseenter="handleTabMouseEnter($event, t('sidebar.addNotebook'), 0, false)"
           @mouseleave="handleTabMouseLeave"
-          class="w-[38px] h-[38px] rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 hover:bg-slate-200/80 dark:hover:bg-slate-800/80 transition cursor-pointer"
+          class="w-[40px] h-[40px] rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 hover:bg-slate-200/80 dark:hover:bg-slate-800/80 transition cursor-pointer"
           :title="t('sidebar.addNotebook')"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
         </button>
