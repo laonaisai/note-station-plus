@@ -17,7 +17,7 @@
           :class="[
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__all_notes__'
-              ? 'h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
               : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
@@ -40,10 +40,10 @@
             {{ noteStore.notes.length }}
           </div>
 
-          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem) -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem，最大高度 200px) -->
           <div
             v-if="activeTabId === '__all_notes__'"
-            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
               class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
@@ -62,7 +62,7 @@
           :class="[
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__favorites__'
-              ? 'h-[200px] bg-amber-500 text-white shadow-sm justify-start pt-1.5 pb-1'
+              ? 'max-h-[200px] bg-amber-500 text-white shadow-sm justify-start pt-1.5 pb-1'
               : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
@@ -85,10 +85,10 @@
             {{ noteStore.favoriteNotes.length }}
           </div>
 
-          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem) -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem，最大高度 200px) -->
           <div
             v-if="activeTabId === '__favorites__'"
-            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
               class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
@@ -107,7 +107,7 @@
           :class="[
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__shared_notes__'
-              ? 'h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
               : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
@@ -130,10 +130,10 @@
             {{ sharedNotesCount }}
           </div>
 
-          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem) -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem，最大高度 200px) -->
           <div
             v-if="activeTabId === '__shared_notes__'"
-            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
               class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
@@ -152,7 +152,7 @@
           :class="[
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__recycle_bin__'
-              ? 'h-[200px] bg-rose-600 text-white shadow-sm justify-start pt-1.5 pb-1'
+              ? 'max-h-[200px] bg-rose-600 text-white shadow-sm justify-start pt-1.5 pb-1'
               : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
@@ -175,10 +175,10 @@
             {{ noteStore.recycledNotes.length }}
           </div>
 
-          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem) -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem，最大高度 200px) -->
           <div
             v-if="activeTabId === '__recycle_bin__'"
-            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
               class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
@@ -205,7 +205,7 @@
           :class="[
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === nb.object_id
-              ? 'h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
+              ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
               : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
@@ -241,10 +241,10 @@
             {{ getNotebookCount(nb) }}
           </div>
 
-          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem) -->
+          <!-- 激活态竖排文字 (顶端对齐，字体 0.875rem，底部内距 0.75rem，最大高度 200px) -->
           <div
             v-if="activeTabId === nb.object_id"
-            class="w-full flex-1 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
               class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
