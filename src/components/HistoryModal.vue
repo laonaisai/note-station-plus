@@ -155,8 +155,9 @@
               <!-- Rendered Preview Mode -->
               <div
                 v-if="viewMode === 'preview'"
-                class="markdown-preview prose prose-sm prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-100 leading-relaxed"
+                class="markdown-preview prose prose-sm prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-100 leading-relaxed cursor-text"
                 v-html="renderedContent"
+                @click="handlePreviewClick"
               />
 
               <!-- Raw Markdown Source Mode -->
@@ -201,6 +202,7 @@ import MarkdownIt from 'markdown-it';
 import { useNoteStore } from '@/stores/noteStore';
 import { NoteVersion, SynoNote } from '@/types/synology';
 import { showToast } from '@/utils/toast';
+import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -240,6 +242,24 @@ const renderedContent = computed(() => {
   if (!previewNote.value?.markdownContent) return `<p class="text-slate-400 italic">${t('editor.contentEmpty')}</p>`;
   return md.render(previewNote.value.markdownContent);
 });
+
+function handlePreviewClick(e: MouseEvent) {
+  const target = e.target as HTMLElement | null;
+  const anchor = target?.closest('a');
+  if (!anchor) return;
+
+  const href = anchor.getAttribute('href');
+  if (!href) return;
+
+  if (href.startsWith('#')) return;
+  if (anchor.hasAttribute('download')) return;
+
+  if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+    e.preventDefault();
+    e.stopPropagation();
+    openExternalLinkPrompt(href);
+  }
+}
 
 watch(
   () => [props.isOpen, props.noteId],

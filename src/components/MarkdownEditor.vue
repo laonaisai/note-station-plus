@@ -625,6 +625,7 @@
           <div
             class="markdown-preview select-text prose prose-sm med:prose-base max-w-none prose-slate dark:prose-invert prose-headings:font-bold prose-a:text-syno-blue cursor-text"
             v-html="renderedPreviewHtml"
+            @click="handlePreviewClick"
           ></div>
         </div>
       </div>
@@ -703,6 +704,7 @@ import { showToast } from '@/utils/toast';
 import { isNoteShared } from '@/utils/shareUtils';
 import { printNote } from '@/utils/printNote';
 import { healLegacyImagePlaceholders } from '@/utils/markdown';
+import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
 import NoteInfoModal from '@/components/NoteInfoModal.vue';
 
 const emit = defineEmits<{
@@ -822,6 +824,24 @@ async function handleCopyPreviewText() {
     }, 2000);
   } catch (err) {
     showToast(t('editor.copyFailed'), 'error');
+  }
+}
+
+function handlePreviewClick(e: MouseEvent) {
+  const target = e.target as HTMLElement | null;
+  const anchor = target?.closest('a');
+  if (!anchor) return;
+
+  const href = anchor.getAttribute('href');
+  if (!href) return;
+
+  if (href.startsWith('#')) return;
+  if (anchor.hasAttribute('download')) return;
+
+  if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+    e.preventDefault();
+    e.stopPropagation();
+    openExternalLinkPrompt(href);
   }
 }
 

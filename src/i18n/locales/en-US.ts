@@ -379,5 +379,14 @@ export const enUS: TranslationMessages = {
     copied: 'Logs copied to clipboard',
     totalCount: '{count} total records',
     refresh: 'Refresh'
+  },
+  externalLink: {
+    modalTitle: 'Open External Link',
+    message: 'You are about to leave the application and open the following link. Do you want to continue?',
+    warning: 'Please make sure this link is from a trusted source to prevent security risks.',
+    copyLink: 'Copy Link',
+    openLink: 'Open Link',
+    close: 'Close',
+    copySuccess: 'Link copied to clipboard'
   }
 };

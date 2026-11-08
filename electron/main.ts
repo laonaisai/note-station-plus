@@ -43,6 +43,20 @@ ipcMain.handle('app:getVersion', () => {
   return app.getVersion();
 });
 
+// Safe external browser launcher IPC handler
+ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+  try {
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:'))) {
+      await shell.openExternal(url);
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid URL scheme' };
+  } catch (err: any) {
+    console.error('[shell:openExternal] failed:', err);
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
 // Localized strings for main process dialogs and menus
 type AppLocale = 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP';
 
@@ -300,6 +314,18 @@ const createWindow = () => {
     if (menu.items.length > 0) {
       menu.popup({ window: mainWindow || undefined });
     }
+  });
+
+  // Prevent accidental in-app navigation when links are clicked, avoiding app UI being overwritten
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    const devUrl = process.env.VITE_DEV_SERVER_URL;
+    if (devUrl && navigationUrl.startsWith(devUrl)) {
+      return;
+    }
+    if (navigationUrl.startsWith('file://')) {
+      return;
+    }
+    event.preventDefault();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

@@ -393,4 +393,13 @@ export interface TranslationMessages {
     totalCount: string;
     refresh: string;
   };
+  externalLink: {
+    modalTitle: string;
+    message: string;
+    warning: string;
+    copyLink: string;
+    openLink: string;
+    close: string;
+    copySuccess: string;
+  };
 }

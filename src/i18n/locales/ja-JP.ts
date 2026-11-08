@@ -379,5 +379,14 @@ export const jaJP: TranslationMessages = {
     copied: 'ログをクリップボードにコピーしました',
     totalCount: '全 {count} 件',
     refresh: '更新'
+  },
+  externalLink: {
+    modalTitle: '外部リンクを開く',
+    message: 'アプリケーションを離れて次の外部リンクを開こうとしています。続行しますか？',
+    warning: 'セキュリティリスクを防ぐため、信頼できるリンクであることを確認してください。',
+    copyLink: 'リンクをコピー',
+    openLink: 'リンクを開く',
+    close: '閉じる',
+    copySuccess: 'リンクがクリップボードにコピーされました'
   }
 };

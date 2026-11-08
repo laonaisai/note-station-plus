@@ -106,6 +106,8 @@
       @close="isPrintModalOpen = false"
     />
 
+    <ExternalLinkModal />
+
     <!-- Global Toast Notifications -->
     <div class="fixed top-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none">
       <transition-group
@@ -184,6 +186,8 @@ import PinSettingsModal from '@/components/PinSettingsModal.vue';
 import AboutModal from '@/components/AboutModal.vue';
 import LogsModal from '@/components/LogsModal.vue';
 import PrintModal from '@/components/PrintModal.vue';
+import ExternalLinkModal from '@/components/ExternalLinkModal.vue';
+import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
 import type { SynoNote } from '@/types/synology';
 
 const sessionStore = useSessionStore();
@@ -275,10 +279,37 @@ function handlePinUpdated() {
   }
 }
 
+function handleGlobalLinkClick(e: MouseEvent) {
+  const target = e.target as HTMLElement | null;
+  const anchor = target?.closest('a');
+  if (!anchor) return;
+
+  const href = anchor.getAttribute('href');
+  if (!href) return;
+
+  // 忽略页内锚点跳转
+  if (href.startsWith('#')) return;
+
+  // 忽略附件下载
+  if (anchor.hasAttribute('download')) return;
+
+  // 针对便签预览区（.markdown-preview）或外部链接进行拦截并弹出确认对话框
+  const isInsideMarkdown = !!anchor.closest('.markdown-preview');
+  const isExternalScheme = href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:');
+
+  if (isInsideMarkdown && isExternalScheme) {
+    e.preventDefault();
+    e.stopPropagation();
+    openExternalLinkPrompt(href);
+  }
+}
+
 onMounted(async () => {
   layoutStore.initResponsive();
   themeStore.initTheme();
   initLocale();
+
+  document.addEventListener('click', handleGlobalLinkClick, true);
 
   // Confirmation before closing when running in plain browser mode
   window.addEventListener('beforeunload', (e) => {
@@ -298,6 +329,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalLinkClick, true);
   layoutStore.destroyResponsive();
 });
 

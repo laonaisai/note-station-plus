@@ -379,5 +379,14 @@ export const zhCN: TranslationMessages = {
     copied: '已复制日志到剪贴板',
     totalCount: '共 {count} 条记录',
     refresh: '刷新'
+  },
+  externalLink: {
+    modalTitle: '打开外部链接',
+    message: '您即将离开应用并访问以下外部链接，是否继续？',
+    warning: '请确保该链接来自可信来源，以防钓鱼或恶意网站风险。',
+    copyLink: '复制链接',
+    openLink: '打开链接',
+    close: '关闭',
+    copySuccess: '链接已复制到剪贴板'
   }
 };

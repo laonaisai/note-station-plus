@@ -379,5 +379,14 @@ export const zhTW: TranslationMessages = {
     copied: '已複製日誌至剪貼簿',
     totalCount: '共 {count} 條記錄',
     refresh: '重新整理'
+  },
+  externalLink: {
+    modalTitle: '開啟外部連結',
+    message: '您即將離開應用程式並訪問以下外部連結，是否繼續？',
+    warning: '請確認該連結來自可信任來源，以防釣魚或惡意網站風險。',
+    copyLink: '複製連結',
+    openLink: '開啟連結',
+    close: '關閉',
+    copySuccess: '連結已複製至剪貼簿'
   }
 };

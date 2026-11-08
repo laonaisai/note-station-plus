@@ -5,6 +5,7 @@ const api = {
   version: process.versions.electron,
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   setLocale: (locale: string) => ipcRenderer.send('app:setLocale', locale),
+  openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   safeStorage: {
     isAvailable: () => ipcRenderer.invoke('safeStorage:isAvailable'),
     encryptString: (plainText: string) => ipcRenderer.invoke('safeStorage:encryptString', plainText),
