@@ -15,15 +15,15 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.allNotes'), noteStore.notes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1.5',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
             activeTabId === '__all_notes__'
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
+              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
           ]"
           :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -55,15 +55,15 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.favorites'), noteStore.favoriteNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1.5',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
             activeTabId === '__favorites__'
               ? 'h-[160px] bg-amber-500 text-white shadow-sm'
-              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
+              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
           ]"
           :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           </div>
@@ -94,15 +94,15 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.sharedNotes'), sharedNotesCount)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1.5',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
             activeTabId === '__shared_notes__'
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
           ]"
           :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </div>
@@ -133,15 +133,15 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.recycleBin'), noteStore.recycledNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1.5',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
             activeTabId === '__recycle_bin__'
               ? 'h-[160px] bg-rose-600 text-white shadow-sm'
-              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
+              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
           ]"
           :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
@@ -180,16 +180,16 @@
           @mouseenter="handleTabMouseEnter($event, nb.title || t('sidebar.notebooks'), getNotebookCount(nb))"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1.5',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
             activeTabId === nb.object_id
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[52px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
           ]"
           :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
         >
           <!-- 图标 + 右下角首字角标 -->
-          <div class="relative shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746-0.332-4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
 
@@ -292,20 +292,20 @@
             </svg>
           </button>
 
-          <!-- 菜单图标按钮 (弹出下拉菜单：同步当前NAS、重命名、导出、删除笔记本) -->
+          <!-- 更多操作下拉菜单按钮 (纵向三点图标) -->
           <div class="relative">
             <button
               @click.stop="isNotebookMenuOpen = !isNotebookMenuOpen"
               :class="[
-                'p-1.5 rounded transition cursor-pointer',
+                'p-1.5 rounded transition cursor-pointer flex items-center justify-center',
                 isNotebookMenuOpen
                   ? 'bg-slate-200 dark:bg-slate-800 text-syno-blue dark:text-sky-400'
                   : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               ]"
               :title="t('common.actions')"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
               </svg>
             </button>
 
