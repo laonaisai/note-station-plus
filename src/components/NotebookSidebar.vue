@@ -8,22 +8,22 @@
     <!-- ================= 1. 50px 纵向选项卡轨道 (Vertical Tab Rail) ================= -->
     <div class="w-[50px] shrink-0 border-r border-slate-200/80 dark:border-slate-800 flex flex-col items-center bg-slate-50/80 dark:bg-slate-950/70 py-2 select-none z-10">
       <!-- 1.1 系统分类项区域 (全部便签、收藏夹、共享便签、回收站) -->
-      <div class="flex flex-col items-center space-y-1.5 shrink-0 w-full px-1">
+      <div class="flex flex-col items-center space-y-1 shrink-0 w-full px-0.5">
         <!-- 全部便签 -->
         <button
           @click="selectTab('__all_notes__')"
           @mouseenter="handleTabMouseEnter($event, t('sidebar.allNotes'), noteStore.notes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
             activeTabId === '__all_notes__'
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
           ]"
           :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
+            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -31,9 +31,9 @@
           <!-- 便签数量 (未激活与激活态均展示在图标下方) -->
           <div
             :class="[
-              'text-[10px] font-semibold leading-none font-mono shrink-0 select-none mt-1',
+              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__all_notes__'
-                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
@@ -42,7 +42,7 @@
 
           <div
             v-if="activeTabId === '__all_notes__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-1"
+            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
             style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
           >
             {{ formatVerticalTitle(t('sidebar.allNotes')) }}
@@ -55,24 +55,24 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.favorites'), noteStore.favoriteNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
             activeTabId === '__favorites__'
               ? 'h-[160px] bg-amber-500 text-white shadow-sm'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
           ]"
           :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
+            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           </div>
 
           <div
             :class="[
-              'text-[10px] font-semibold leading-none font-mono shrink-0 select-none mt-1',
+              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__favorites__'
-                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
@@ -81,7 +81,7 @@
 
           <div
             v-if="activeTabId === '__favorites__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-1"
+            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
             style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
           >
             {{ formatVerticalTitle(t('sidebar.favorites')) }}
@@ -94,24 +94,24 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.sharedNotes'), sharedNotesCount)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
             activeTabId === '__shared_notes__'
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
           ]"
           :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
+            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </div>
 
           <div
             :class="[
-              'text-[10px] font-semibold leading-none font-mono shrink-0 select-none mt-1',
+              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__shared_notes__'
-                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
@@ -120,7 +120,7 @@
 
           <div
             v-if="activeTabId === '__shared_notes__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-1"
+            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
             style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
           >
             {{ formatVerticalTitle(t('sidebar.sharedNotes')) }}
@@ -133,24 +133,24 @@
           @mouseenter="handleTabMouseEnter($event, t('sidebar.recycleBin'), noteStore.recycledNotes.length)"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
             activeTabId === '__recycle_bin__'
               ? 'h-[160px] bg-rose-600 text-white shadow-sm'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
           ]"
           :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
+            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
 
           <div
             :class="[
-              'text-[10px] font-semibold leading-none font-mono shrink-0 select-none mt-1',
+              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__recycle_bin__'
-                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
@@ -159,7 +159,7 @@
 
           <div
             v-if="activeTabId === '__recycle_bin__'"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-1"
+            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
             style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
           >
             {{ formatVerticalTitle(t('sidebar.recycleBin')) }}
@@ -168,10 +168,10 @@
       </div>
 
       <!-- 微细分割线 -->
-      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-2 shrink-0"></div>
+      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-1 shrink-0"></div>
 
       <!-- 1.2 用户自定义笔记本列表 (支持独立纵向滚动) -->
-      <div class="flex-1 w-full flex flex-col items-center space-y-1.5 overflow-y-auto scrollbar-none px-1 py-0.5 min-h-0">
+      <div class="flex-1 w-full flex flex-col items-center space-y-1 overflow-y-auto scrollbar-none px-0.5 py-0 min-h-0">
         <button
           v-for="nb in noteStore.notebooks"
           :key="nb.object_id"
@@ -180,23 +180,23 @@
           @mouseenter="handleTabMouseEnter($event, nb.title || t('sidebar.notebooks'), getNotebookCount(nb))"
           @mouseleave="handleTabMouseLeave"
           :class="[
-            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-1',
+            'w-[42px] rounded-lg flex flex-col items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none py-0.5',
             activeTabId === nb.object_id
               ? 'h-[160px] bg-syno-blue text-white shadow-sm'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
           ]"
           :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
         >
-          <!-- 图标 + 右下角首字角标 -->
-          <div class="relative shrink-0 flex items-center justify-center w-5 h-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <!-- 图标 + 右下角首字角标 (图标 32*32, 首字 12px) -->
+          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
+            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746-0.332-4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
 
-            <!-- 首字角标 (Badge) -->
+            <!-- 首字角标 (Badge: 字体 12px) -->
             <span
               :class="[
-                'absolute -bottom-1 -right-1.5 min-w-[13px] h-[13px] px-0.5 rounded-full text-[8.5px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
+                'absolute -bottom-0.5 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full text-[12px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
                 activeTabId === nb.object_id
                   ? 'bg-white text-syno-blue border border-blue-200'
                   : 'bg-white dark:bg-slate-800 text-syno-blue dark:text-sky-400 border border-slate-200 dark:border-slate-700'
@@ -206,12 +206,12 @@
             </span>
           </div>
 
-          <!-- 图标底下：便签数量 (未激活态与激活态均展示) -->
+          <!-- 图标底下：便签数量 (字体 8px) -->
           <div
             :class="[
-              'text-[10px] font-semibold leading-none font-mono shrink-0 select-none mt-1',
+              'text-[8px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === nb.object_id
-                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                ? 'px-1 py-0.2 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
             ]"
           >
@@ -221,7 +221,7 @@
           <!-- 激活态竖排文字 -->
           <div
             v-if="activeTabId === nb.object_id"
-            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-1"
+            class="flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden my-0.5"
             style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
           >
             {{ formatVerticalTitle(nb.title) }}
@@ -230,7 +230,7 @@
       </div>
 
       <!-- 微细分割线 -->
-      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-2 shrink-0"></div>
+      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-1 shrink-0"></div>
 
       <!-- 1.3 底部快捷新建笔记本按钮 -->
       <div class="shrink-0 flex flex-col items-center pt-0.5 pb-1">
