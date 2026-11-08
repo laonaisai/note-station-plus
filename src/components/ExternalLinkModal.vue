@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+    class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none"
     @click.self="handleClose"
   >
     <div
@@ -105,6 +105,7 @@ import { t } from '@/i18n';
 import { isLinkModalOpen, pendingLinkUrl, closeExternalLinkPrompt } from '@/utils/externalLinkModal';
 import { openInExternalBrowser } from '@/utils/openUrl';
 import { showToast } from '@/utils/toast';
+import { logger } from '@/services/logger';
 
 const props = defineProps<{
   isOpen?: boolean;
@@ -129,12 +130,14 @@ function handleClose() {
 }
 
 async function handleCopyLink() {
-  if (!targetUrl.value) return;
+  const url = targetUrl.value;
+  if (!url) return;
   try {
-    await navigator.clipboard.writeText(targetUrl.value);
+    await navigator.clipboard.writeText(url);
+    logger.info('system', 'copyLink', '已复制外部链接到剪贴板', { url });
     showToast(t('externalLink.copySuccess'), 'success');
-  } catch (err) {
-    console.error('Failed to copy link to clipboard:', err);
+  } catch (err: any) {
+    logger.error('system', 'copyLinkFailed', '复制外部链接到剪贴板失败', err, { url });
     showToast(t('common.error'), 'error');
   }
   handleClose();
@@ -144,6 +147,7 @@ async function handleOpenLink() {
   const url = targetUrl.value;
   handleClose();
   if (url) {
+    logger.info('system', 'openLink', '用户点击打开外部链接', { url });
     await openInExternalBrowser(url);
   }
 }

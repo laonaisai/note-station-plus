@@ -705,6 +705,7 @@ import { isNoteShared } from '@/utils/shareUtils';
 import { printNote } from '@/utils/printNote';
 import { healLegacyImagePlaceholders } from '@/utils/markdown';
 import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
+import { normalizeExternalUrl } from '@/utils/openUrl';
 import NoteInfoModal from '@/components/NoteInfoModal.vue';
 
 const emit = defineEmits<{
@@ -838,11 +839,12 @@ function handlePreviewClick(e: MouseEvent) {
   if (href.startsWith('#')) return;
   if (anchor.hasAttribute('download')) return;
 
-  if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
-    e.preventDefault();
-    e.stopPropagation();
-    openExternalLinkPrompt(href);
-  }
+  const externalUrl = normalizeExternalUrl(href);
+  if (!externalUrl) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  openExternalLinkPrompt(externalUrl);
 }
 
 const isRecycledNote = computed(() => {

@@ -106,7 +106,11 @@
       @close="isPrintModalOpen = false"
     />
 
-    <ExternalLinkModal />
+    <ExternalLinkModal
+      :is-open="isExternalLinkModalOpen"
+      :url="externalLinkTargetUrl"
+      @close="isExternalLinkModalOpen = false"
+    />
 
     <!-- Global Toast Notifications -->
     <div class="fixed top-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none">
@@ -187,7 +191,9 @@ import AboutModal from '@/components/AboutModal.vue';
 import LogsModal from '@/components/LogsModal.vue';
 import PrintModal from '@/components/PrintModal.vue';
 import ExternalLinkModal from '@/components/ExternalLinkModal.vue';
-import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
+import { onExternalLinkPrompt } from '@/utils/externalLinkModal';
+import { normalizeExternalUrl } from '@/utils/openUrl';
+import { logger } from '@/services/logger';
 import type { SynoNote } from '@/types/synology';
 
 const sessionStore = useSessionStore();
@@ -279,6 +285,18 @@ function handlePinUpdated() {
   }
 }
 
+const isExternalLinkModalOpen = ref(false);
+const externalLinkTargetUrl = ref('');
+let unsubscribePrompt: (() => void) | null = null;
+let unsubscribeElectronPrompt: (() => void) | null = null;
+
+function handlePromptExternalLink(url: string) {
+  const normalized = normalizeExternalUrl(url);
+  if (!normalized) return;
+  externalLinkTargetUrl.value = normalized;
+  isExternalLinkModalOpen.value = true;
+}
+
 function handleGlobalLinkClick(e: MouseEvent) {
   const target = e.target as HTMLElement | null;
   const anchor = target?.closest('a');
@@ -293,15 +311,16 @@ function handleGlobalLinkClick(e: MouseEvent) {
   // 忽略附件下载
   if (anchor.hasAttribute('download')) return;
 
-  // 针对便签预览区（.markdown-preview）或外部链接进行拦截并弹出确认对话框
-  const isInsideMarkdown = !!anchor.closest('.markdown-preview');
-  const isExternalScheme = href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:');
+  // 规范化目标外部链接 (包含 http, https, mailto, //, www. 等)
+  const externalUrl = normalizeExternalUrl(href);
+  if (!externalUrl) return;
 
-  if (isInsideMarkdown && isExternalScheme) {
-    e.preventDefault();
-    e.stopPropagation();
-    openExternalLinkPrompt(href);
-  }
+  // 拦截超链接跳转并弹出确认对话框
+  e.preventDefault();
+  e.stopPropagation();
+
+  logger.info('system', 'clickExternalLink', '捕获外部链接点击事件，展示确认弹窗', { targetUrl: externalUrl });
+  handlePromptExternalLink(externalUrl);
 }
 
 onMounted(async () => {
@@ -310,6 +329,14 @@ onMounted(async () => {
   initLocale();
 
   document.addEventListener('click', handleGlobalLinkClick, true);
+
+  // 监听由内部 utils 派发的外部链接弹窗请求
+  unsubscribePrompt = onExternalLinkPrompt(handlePromptExternalLink);
+
+  // 监听由 Electron 主进程反向派发的外部链接弹窗请求 (双重防线)
+  if (typeof (window as any).electronAPI?.onPromptExternalLink === 'function') {
+    unsubscribeElectronPrompt = (window as any).electronAPI.onPromptExternalLink(handlePromptExternalLink);
+  }
 
   // Confirmation before closing when running in plain browser mode
   window.addEventListener('beforeunload', (e) => {
@@ -330,6 +357,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleGlobalLinkClick, true);
+  if (unsubscribePrompt) unsubscribePrompt();
+  if (unsubscribeElectronPrompt) unsubscribeElectronPrompt();
   layoutStore.destroyResponsive();
 });
 

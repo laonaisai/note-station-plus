@@ -325,7 +325,12 @@ const createWindow = () => {
     if (navigationUrl.startsWith('file://')) {
       return;
     }
+    // Block navigation that would overwrite the main application window
     event.preventDefault();
+
+    // Notify renderer process to display the External Link confirmation dialog
+    console.log('[will-navigate] Intercepted external navigation, sending prompt to renderer for:', navigationUrl);
+    mainWindow?.webContents.send('app:promptExternalLink', navigationUrl);
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

@@ -203,6 +203,7 @@ import { useNoteStore } from '@/stores/noteStore';
 import { NoteVersion, SynoNote } from '@/types/synology';
 import { showToast } from '@/utils/toast';
 import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
+import { normalizeExternalUrl } from '@/utils/openUrl';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -254,11 +255,12 @@ function handlePreviewClick(e: MouseEvent) {
   if (href.startsWith('#')) return;
   if (anchor.hasAttribute('download')) return;
 
-  if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
-    e.preventDefault();
-    e.stopPropagation();
-    openExternalLinkPrompt(href);
-  }
+  const externalUrl = normalizeExternalUrl(href);
+  if (!externalUrl) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  openExternalLinkPrompt(externalUrl);
 }
 
 watch(

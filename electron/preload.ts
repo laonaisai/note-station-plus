@@ -6,6 +6,11 @@ const api = {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   setLocale: (locale: string) => ipcRenderer.send('app:setLocale', locale),
   openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
+  onPromptExternalLink: (callback: (url: string) => void) => {
+    const handler = (_event: any, url: string) => callback(url);
+    ipcRenderer.on('app:promptExternalLink', handler);
+    return () => ipcRenderer.removeListener('app:promptExternalLink', handler);
+  },
   safeStorage: {
     isAvailable: () => ipcRenderer.invoke('safeStorage:isAvailable'),
     encryptString: (plainText: string) => ipcRenderer.invoke('safeStorage:encryptString', plainText),

@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isSafeExternalUrl, openInExternalBrowser } from '@/utils/openUrl';
-import { isLinkModalOpen, pendingLinkUrl, openExternalLinkPrompt, closeExternalLinkPrompt } from '@/utils/externalLinkModal';
+import { isSafeExternalUrl, normalizeExternalUrl, openInExternalBrowser } from '@/utils/openUrl';
+import {
+  isLinkModalOpen,
+  pendingLinkUrl,
+  openExternalLinkPrompt,
+  closeExternalLinkPrompt,
+  onExternalLinkPrompt
+} from '@/utils/externalLinkModal';
 
 describe('External Link Handler & Modal Utilities', () => {
   const originalWindow = (globalThis as any).window;
@@ -14,25 +20,38 @@ describe('External Link Handler & Modal Utilities', () => {
     (globalThis as any).window = originalWindow;
   });
 
-  describe('isSafeExternalUrl 协议安全校验', () => {
-    it('应正确放行安全的外部协议 (http, https, mailto)', () => {
-      expect(isSafeExternalUrl('https://github.com')).toBe(true);
-      expect(isSafeExternalUrl('http://example.com/test?query=1')).toBe(true);
-      expect(isSafeExternalUrl('mailto:test@example.com')).toBe(true);
-      expect(isSafeExternalUrl('  https://synology.com  ')).toBe(true);
+  describe('normalizeExternalUrl 协议安全校验与链接规范化', () => {
+    it('应正确放行并保留标准的外部协议 (http, https, mailto)', () => {
+      expect(normalizeExternalUrl('https://github.com')).toBe('https://github.com');
+      expect(normalizeExternalUrl('http://example.com/test?query=1')).toBe('http://example.com/test?query=1');
+      expect(normalizeExternalUrl('mailto:test@example.com')).toBe('mailto:test@example.com');
+      expect(normalizeExternalUrl('  https://synology.com  ')).toBe('https://synology.com');
     });
 
-    it('应严格拦截不安全或非外部跳转的协议 (javascript, data, file, 锚点, 相对路径)', () => {
-      expect(isSafeExternalUrl('')).toBe(false);
-      expect(isSafeExternalUrl('javascript:alert(1)')).toBe(false);
-      expect(isSafeExternalUrl('data:text/html,<h1>bad</h1>')).toBe(false);
-      expect(isSafeExternalUrl('file:///etc/passwd')).toBe(false);
-      expect(isSafeExternalUrl('#heading-1')).toBe(false);
-      expect(isSafeExternalUrl('/relative/path')).toBe(false);
+    it('应将纯域名与协议相对地址自动规范化为 https 外部链接', () => {
+      expect(normalizeExternalUrl('www.baidu.com')).toBe('https://www.baidu.com');
+      expect(normalizeExternalUrl('//github.com/laonaisai')).toBe('https://github.com/laonaisai');
+      expect(normalizeExternalUrl('api.synology.com/query')).toBe('https://api.synology.com/query');
+    });
+
+    it('应严格拦截不安全或非外部跳转的协议 (javascript, data, vbscript, 锚点, 相对路径)', () => {
+      expect(normalizeExternalUrl('')).toBeNull();
+      expect(normalizeExternalUrl(null)).toBeNull();
+      expect(normalizeExternalUrl('javascript:alert(1)')).toBeNull();
+      expect(normalizeExternalUrl('data:text/html,<h1>bad</h1>')).toBeNull();
+      expect(normalizeExternalUrl('vbscript:msgbox(1)')).toBeNull();
+      expect(normalizeExternalUrl('#heading-1')).toBeNull();
+      expect(normalizeExternalUrl('/local/path/index.html')).toBeNull();
+    });
+
+    it('isSafeExternalUrl 应与 normalizeExternalUrl 判定一致', () => {
+      expect(isSafeExternalUrl('https://google.com')).toBe(true);
+      expect(isSafeExternalUrl('www.google.com')).toBe(true);
+      expect(isSafeExternalUrl('javascript:void(0)')).toBe(false);
     });
   });
 
-  describe('externalLinkModal 对话框状态管理', () => {
+  describe('externalLinkModal 对话框状态管理与事件广播', () => {
     it('openExternalLinkPrompt 应打开弹窗并保存待确认的 URL', () => {
       expect(isLinkModalOpen.value).toBe(false);
       expect(pendingLinkUrl.value).toBe('');
@@ -41,6 +60,19 @@ describe('External Link Handler & Modal Utilities', () => {
 
       expect(isLinkModalOpen.value).toBe(true);
       expect(pendingLinkUrl.value).toBe('https://github.com/laonaisai');
+    });
+
+    it('openExternalLinkPrompt 应能成功通知通过 onExternalLinkPrompt 注册的监听器', () => {
+      const listenerSpy = vi.fn();
+      const unsubscribe = onExternalLinkPrompt(listenerSpy);
+
+      openExternalLinkPrompt('www.synology.com');
+
+      expect(listenerSpy).toHaveBeenCalledWith('https://www.synology.com');
+
+      unsubscribe();
+      openExternalLinkPrompt('https://other.com');
+      expect(listenerSpy).toHaveBeenCalledTimes(1);
     });
 
     it('closeExternalLinkPrompt 应关闭弹窗并清空待确认 URL', () => {
@@ -120,10 +152,11 @@ describe('External Link Handler & Modal Utilities', () => {
       if (anchor) {
         const linkHref = anchor.getAttribute('href');
         if (linkHref && !linkHref.startsWith('#') && !anchor.hasAttribute('download')) {
-          if (linkHref.startsWith('http://') || linkHref.startsWith('https://') || linkHref.startsWith('mailto:')) {
+          const externalUrl = normalizeExternalUrl(linkHref);
+          if (externalUrl) {
             mockEvent.preventDefault();
             mockEvent.stopPropagation();
-            openExternalLinkPrompt(linkHref);
+            openExternalLinkPrompt(externalUrl);
           }
         }
       }
@@ -137,6 +170,14 @@ describe('External Link Handler & Modal Utilities', () => {
       expect(isPropagationStopped).toBe(true);
       expect(isLinkModalOpen.value).toBe(true);
       expect(pendingLinkUrl.value).toBe('https://www.google.com');
+    });
+
+    it('点击便签中的纯域名 (www.xxx.com) 链接时也应正确识别并弹出确认对话框', () => {
+      const { isDefaultPrevented, isPropagationStopped } = simulatePreviewLinkClick('www.synology.cn');
+      expect(isDefaultPrevented).toBe(true);
+      expect(isPropagationStopped).toBe(true);
+      expect(isLinkModalOpen.value).toBe(true);
+      expect(pendingLinkUrl.value).toBe('https://www.synology.cn');
     });
 
     it('点击附件下载链接时不应弹出外部链接对话框', () => {
