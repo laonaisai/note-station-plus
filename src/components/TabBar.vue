@@ -1,7 +1,10 @@
 <template>
   <div class="h-11 med:h-13 bg-slate-900 border-b border-slate-800 flex items-center px-2 med:px-3 select-none justify-between transition-all duration-150">
     <!-- Left: App Icon & Server Tabs -->
-    <div class="flex items-center space-x-1.5 overflow-x-auto h-full scrollbar-none py-1">
+    <div
+      class="flex items-center space-x-1.5 overflow-x-auto overflow-y-hidden flex-1 min-w-0 h-full scrollbar-none py-1 mr-2"
+      @wheel.passive="handleTabsWheel"
+    >
       <div class="flex items-center px-1.5 text-slate-100 font-semibold text-xs med:text-sm tracking-wide mr-1 shrink-0">
         <img src="/logo.png" alt="NoteStation+" class="w-5 h-5 med:w-6 med:h-6 rounded-md mr-1.5 object-contain shadow-sm" />
         {{ t('tabBar.appName') }}
@@ -77,7 +80,11 @@
 
     <!-- Right: Server Status Info & Actions -->
     <div class="flex items-center space-x-1.5 med:space-x-2 text-xs med:text-sm text-slate-400 shrink-0">
-      <span v-if="currentStatusText" class="hidden md:inline px-2 med:px-2.5 py-0.5 med:py-1 rounded bg-slate-800 text-[11px] med:text-xs text-slate-300">
+      <span
+        v-if="currentStatusText"
+        class="hidden md:inline px-2 med:px-2.5 py-0.5 med:py-1 rounded bg-slate-800 text-[11px] med:text-xs text-slate-300 max-w-[160px] med:max-w-[220px] truncate"
+        :title="currentStatusText"
+      >
         {{ currentStatusText }}
       </span>
 
@@ -324,6 +331,13 @@ const currentDensityModeName = computed(() => {
 function selectDensityMode(mode: UiDensityMode) {
   layoutStore.setUiDensityMode(mode);
   isDensityMenuOpen.value = false;
+}
+
+function handleTabsWheel(e: WheelEvent) {
+  if (e.deltaY !== 0) {
+    const el = e.currentTarget as HTMLElement;
+    el.scrollLeft += e.deltaY;
+  }
 }
 
 const currentLangShortName = computed(() => {
