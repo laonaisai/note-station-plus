@@ -3,14 +3,14 @@
     <!-- Note Loading Skeleton State -->
     <div v-if="noteStore.isLoadingNote" class="flex-1 flex flex-col h-full overflow-hidden select-none animate-in fade-in duration-150">
       <!-- Loading Top Bar Skeleton -->
-      <div class="h-14 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
+      <div class="h-14 med:h-16 px-5 med:px-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
         <div class="flex items-center space-x-3 flex-1 min-w-0">
-          <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
-          <div class="h-5 w-48 sm:w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+          <div class="w-7 h-7 med:w-8 med:h-8 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+          <div class="h-5 med:h-6 w-48 sm:w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
         </div>
         <div class="flex items-center space-x-2">
-          <div class="h-6 w-14 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
-          <div class="h-6 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
+          <div class="h-6 med:h-7 w-14 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
+          <div class="h-6 med:h-7 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
         </div>
       </div>
 
@@ -62,7 +62,7 @@
     <!-- Active Note Editor -->
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
       <!-- Top Note Bar -->
-      <div class="h-14 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
+      <div class="h-14 med:h-16 px-5 med:px-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
         <!-- Left Side: Sidebar Toggle Icons & Note Title Input -->
         <div class="flex items-center flex-1 mr-4 min-w-0">
           <!-- Sidebar Toggle Buttons (Collapse / Expand controls) -->
@@ -70,12 +70,12 @@
             <button
               @click="layoutStore.toggleSidebar"
               :class="[
-                'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
+                'p-1.5 med:p-2 rounded-md transition text-xs flex items-center cursor-pointer',
                 layoutStore.isSidebarCollapsed ? 'bg-blue-50 dark:bg-blue-950/40 text-syno-blue' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               ]"
               :title="layoutStore.isSidebarCollapsed ? t('editor.expandSidebar') : t('editor.collapseSidebar')"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4 med:w-4.5 med:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
               </svg>
             </button>
@@ -83,12 +83,12 @@
             <button
               @click="layoutStore.toggleFocusMode"
               :class="[
-                'p-1.5 rounded-md transition text-xs flex items-center cursor-pointer',
+                'p-1.5 med:p-2 rounded-md transition text-xs flex items-center cursor-pointer',
                 layoutStore.isSidebarCollapsed ? 'bg-syno-blue text-white shadow-xs' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               ]"
               :title="layoutStore.isSidebarCollapsed ? t('editor.focusModeExit') : t('editor.focusModeEnter')"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4 med:w-4.5 med:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
             </button>
@@ -100,11 +100,11 @@
             <button
               v-if="noteStore.activeNote && !isRecycledNote"
               @click="toggleActiveFavorite"
-              class="mr-1.5 p-1 rounded-md transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              class="mr-1.5 p-1 med:p-1.5 rounded-md transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
               :title="noteStore.isFavorite(noteStore.activeNote.object_id) ? t('editor.favoriteRemove') : t('editor.favoriteAdd')"
             >
               <svg
-                class="w-4 h-4"
+                class="w-4 h-4 med:w-4.5 med:h-4.5"
                 :class="noteStore.isFavorite(noteStore.activeNote.object_id) ? 'text-amber-500 fill-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -116,7 +116,7 @@
             <!-- Share Icon (当前便签已共享) -->
             <svg
               v-if="isNoteShared(noteStore.activeNote)"
-              class="w-4 h-4 text-syno-blue mr-2 shrink-0"
+              class="w-4 h-4 med:w-4.5 med:h-4.5 text-syno-blue mr-2 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -130,21 +130,21 @@
               :readonly="isRecycledNote"
               type="text"
               :placeholder="t('editor.titlePlaceholder')"
-              class="text-base font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 border-none outline-none flex-1 bg-transparent truncate"
+              class="text-base med:text-xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 border-none outline-none flex-1 bg-transparent truncate"
             />
           </div>
         </div>
 
         <!-- Right Action Tools -->
-        <div class="flex items-center space-x-2.5 text-xs select-none shrink-0">
+        <div class="flex items-center space-x-2.5 med:space-x-3 text-xs med:text-sm select-none shrink-0">
           <!-- 回收站便签专用操作栏 (便签操作仅有“恢复”与“彻底删除”) -->
           <template v-if="isRecycledNote">
             <button
               @click="handleRestoreRecycledNote"
-              class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              class="px-2.5 med:px-3 py-1 med:py-1.5 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
               :title="t('editor.restore')"
             >
-              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
               {{ t('editor.restore') }}
@@ -152,10 +152,10 @@
 
             <button
               @click="handlePermanentDeleteRecycledNote"
-              class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              class="px-2.5 med:px-3 py-1 med:py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
               :title="t('editor.permDelete')"
             >
-              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               {{ t('editor.permDelete') }}
@@ -165,9 +165,9 @@
           <!-- 普通便签操作栏 -->
           <template v-else>
             <!-- Save status indicator -->
-            <span class="text-slate-400 dark:text-slate-500 text-xs flex items-center">
+            <span class="text-slate-400 dark:text-slate-500 text-xs med:text-sm flex items-center">
               <span v-if="noteStore.isSaving" class="flex items-center text-amber-500 dark:text-amber-400">
-                <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
+                <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3 med:h-3.5 med:w-3.5 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
@@ -177,7 +177,7 @@
                 {{ t('common.unsaved') }}
               </span>
               <span v-else class="text-emerald-500 dark:text-emerald-400 flex items-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
                 {{ t('common.saved') }}
@@ -188,10 +188,10 @@
             <button
               @click="saveNote(true)"
               :disabled="noteStore.isSaving"
-              class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
+              class="px-2 med:px-2.5 py-1 med:py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50 text-xs med:text-sm"
               :title="t('editor.saveNote') + ' (Ctrl+S)'"
             >
-              <svg class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
               {{ t('common.save') }}
@@ -201,10 +201,10 @@
             <button
               @click="handleSyncWithServer"
               :disabled="isSyncingWithServer || noteStore.isLoading || noteStore.isSyncingWithServer"
-              class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50"
+              class="px-2 med:px-2.5 py-1 med:py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50 text-xs med:text-sm"
               :title="t('editor.syncWithServer')"
             >
-              <svg :class="['w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400', (isSyncingWithServer || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg :class="['w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400', (isSyncingWithServer || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               {{ t('editor.syncWithServer') }}
@@ -213,10 +213,10 @@
             <!-- Sync to other servers button (同步到其他NAS) -->
             <button
               @click="handleOpenSync"
-              class="px-2.5 py-1 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer"
+              class="px-2.5 med:px-3 py-1 med:py-1.5 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer text-xs med:text-sm"
               :title="t('editor.syncToOtherServer')"
             >
-              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
               {{ t('editor.syncToOtherServer') }}
@@ -227,16 +227,16 @@
               <button
                 @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
                 :class="[
-                  'px-2 py-1 rounded-md font-medium transition flex items-center border cursor-pointer text-xs',
+                  'px-2 med:px-2.5 py-1 med:py-1.5 rounded-md font-medium transition flex items-center border cursor-pointer text-xs med:text-sm',
                   isMoreMenuOpen ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
                 ]"
                 :title="t('editor.more')"
               >
-                <svg class="w-3.5 h-3.5 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
                 <span>{{ t('editor.more') }}</span>
-                <svg class="w-3 h-3 ml-1 text-slate-400 dark:text-slate-500 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-3 h-3 med:w-3.5 med:h-3.5 ml-1 text-slate-400 dark:text-slate-500 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -245,14 +245,14 @@
               <div
                 v-if="isMoreMenuOpen"
                 @click.stop
-                class="absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 z-40 text-xs animate-in fade-in duration-150"
+                class="absolute right-0 top-full mt-1.5 w-48 med:w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 med:py-2 z-40 text-xs med:text-sm animate-in fade-in duration-150"
               >
                 <!-- 导入 -->
                 <button
                   @click="triggerImport"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   <span>{{ t('editor.importMd') }}</span>
@@ -261,9 +261,9 @@
                 <!-- 导出 -->
                 <button
                   @click="triggerExport"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>{{ t('editor.exportMd') }}</span>
@@ -274,9 +274,9 @@
                 <!-- 分享 -->
                 <button
                   @click="triggerShare"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                   <span>{{ t('editor.shareManage') }}</span>
@@ -285,9 +285,9 @@
                 <!-- 历史 -->
                 <button
                   @click="triggerHistory"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>{{ t('editor.historyVersions') }}</span>
@@ -298,9 +298,9 @@
                 <!-- 打印 -->
                 <button
                   @click="triggerPrint"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
                   <span>{{ t('editor.printNote') }}</span>
@@ -309,9 +309,9 @@
                 <!-- 复制便签链接 -->
                 <button
                   @click="triggerCopyLink"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                   <span>{{ t('editor.copyLink') }}</span>
@@ -320,9 +320,9 @@
                 <!-- 便签信息 -->
                 <button
                   @click="triggerInfo"
-                  class="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>{{ t('editor.noteInfo') }}</span>
@@ -332,22 +332,22 @@
           </template>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
-          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 med:p-1 rounded-lg border border-slate-200 dark:border-slate-700">
             <button
               @click="editorMode = 'split'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'split' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+              :class="['px-2 med:px-3 py-0.5 med:py-1 rounded text-[11px] med:text-xs font-medium transition cursor-pointer', editorMode === 'split' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
               {{ t('editor.modeSplit') }}
             </button>
             <button
               @click="editorMode = 'edit'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'edit' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+              :class="['px-2 med:px-3 py-0.5 med:py-1 rounded text-[11px] med:text-xs font-medium transition cursor-pointer', editorMode === 'edit' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
               {{ t('editor.modeEdit') }}
             </button>
             <button
               @click="editorMode = 'preview'"
-              :class="['px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer', editorMode === 'preview' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+              :class="['px-2 med:px-3 py-0.5 med:py-1 rounded text-[11px] med:text-xs font-medium transition cursor-pointer', editorMode === 'preview' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
             >
               {{ t('editor.modePreview') }}
             </button>
@@ -356,8 +356,8 @@
       </div>
 
       <!-- Tag Editing Strip (Requirement 2: 便签标签编辑) -->
-      <div class="px-5 py-1.5 bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs">
-        <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] mr-1">
+      <div class="px-5 med:px-6 py-1.5 med:py-2 bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs med:text-sm">
+        <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] med:text-xs mr-1">
           <svg class="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
@@ -368,7 +368,7 @@
         <span
           v-for="tag in editTags"
           :key="tag"
-          class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 group transition hover:border-slate-300 dark:hover:border-slate-600"
+          class="inline-flex items-center px-2 med:px-2.5 py-0.5 med:py-1 rounded-md text-[11px] med:text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 group transition hover:border-slate-300 dark:hover:border-slate-600"
         >
           <span>{{ tag }}</span>
           <button
@@ -377,7 +377,7 @@
             class="ml-1 text-slate-400 dark:text-slate-500 hover:text-rose-500 rounded transition cursor-pointer"
             :title="t('common.remove')"
           >
-            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-3 h-3 med:w-3.5 med:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -388,10 +388,10 @@
           <button
             v-if="!isAddingTag"
             @click="startAddTag"
-            class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 border border-dashed border-slate-300 dark:border-slate-700 hover:border-syno-blue bg-white dark:bg-slate-800 hover:bg-blue-50/40 dark:hover:bg-slate-700 transition cursor-pointer"
+            class="inline-flex items-center px-2 med:px-2.5 py-0.5 med:py-1 rounded-md text-[11px] med:text-xs text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 border border-dashed border-slate-300 dark:border-slate-700 hover:border-syno-blue bg-white dark:bg-slate-800 hover:bg-blue-50/40 dark:hover:bg-slate-700 transition cursor-pointer"
             :title="t('editor.addTag')"
           >
-            <svg class="w-3 h-3 mr-0.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-3 h-3 med:w-3.5 med:h-3.5 mr-0.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             {{ t('editor.addTag') }}
@@ -405,17 +405,17 @@
               @keydown.esc="cancelAddTag"
               @blur="onTagInputBlur"
               :placeholder="t('editor.tagPlaceholder')"
-              class="w-32 px-2 py-0.5 text-[11px] bg-white dark:bg-slate-800 border border-syno-blue rounded-md outline-none focus:ring-1 focus:ring-syno-blue text-slate-800 dark:text-slate-100"
+              class="w-32 med:w-40 px-2 med:px-2.5 py-0.5 med:py-1 text-[11px] med:text-xs bg-white dark:bg-slate-800 border border-syno-blue rounded-md outline-none focus:ring-1 focus:ring-syno-blue text-slate-800 dark:text-slate-100"
             />
             <button
               @mousedown.prevent="confirmAddTag"
-              class="px-1.5 py-0.5 bg-syno-blue hover:bg-blue-600 text-white rounded text-[10px] transition cursor-pointer"
+              class="px-1.5 med:px-2 py-0.5 med:py-1 bg-syno-blue hover:bg-blue-600 text-white rounded text-[10px] med:text-xs transition cursor-pointer"
             >
               {{ t('common.confirm') }}
             </button>
             <button
               @mousedown.prevent="cancelAddTag"
-              class="px-1 py-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded text-[10px] transition cursor-pointer"
+              class="px-1 med:px-1.5 py-0.5 med:py-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded text-[10px] med:text-xs transition cursor-pointer"
             >
               {{ t('common.cancel') }}
             </button>
@@ -512,37 +512,37 @@
       </div>
 
       <!-- Quick Markdown Toolbar (普通编辑模式下显示) -->
-      <div v-if="!isRecycledNote" class="h-9 px-5 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center space-x-1 select-none overflow-x-auto shrink-0">
-        <button @click="insertMarkdown('**', '**')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs" :title="t('editor.bold') + ' (Ctrl+B)'">B</button>
-        <button @click="insertMarkdown('*', '*')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 italic text-xs" :title="t('editor.italic')">I</button>
-        <button @click="insertMarkdown('# ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold" :title="t('editor.h1')">H1</button>
-        <button @click="insertMarkdown('## ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold" :title="t('editor.h2')">H2</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
-        <button @click="insertMarkdown('- ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.ul')">• {{ t('editor.ul') }}</button>
-        <button @click="insertMarkdown('1. ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.ol')">1. {{ t('editor.ol') }}</button>
-        <button @click="insertMarkdown('- [ ] ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.task')">☑ {{ t('editor.task') }}</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
-        <button @click="insertMarkdown('```\n', '\n```')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-mono" :title="t('editor.code')">&lt;/&gt;</button>
-        <button @click="insertMarkdown('| 列1 | 列2 |\n| :--- | :--- |\n| 内容1 | 内容2 |\n')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.table')">{{ t('editor.table') }}</button>
-        <button @click="insertMarkdown('> ')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.quote')">&ldquo; {{ t('editor.quote') }}</button>
-        <button @click="insertMarkdown('$$ \n', '\n $$')" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs" :title="t('editor.formula')">∑</button>
-        <span class="w-[1px] h-3.5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+      <div v-if="!isRecycledNote" class="h-9 med:h-10 px-5 med:px-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center space-x-1 med:space-x-1.5 select-none overflow-x-auto shrink-0 text-xs med:text-sm">
+        <button @click="insertMarkdown('**', '**')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs med:text-sm" :title="t('editor.bold') + ' (Ctrl+B)'">B</button>
+        <button @click="insertMarkdown('*', '*')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 italic text-xs med:text-sm" :title="t('editor.italic')">I</button>
+        <button @click="insertMarkdown('# ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm font-semibold" :title="t('editor.h1')">H1</button>
+        <button @click="insertMarkdown('## ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm font-semibold" :title="t('editor.h2')">H2</button>
+        <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+        <button @click="insertMarkdown('- ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.ul')">• {{ t('editor.ul') }}</button>
+        <button @click="insertMarkdown('1. ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.ol')">1. {{ t('editor.ol') }}</button>
+        <button @click="insertMarkdown('- [ ] ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.task')">☑ {{ t('editor.task') }}</button>
+        <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+        <button @click="insertMarkdown('```\n', '\n```')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm font-mono" :title="t('editor.code')">&lt;/&gt;</button>
+        <button @click="insertMarkdown('| 列1 | 列2 |\n| :--- | :--- |\n| 内容1 | 内容2 |\n')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.table')">{{ t('editor.table') }}</button>
+        <button @click="insertMarkdown('> ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.quote')">&ldquo; {{ t('editor.quote') }}</button>
+        <button @click="insertMarkdown('$$ \n', '\n $$')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm" :title="t('editor.formula')">∑</button>
+        <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
         <button
           @click="triggerSelectImage"
-          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center space-x-1 cursor-pointer"
+          class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm flex items-center space-x-1 cursor-pointer"
           :title="t('editor.image')"
         >
-          <svg class="w-3.5 h-3.5 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span>{{ t('editor.image') }}</span>
         </button>
         <button
           @click="triggerSelectAttachment"
-          class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center space-x-1 cursor-pointer"
+          class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm flex items-center space-x-1 cursor-pointer"
           :title="t('editor.attachments')"
         >
-          <svg class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
           <span>{{ t('editor.attachments') }}</span>
@@ -564,8 +564,8 @@
         />
 
         <!-- Uploading Indicator in Toolbar -->
-        <div v-if="noteStore.isUploadingAttachment" class="ml-auto flex items-center text-xs text-syno-blue dark:text-sky-400 font-medium space-x-1 animate-pulse">
-          <svg class="animate-spin h-3.5 w-3.5 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24">
+        <div v-if="noteStore.isUploadingAttachment" class="ml-auto flex items-center text-xs med:text-sm text-syno-blue dark:text-sky-400 font-medium space-x-1 animate-pulse">
+          <svg class="animate-spin h-3.5 w-3.5 med:h-4 med:w-4 text-syno-blue dark:text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
@@ -593,7 +593,7 @@
             @drop.prevent="handleDrop"
             :readonly="isRecycledNote"
             :placeholder="t('editor.markdownPlaceholder', undefined) || '使用 Markdown 编写便签内容...'"
-            class="w-full h-full p-6 text-sm font-mono text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950 resize-none outline-none leading-relaxed"
+            class="w-full h-full p-6 med:p-8 text-sm med:text-base font-mono text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950 resize-none outline-none leading-relaxed"
           ></textarea>
         </div>
 
@@ -601,7 +601,7 @@
         <div
           v-show="editorMode === 'split' || editorMode === 'preview'"
           :class="[
-            'h-full overflow-y-auto p-6 bg-slate-50/50 dark:bg-slate-900/40 select-text relative group',
+            'h-full overflow-y-auto p-6 med:p-8 bg-slate-50/50 dark:bg-slate-900/40 select-text relative group',
             editorMode === 'split' ? 'w-1/2' : 'w-full'
           ]"
         >
@@ -609,13 +609,13 @@
           <div class="sticky top-0 float-right z-10 -mt-2 -mr-2 mb-2 ml-4">
             <button
               @click="handleCopyPreviewText"
-              class="px-2.5 py-1 text-xs bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-syno-blue dark:hover:text-sky-400 rounded-md border border-slate-200/90 dark:border-slate-700 shadow-xs backdrop-blur-xs flex items-center space-x-1.5 transition cursor-pointer select-none opacity-70 hover:opacity-100"
+              class="px-2.5 py-1 text-xs med:text-sm bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-syno-blue dark:hover:text-sky-400 rounded-md border border-slate-200/90 dark:border-slate-700 shadow-xs backdrop-blur-xs flex items-center space-x-1.5 transition cursor-pointer select-none opacity-70 hover:opacity-100"
               :title="isCopied ? t('editor.copySuccess') : t('editor.copyContent')"
             >
-              <svg v-if="!isCopied" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-if="!isCopied" class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <svg v-else class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-else class="w-3.5 h-3.5 med:w-4 med:h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               <span :class="isCopied ? 'text-emerald-600 dark:text-emerald-400 font-medium' : ''">{{ isCopied ? t('editor.copied') : t('editor.copyContent') }}</span>
@@ -623,7 +623,7 @@
           </div>
 
           <div
-            class="markdown-preview select-text prose prose-sm max-w-none prose-slate dark:prose-invert prose-headings:font-bold prose-a:text-syno-blue cursor-text"
+            class="markdown-preview select-text prose prose-sm med:prose-base max-w-none prose-slate dark:prose-invert prose-headings:font-bold prose-a:text-syno-blue cursor-text"
             v-html="renderedPreviewHtml"
           ></div>
         </div>

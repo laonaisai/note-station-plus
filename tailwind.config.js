@@ -9,6 +9,10 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        'med': '1440px',
+        'medium': '1440px',
+      },
       colors: {
         syno: {
           blue: '#0086d6',
