@@ -1,1726 +1,593 @@
 <template>
   <div
     :class="[
-      'h-full bg-slate-100/90 dark:bg-slate-900/90 flex flex-col select-none shrink-0 transition-all duration-200 ease-in-out relative',
+      'h-full bg-slate-100/90 dark:bg-slate-900/90 flex flex-row select-none shrink-0 transition-all duration-200 ease-in-out relative',
       layoutStore.isSidebarCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-80 med:w-96 border-r border-slate-200/90 dark:border-slate-800'
     ]"
   >
-    <!-- Top Global Header -->
-    <div class="h-10 med:h-12 px-3 med:px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs med:text-sm font-semibold text-slate-700 dark:text-slate-200 shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs transition-all">
-      <span class="flex items-center text-slate-700 dark:text-slate-200 truncate mr-2">
-        <svg class="w-4 h-4 med:w-4.5 med:h-4.5 mr-1.5 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <span class="truncate">{{ t('sidebar.notebooks') }}</span>
-      </span>
-
-      <!-- Action Buttons -->
-      <div class="flex items-center space-x-1 med:space-x-1.5 shrink-0">
-        <!-- Refresh / Sync with Server Button -->
-        <button
-          @click="handleRefreshAll"
-          :disabled="noteStore.isLoading || noteStore.isSyncingWithServer"
-          class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition disabled:opacity-40 cursor-pointer"
-          :title="t('editor.syncWithServer')"
-        >
-          <svg :class="['w-3.5 h-3.5 med:w-4 med:h-4', (noteStore.isLoading || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-
-        <!-- New Notebook Button -->
-        <button
-          @click="openCreateModal"
-          class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
-          :title="t('sidebar.addNotebook')"
-        >
-          <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-
-        <!-- Collapse Sidebar Button -->
-        <button
-          @click="layoutStore.toggleSidebar"
-          class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
-          :title="t('editor.collapseSidebar')"
-        >
-          <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Accordion List Body (无外层多余滚动条，仅内部展开列表滚动) -->
-    <div
-      :class="[
-        'flex-1 p-2 flex flex-col min-h-0 space-y-1.5',
-        expandedNotebookId ? 'overflow-hidden' : 'overflow-y-auto'
-      ]"
-    >
-      <div v-if="noteStore.notebooks.length === 0" class="text-center py-8 text-xs text-slate-400">
-        {{ sessionStore.activeSessionState?.isLoggedIn ? t('sidebar.emptyNotebooks') : t('sidebar.notConnected') }}
-      </div>
-
-      <!-- 0. "收藏夹" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
-      <div
-        v-if="noteStore.notebooks.length > 0"
-        v-show="!expandedNotebookId || expandedNotebookId === '__favorites__'"
-        :class="[
-          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
-          expandedNotebookId === '__favorites__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
-        ]"
-      >
-        <!-- "收藏夹" Accordion Header -->
-        <div
-          @click="toggleAccordion('__favorites__')"
-          :class="[
-            'group flex items-center justify-between px-2.5 med:px-3.5 py-2 med:py-2.5 text-xs med:text-sm cursor-pointer transition select-none shrink-0',
-            expandedNotebookId === '__favorites__'
-              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-          ]"
-        >
-          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
-            <!-- Chevron arrow indicator -->
-            <svg
-              :class="[
-                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__favorites__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
-              ]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
-            <!-- Star Icon (收藏夹图标) -->
-            <svg
-              class="w-3.5 h-3.5 shrink-0"
-              :class="expandedNotebookId === '__favorites__' ? 'text-amber-500 fill-amber-400' : 'text-slate-400'"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-
-            <span class="truncate">{{ t('sidebar.favorites') }}</span>
-          </div>
-
-          <span
+    <!-- ================= 1. 50px 纵向选项卡轨道 (Vertical Tab Rail) ================= -->
+    <div class="w-[50px] shrink-0 border-r border-slate-200/80 dark:border-slate-800 flex flex-col items-center bg-slate-50/80 dark:bg-slate-950/70 py-2 select-none z-10">
+      <!-- 1.1 系统分类项区域 (全部便签、收藏夹、共享便签、回收站) -->
+      <div class="flex flex-col items-center space-y-1.5 shrink-0 w-full px-1">
+        <!-- 全部便签 -->
+        <div class="relative group w-full flex justify-center">
+          <button
+            @click="selectTab('__all_notes__')"
             :class="[
-              'text-[10px] med:text-xs px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__favorites__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              'w-[42px] rounded-lg flex items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+              activeTabId === '__all_notes__'
+                ? 'h-[160px] flex-col pt-2.5 pb-2 bg-syno-blue text-white shadow-sm'
+                : 'h-[42px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200'
             ]"
+            :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
           >
-            {{ noteStore.favoriteNotes.length }}
-          </span>
+            <div class="relative shrink-0 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div
+              v-if="activeTabId === '__all_notes__'"
+              class="mt-2 flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.allNotes')) }}
+            </div>
+          </button>
+          <!-- Hover Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2.5 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span class="font-medium mr-1.5">{{ t('sidebar.allNotes') }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">{{ noteStore.notes.length }}</span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
+          </div>
         </div>
 
-        <!-- "收藏夹" Accordion Content -->
-        <div v-if="expandedNotebookId === '__favorites__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
-          <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-            <div class="relative w-full flex items-center">
-              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <input
-                v-model="noteStore.searchQuery"
-                type="text"
-                :placeholder="t('sidebar.searchPlaceholder')"
-                class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
-              />
-              <button
-                v-if="noteStore.searchQuery"
-                @click="noteStore.searchQuery = ''"
-                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                :title="t('sidebar.clearSearch')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Tags Multi-Select Dropdown Filter Row -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 relative shrink-0">
-            <div class="flex items-center justify-between text-[11px]">
-              <div class="relative flex-1 mr-2">
-                <button
-                  type="button"
-                  @click="isTagDropdownOpen = !isTagDropdownOpen"
-                  class="w-full flex items-center justify-between px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-left text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition shadow-2xs cursor-pointer"
-                >
-                  <span class="truncate flex items-center">
-                    <svg class="w-3 h-3 text-slate-400 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <span v-if="noteStore.selectedTags.length === 0" class="text-slate-400 dark:text-slate-500">{{ t('sidebar.filterByTag') }}...</span>
-                    <span v-else class="text-syno-blue dark:text-sky-400 font-medium">{{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}</span>
-                  </span>
-                  <svg class="w-3 h-3 text-slate-400 shrink-0 ml-1 transition-transform" :class="isTagDropdownOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                <div
-                  v-if="isTagDropdownOpen"
-                  class="absolute left-0 top-full mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-30 py-1 max-h-48 overflow-y-auto"
-                >
-                  <div
-                    v-for="tag in panelTags"
-                    :key="tag.name"
-                    @click="noteStore.toggleTag(tag.name)"
-                    class="px-2.5 py-1 text-[11px] flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
-                    :class="noteStore.selectedTags.includes(tag.name) ? 'text-syno-blue dark:text-sky-400 font-medium bg-blue-50/50 dark:bg-blue-950/40' : 'text-slate-700 dark:text-slate-300'"
-                  >
-                    <span class="flex items-center space-x-1.5 truncate">
-                      <input
-                        type="checkbox"
-                        :checked="noteStore.selectedTags.includes(tag.name)"
-                        class="rounded border-slate-300 dark:border-slate-600 text-syno-blue pointer-events-none"
-                      />
-                      <span class="truncate"># {{ tag.name }}</span>
-                    </span>
-                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal shrink-0 ml-1">{{ tag.count }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                v-if="noteStore.selectedTags.length > 0"
-                @click="noteStore.clearTags()"
-                class="text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:underline shrink-0 text-[10px] transition cursor-pointer"
-              >
-                {{ t('common.clear') }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Notes Scrollable List (按年月分组) -->
-          <div class="flex-1 overflow-y-auto p-1.5 space-y-3 min-h-0">
-            <div v-if="groupedNotes.length === 0" class="text-center py-6 text-xs text-slate-400">
-              <svg class="w-8 h-8 mx-auto mb-1.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noFavorites') }}
-            </div>
-
-            <div v-for="group in groupedNotes" :key="group.key" class="space-y-1">
-              <!-- Year-Month Group Header -->
-              <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-                <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-                <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
-                </span>
-              </div>
-
-              <!-- Note Items in Group -->
-              <div
-                v-for="note in group.notes"
-                :key="note.object_id"
-                @click="noteStore.selectNote(note.object_id)"
-                @contextmenu.prevent="openNoteContextMenu($event, note)"
-                :class="[
-                  'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
-                  noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
-                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-start justify-between">
-                  <h4
-                    class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
-                  >
-                    <!-- Loading Spinner (便签内容加载中) -->
-                    <svg
-                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                      class="animate-spin w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-
-                    <!-- Favorite Icon (已收藏图标) -->
-                    <svg
-                      v-if="noteStore.isFavorite(note.object_id)"
-                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      :title="t('sidebar.addToFavorites')"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-
-                    <!-- Share Icon (已共享图标) -->
-                    <svg
-                      v-if="isNoteShared(note)"
-                      class="w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      :title="t('editor.sharedBadge')"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-
-                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
-                  </h4>
-
-                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
-                  <button
-                    @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
-                    :class="[
-                      noteStore.activeNoteId === note.object_id
-                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100',
-                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
-                        : ''
-                    ]"
-                    :title="t('common.actions')"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                </div>
-
-                <p
-                  class="text-[11px] med:text-xs line-clamp-2 mt-1"
-                  :class="noteStore.activeNoteId === note.object_id ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'"
-                >
-                  {{ note.brief || note.markdownContent || t('common.info') }}
-                </p>
-
-                <div
-                  class="flex items-center justify-between mt-2 pt-1.5 border-t text-[10px] med:text-xs"
-                  :class="noteStore.activeNoteId === note.object_id ? 'border-slate-700/80 text-slate-400' : 'border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500'"
-                >
-                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-                  <div class="flex items-center space-x-1">
-                    <span
-                      v-for="t in (note.tag || []).slice(0, 2)"
-                      :key="t"
-                      class="px-1.5 med:px-2 py-0.2 med:py-0.5 rounded font-normal"
-                      :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700 dark:bg-blue-900/60 text-slate-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'"
-                    >
-                      #{{ t }}
-                    </span>
-                    <span v-if="(note.tag || []).length > 2" class="text-[9px] med:text-[10px]">
-                      +{{ (note.tag || []).length - 2 }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 1. "全部笔记" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
-      <div
-        v-if="noteStore.notebooks.length > 0"
-        v-show="!expandedNotebookId || expandedNotebookId === '__all_notes__'"
-        :class="[
-          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
-          expandedNotebookId === '__all_notes__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
-        ]"
-      >
-        <!-- "全部笔记" Accordion Header -->
-        <div
-          @click="toggleAccordion('__all_notes__')"
-          :class="[
-            'group flex items-center justify-between px-2.5 med:px-3.5 py-2 med:py-2.5 text-xs med:text-sm cursor-pointer transition select-none shrink-0',
-            expandedNotebookId === '__all_notes__'
-              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-          ]"
-        >
-          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
-            <!-- Chevron arrow indicator -->
-            <svg
-              :class="[
-                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__all_notes__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
-              ]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
-            <!-- All Notes Icon -->
-            <svg
-              class="w-3.5 h-3.5 shrink-0"
-              :class="expandedNotebookId === '__all_notes__' ? 'text-syno-blue' : 'text-slate-400'"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-
-            <span class="truncate">{{ t('sidebar.allNotes') }}</span>
-          </div>
-
-          <span
+        <!-- 收藏夹 -->
+        <div class="relative group w-full flex justify-center">
+          <button
+            @click="selectTab('__favorites__')"
             :class="[
-              'text-[10px] med:text-xs px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__all_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              'w-[42px] rounded-lg flex items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+              activeTabId === '__favorites__'
+                ? 'h-[160px] flex-col pt-2.5 pb-2 bg-amber-500 text-white shadow-sm'
+                : 'h-[42px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400'
             ]"
+            :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
           >
-            {{ noteStore.notes.length }}
-          </span>
+            <div class="relative shrink-0 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+            </div>
+            <div
+              v-if="activeTabId === '__favorites__'"
+              class="mt-2 flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.favorites')) }}
+            </div>
+          </button>
+          <!-- Hover Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2.5 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span class="font-medium mr-1.5">{{ t('sidebar.favorites') }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">{{ noteStore.favoriteNotes.length }}</span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
+          </div>
         </div>
 
-        <!-- "全部笔记" Accordion Content -->
-        <div v-if="expandedNotebookId === '__all_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
-          <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-            <div class="relative w-full flex items-center">
-              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <input
-                v-model="noteStore.searchQuery"
-                type="text"
-                :placeholder="t('sidebar.searchPlaceholder')"
-                class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
-              />
-              <button
-                v-if="noteStore.searchQuery"
-                @click="noteStore.searchQuery = ''"
-                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                :title="t('sidebar.clearSearch')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Tag Dropdown Multi-Select Row inside Accordion -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
-            <div class="flex items-center justify-between">
-              <!-- Dropdown Trigger Button -->
-              <button
-                type="button"
-                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
-                :class="[
-                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
-                  noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-center space-x-1.5 truncate mr-1">
-                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span class="truncate">
-                    <template v-if="noteStore.selectedTags.length === 0">
-                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
-                    </template>
-                    <template v-else>
-                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
-                    </template>
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1 shrink-0">
-                  <span
-                    v-if="noteStore.selectedTags.length > 0"
-                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
-                  >
-                    {{ noteStore.selectedTags.length }}
-                  </span>
-                  <svg
-                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              <!-- Clear Tags Button -->
-              <button
-                v-if="noteStore.selectedTags.length > 0"
-                @click.stop="noteStore.clearTags()"
-                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                :title="t('sidebar.clearTags')"
-              >
-                {{ t('common.clear') }}
-              </button>
-            </div>
-
-            <!-- Dropdown Floating Panel -->
-            <div
-              v-if="isTagDropdownOpen"
-              @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
-            >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
-                <span>{{ t('sidebar.filterByTag') }}</span>
-                <button
-                  v-if="noteStore.selectedTags.length > 0"
-                  @click="noteStore.clearTags()"
-                  class="text-syno-blue hover:underline cursor-pointer"
-                >
-                  {{ t('sidebar.clearTags') }}
-                </button>
-              </div>
-
-              <label
-                v-for="tagItem in panelTags"
-                :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
-              >
-                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
-                  <input
-                    type="checkbox"
-                    :checked="noteStore.selectedTags.includes(tagItem.name)"
-                    @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
-                  />
-                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
-                </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-                  {{ tagItem.count }}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
-            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
-            </span>
-            <button
-              @click="handleCreateNoteInPanel('__all_notes__')"
-              :disabled="noteStore.isCreating"
-              class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              :title="t('sidebar.newNote')"
-            >
-              <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
-            </button>
-          </div>
-
-          <!-- Note Items Container with Year-Month Grouping (滚动条仅在内部展示) -->
-          <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-            <!-- Loading indicator during note creation -->
-            <div
-              v-if="noteStore.isCreating"
-              class="p-2 rounded-lg border border-syno-blue/40 bg-blue-50/50 animate-pulse flex items-center space-x-2 text-xs text-syno-blue"
-            >
-              <svg class="animate-spin h-3.5 w-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
-            </div>
-
-            <!-- Empty State -->
-            <div
-              v-else-if="groupedNotes.length === 0"
-              class="text-center py-8 text-xs text-slate-400"
-            >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noNotes') }}
-            </div>
-
-            <!-- Month Groups -->
-            <div
-              v-for="group in groupedNotes"
-              :key="group.key"
-              class="space-y-1"
-            >
-              <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-                <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-                <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
-                </span>
-              </div>
-
-              <!-- Note Cards (支持右键上下文菜单) -->
-              <div
-                v-for="note in group.notes"
-                :key="note.object_id"
-                @click="noteStore.selectNote(note.object_id)"
-                @contextmenu.prevent="openNoteContextMenu($event, note)"
-                :class="[
-                  'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
-                  noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
-                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-start justify-between">
-                  <h4
-                    class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
-                  >
-                    <!-- Loading Spinner (便签内容加载中) -->
-                    <svg
-                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                      class="animate-spin w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-
-                    <!-- Favorite Icon (已收藏图标) -->
-                    <svg
-                      v-if="noteStore.isFavorite(note.object_id)"
-                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      :title="t('sidebar.addToFavorites')"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-
-                    <!-- Share Icon (已共享图标) -->
-                    <svg
-                      v-if="isNoteShared(note)"
-                      class="w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      :title="t('editor.sharedBadge')"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-
-                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
-                  </h4>
-
-                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
-                  <button
-                    @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
-                    :class="[
-                      noteStore.activeNoteId === note.object_id
-                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
-                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
-                        : ''
-                    ]"
-                    :title="t('common.actions')"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Tags List on Note Item Card -->
-                <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
-                  <span
-                    v-for="t in note.tag"
-                    :key="t"
-                    class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
-                    :title="t"
-                  >
-                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
-                    <span class="truncate">{{ t }}</span>
-                  </span>
-                </div>
-
-                <!-- Time & Meta -->
-                <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
-                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-                  <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} {{ t('sidebar.tags') }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. "共享便签" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
-      <div
-        v-if="noteStore.notebooks.length > 0"
-        v-show="!expandedNotebookId || expandedNotebookId === '__shared_notes__'"
-        :class="[
-          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
-          expandedNotebookId === '__shared_notes__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
-        ]"
-      >
-        <!-- "共享便签" Accordion Header -->
-        <div
-          @click="toggleAccordion('__shared_notes__')"
-          :class="[
-            'group flex items-center justify-between px-2.5 med:px-3.5 py-2 med:py-2.5 text-xs med:text-sm cursor-pointer transition select-none shrink-0',
-            expandedNotebookId === '__shared_notes__'
-              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-          ]"
-        >
-          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
-            <!-- Chevron arrow indicator -->
-            <svg
-              :class="[
-                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__shared_notes__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
-              ]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
-            <!-- Shared Notes Icon -->
-            <svg
-              class="w-3.5 h-3.5 shrink-0"
-              :class="expandedNotebookId === '__shared_notes__' ? 'text-syno-blue' : 'text-slate-400'"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-
-            <span class="truncate">{{ t('sidebar.sharedNotes') }}</span>
-          </div>
-
-          <span
+        <!-- 共享便签 -->
+        <div class="relative group w-full flex justify-center">
+          <button
+            @click="selectTab('__shared_notes__')"
             :class="[
-              'text-[10px] med:text-xs px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__shared_notes__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              'w-[42px] rounded-lg flex items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+              activeTabId === '__shared_notes__'
+                ? 'h-[160px] flex-col pt-2.5 pb-2 bg-syno-blue text-white shadow-sm'
+                : 'h-[42px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
             ]"
+            :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
           >
-            {{ sharedNotesCount }}
-          </span>
+            <div class="relative shrink-0 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </div>
+            <div
+              v-if="activeTabId === '__shared_notes__'"
+              class="mt-2 flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.sharedNotes')) }}
+            </div>
+          </button>
+          <!-- Hover Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2.5 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span class="font-medium mr-1.5">{{ t('sidebar.sharedNotes') }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">{{ sharedNotesCount }}</span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
+          </div>
         </div>
 
-        <!-- "共享便签" Accordion Content -->
-        <div v-if="expandedNotebookId === '__shared_notes__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
-          <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-            <div class="relative w-full flex items-center">
-              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <input
-                v-model="noteStore.searchQuery"
-                type="text"
-                :placeholder="t('sidebar.searchPlaceholder')"
-                class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
-              />
-              <button
-                v-if="noteStore.searchQuery"
-                @click="noteStore.searchQuery = ''"
-                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                :title="t('sidebar.clearSearch')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Tag Dropdown Multi-Select Row inside Accordion -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
-            <div class="flex items-center justify-between">
-              <!-- Dropdown Trigger Button -->
-              <button
-                type="button"
-                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
-                :class="[
-                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
-                  noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-center space-x-1.5 truncate mr-1">
-                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span class="truncate">
-                    <template v-if="noteStore.selectedTags.length === 0">
-                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
-                    </template>
-                    <template v-else>
-                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
-                    </template>
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1 shrink-0">
-                  <span
-                    v-if="noteStore.selectedTags.length > 0"
-                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
-                  >
-                    {{ noteStore.selectedTags.length }}
-                  </span>
-                  <svg
-                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              <!-- Clear Tags Button -->
-              <button
-                v-if="noteStore.selectedTags.length > 0"
-                @click.stop="noteStore.clearTags()"
-                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                :title="t('sidebar.clearTags')"
-              >
-                {{ t('common.clear') }}
-              </button>
-            </div>
-
-            <!-- Dropdown Floating Panel -->
-            <div
-              v-if="isTagDropdownOpen"
-              @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
-            >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
-                <span>{{ t('sidebar.filterByTag') }}</span>
-                <button
-                  v-if="noteStore.selectedTags.length > 0"
-                  @click="noteStore.clearTags()"
-                  class="text-syno-blue hover:underline cursor-pointer"
-                >
-                  {{ t('sidebar.clearTags') }}
-                </button>
-              </div>
-
-              <label
-                v-for="tagItem in panelTags"
-                :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
-              >
-                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
-                  <input
-                    type="checkbox"
-                    :checked="noteStore.selectedTags.includes(tagItem.name)"
-                    @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
-                  />
-                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
-                </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-                  {{ tagItem.count }}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
-            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
-            </span>
-            <button
-              @click="handleCreateNoteInPanel('__shared_notes__')"
-              :disabled="noteStore.isCreating"
-              class="h-6 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              :title="t('sidebar.newNote')"
-            >
-              <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
-            </button>
-          </div>
-
-          <!-- Note Items Container with Year-Month Grouping -->
-          <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-            <!-- Loading indicator during note creation -->
-            <div
-              v-if="noteStore.isCreating"
-              class="p-2 rounded-lg border border-syno-blue/40 bg-blue-50/50 animate-pulse flex items-center space-x-2 text-xs text-syno-blue"
-            >
-              <svg class="animate-spin h-3.5 w-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
-            </div>
-
-            <!-- Empty State -->
-            <div
-              v-else-if="groupedNotes.length === 0"
-              class="text-center py-8 text-xs text-slate-400"
-            >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noShared') }}
-            </div>
-
-            <!-- Month Groups -->
-            <div
-              v-for="group in groupedNotes"
-              :key="group.key"
-              class="space-y-1"
-            >
-              <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-                <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-                <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
-                </span>
-              </div>
-
-              <!-- Note Cards (支持右键上下文菜单) -->
-              <div
-                v-for="note in group.notes"
-                :key="note.object_id"
-                @click="noteStore.selectNote(note.object_id)"
-                @contextmenu.prevent="openNoteContextMenu($event, note)"
-                :class="[
-                  'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
-                  noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
-                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-start justify-between">
-                  <h4
-                    class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
-                  >
-                    <!-- Loading Spinner (便签内容加载中) -->
-                    <svg
-                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                      class="animate-spin w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-
-                    <!-- Favorite Icon (已收藏图标) -->
-                    <svg
-                      v-if="noteStore.isFavorite(note.object_id)"
-                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      :title="t('sidebar.addToFavorites')"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-
-                    <!-- Share Icon (已共享图标) -->
-                    <svg
-                      v-if="isNoteShared(note)"
-                      class="w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      :title="t('editor.sharedBadge')"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-
-                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
-                  </h4>
-
-                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
-                  <button
-                    @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
-                    :class="[
-                      noteStore.activeNoteId === note.object_id
-                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
-                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
-                        : ''
-                    ]"
-                    :title="t('common.actions')"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Tags List on Note Item Card -->
-                <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
-                  <span
-                    v-for="t in note.tag"
-                    :key="t"
-                    class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
-                    :title="t"
-                  >
-                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
-                    <span class="truncate">{{ t }}</span>
-                  </span>
-                </div>
-
-                <!-- Time & Meta -->
-                <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
-                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-                  <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} {{ t('sidebar.tags') }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. "回收站" Accordion Panel (展开时独占显示，收起时与其他笔记本并列显示) -->
-      <div
-        v-if="noteStore.notebooks.length > 0"
-        v-show="!expandedNotebookId || expandedNotebookId === '__recycle_bin__'"
-        :class="[
-          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
-          expandedNotebookId === '__recycle_bin__' ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
-        ]"
-      >
-        <!-- "回收站" Accordion Header -->
-        <div
-          @click="toggleAccordion('__recycle_bin__')"
-          :class="[
-            'group flex items-center justify-between px-2.5 med:px-3.5 py-2 med:py-2.5 text-xs med:text-sm cursor-pointer transition select-none shrink-0',
-            expandedNotebookId === '__recycle_bin__'
-              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-          ]"
-        >
-          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
-            <!-- Chevron arrow indicator -->
-            <svg
-              :class="[
-                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === '__recycle_bin__' ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
-              ]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
-            <!-- Trash Can Icon -->
-            <svg
-              class="w-3.5 h-3.5 shrink-0"
-              :class="expandedNotebookId === '__recycle_bin__' ? 'text-syno-blue' : 'text-slate-400'"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-
-            <span class="truncate">{{ t('sidebar.recycleBin') }}</span>
-          </div>
-
-          <span
+        <!-- 回收站 -->
+        <div class="relative group w-full flex justify-center">
+          <button
+            @click="selectTab('__recycle_bin__')"
             :class="[
-              'text-[10px] med:text-xs px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full font-normal shrink-0',
-              expandedNotebookId === '__recycle_bin__' ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              'w-[42px] rounded-lg flex items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+              activeTabId === '__recycle_bin__'
+                ? 'h-[160px] flex-col pt-2.5 pb-2 bg-rose-600 text-white shadow-sm'
+                : 'h-[42px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500'
             ]"
+            :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
           >
-            {{ noteStore.recycledNotes.length }}
-          </span>
-        </div>
-
-        <!-- "回收站" Accordion Content -->
-        <div v-if="expandedNotebookId === '__recycle_bin__'" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
-          <!-- Dedicated Search Bar Row inside Accordion -->
-          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-            <div class="relative w-full flex items-center">
-              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <input
-                v-model="noteStore.searchQuery"
-                type="text"
-                :placeholder="t('sidebar.searchPlaceholder')"
-                class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
-              />
-              <button
-                v-if="noteStore.searchQuery"
-                @click="noteStore.searchQuery = ''"
-                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                :title="t('sidebar.clearSearch')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Tag Dropdown Multi-Select Row inside Accordion -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
-            <div class="flex items-center justify-between">
-              <!-- Dropdown Trigger Button -->
-              <button
-                type="button"
-                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
-                :class="[
-                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
-                  noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-center space-x-1.5 truncate mr-1">
-                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span class="truncate">
-                    <template v-if="noteStore.selectedTags.length === 0">
-                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
-                    </template>
-                    <template v-else>
-                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
-                    </template>
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1 shrink-0">
-                  <span
-                    v-if="noteStore.selectedTags.length > 0"
-                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
-                  >
-                    {{ noteStore.selectedTags.length }}
-                  </span>
-                  <svg
-                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              <!-- Clear Tags Button -->
-              <button
-                v-if="noteStore.selectedTags.length > 0"
-                @click.stop="noteStore.clearTags()"
-                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                :title="t('sidebar.clearTags')"
-              >
-                {{ t('common.clear') }}
-              </button>
-            </div>
-
-            <!-- Dropdown Floating Panel -->
-            <div
-              v-if="isTagDropdownOpen"
-              @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
-            >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
-                <span>{{ t('sidebar.filterByTag') }}</span>
-                <button
-                  v-if="noteStore.selectedTags.length > 0"
-                  @click="noteStore.clearTags()"
-                  class="text-syno-blue hover:underline cursor-pointer"
-                >
-                  {{ t('sidebar.clearTags') }}
-                </button>
-              </div>
-
-              <label
-                v-for="tagItem in panelTags"
-                :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
-              >
-                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
-                  <input
-                    type="checkbox"
-                    :checked="noteStore.selectedTags.includes(tagItem.name)"
-                    @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
-                  />
-                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
-                </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-                  {{ tagItem.count }}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Panel Action Bar: Note Count Only (No New Note button in Recycle Bin) -->
-          <div class="px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
-            <span class="font-medium text-slate-700 dark:text-slate-300">{{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})</span>
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">{{ t('sidebar.recycledNotes') }}</span>
-          </div>
-
-          <!-- Notes Scrollable List inside Accordion Panel -->
-          <div class="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-0 bg-white">
-            <div v-if="noteStore.isLoading" class="p-6 text-center text-xs text-slate-400">
-              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-syno-blue inline-block" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              {{ t('common.loading') }}
-            </div>
-            <div v-else-if="noteStore.filteredNotes.length === 0" class="p-8 text-center text-xs text-slate-400">
-              <svg class="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              <span>{{ t('sidebar.emptyRecycleBin') }}</span>
-            </div>
-            <div v-else>
-              <div
-                v-for="note in noteStore.filteredNotes"
-                :key="note.object_id"
-                @click="noteStore.selectNote(note.object_id)"
-                @contextmenu.prevent="openNoteContextMenu($event, note)"
-                :class="[
-                  'group p-2.5 med:p-3.5 transition cursor-pointer select-none border-l-2',
-                  noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 text-white border-syno-blue shadow-xs'
-                    : 'border-transparent hover:bg-slate-50 text-slate-800'
-                ]"
-              >
-                <!-- Title Row & Menu Button -->
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-1.5 flex-1 min-w-0 pr-1">
-                    <!-- Loading Spinner (便签内容加载中) -->
-                    <svg
-                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                      class="animate-spin w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-
-                    <!-- Favorite Icon (已收藏图标) -->
-                    <svg
-                      v-if="noteStore.isFavorite(note.object_id)"
-                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      :title="t('sidebar.addToFavorites')"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-
-                    <svg
-                      v-if="isNoteShared(note)"
-                      class="w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      :title="t('editor.sharedBadge')"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-
-                    <h4
-                      :class="[
-                        'text-xs med:text-sm font-semibold truncate',
-                        noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800'
-                      ]"
-                    >
-                      {{ note.title || t('editor.untitledNote') }}
-                    </h4>
-                  </div>
-
-                  <!-- Note Actions Menu Trigger Button -->
-                  <button
-                    @click.stop="openNoteMenuFromButton($event, note)"
-                    :class="[
-                      'p-1 rounded transition cursor-pointer shrink-0 opacity-0 group-hover:opacity-100',
-                      noteStore.activeNoteId === note.object_id
-                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
-                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
-                        : ''
-                    ]"
-                    :title="t('common.actions')"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Tags List on Note Item Card -->
-                <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
-                  <span
-                    v-for="t in note.tag"
-                    :key="t"
-                    class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
-                    :title="t"
-                  >
-                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
-                    <span class="truncate">{{ t }}</span>
-                  </span>
-                </div>
-
-                <!-- Time & Meta -->
-                <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
-                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-                  <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} {{ t('sidebar.tags') }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Notebooks Accordion Panels (展开时独占显示，隐藏其他笔记本；收起时全部恢复显示) -->
-      <div
-        v-for="nb in noteStore.notebooks"
-        :key="nb.object_id"
-        v-show="!expandedNotebookId || expandedNotebookId === nb.object_id"
-        :class="[
-          'border border-slate-200/80 dark:border-slate-800 rounded-lg overflow-hidden bg-white/60 dark:bg-slate-900/60 shadow-2xs transition',
-          expandedNotebookId === nb.object_id ? 'flex-1 flex flex-col min-h-0' : 'shrink-0'
-        ]"
-      >
-        <!-- Notebook Accordion Header -->
-        <div
-          @click="toggleAccordion(nb.object_id)"
-          @contextmenu.prevent="openContextMenu($event, nb)"
-          :class="[
-            'group flex items-center justify-between px-2.5 med:px-3.5 py-2 med:py-2.5 text-xs med:text-sm cursor-pointer transition select-none shrink-0',
-            expandedNotebookId === nb.object_id
-              ? 'bg-blue-50/90 dark:bg-blue-950/40 text-syno-blue dark:text-sky-400 font-semibold border-b border-blue-100 dark:border-blue-900/40'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-          ]"
-        >
-          <div class="flex items-center space-x-1.5 truncate flex-1 min-w-0 pr-1">
-            <!-- Chevron arrow indicator -->
-            <svg
-              :class="[
-                'w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-                expandedNotebookId === nb.object_id ? 'transform rotate-90 text-syno-blue dark:text-sky-400' : ''
-              ]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-
-            <!-- Notebook Folder Icon -->
-            <svg
-              class="w-3.5 h-3.5 shrink-0"
-              :class="expandedNotebookId === nb.object_id ? 'text-syno-blue' : 'text-slate-400'"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-
-            <span class="truncate" :title="nb.title || t('sidebar.notebooks')">{{ nb.title || t('sidebar.notebooks') }}</span>
-          </div>
-
-          <div class="flex items-center space-x-1 shrink-0">
-            <!-- Action Buttons (Hover) -->
-            <!-- Rename notebook button -->
-            <button
-              @click.stop="openRenameModal(nb)"
-              class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition cursor-pointer"
-              :title="t('sidebar.editNotebook')"
-            >
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
-
-            <!-- Export Notebook as Zip -->
-            <button
-              @click.stop="handleExportNotebook(nb)"
-              class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition cursor-pointer"
-              :title="t('sidebar.exportZip')"
-            >
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-
-            <!-- Delete notebook button -->
-            <button
-              v-if="!nb.preset && noteStore.notebooks.length > 1"
-              @click.stop="openDeleteModal(nb)"
-              class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition cursor-pointer"
-              :title="t('sidebar.deleteNotebookTitle')"
-            >
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="relative shrink-0 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-            </button>
-
-            <!-- Note count badge (放在操作按钮后面，统一靠右整齐对齐) -->
-            <span
-              :class="[
-                'text-[10px] med:text-xs px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full font-normal shrink-0 ml-0.5',
-                expandedNotebookId === nb.object_id ? 'bg-syno-blue text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-              ]"
+            </div>
+            <div
+              v-if="activeTabId === '__recycle_bin__'"
+              class="mt-2 flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
             >
-              {{ noteStore.getNotebookNoteCount(nb) }}
-            </span>
+              {{ formatVerticalTitle(t('sidebar.recycleBin')) }}
+            </div>
+          </button>
+          <!-- Hover Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2.5 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span class="font-medium mr-1.5">{{ t('sidebar.recycleBin') }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">{{ noteStore.recycledNotes.length }}</span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
           </div>
         </div>
+      </div>
 
-        <!-- Notebook Accordion Content (Only expanded for this notebook) -->
-        <div v-if="expandedNotebookId === nb.object_id" class="flex-1 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-900/50">
-          <!-- Dedicated Search Bar Row inside this Notebook's Accordion -->
-          <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-            <div class="relative w-full flex items-center">
-              <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <!-- 微细分割线 -->
+      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-2 shrink-0"></div>
+
+      <!-- 1.2 用户自定义笔记本列表 (支持独立纵向滚动) -->
+      <div class="flex-1 w-full flex flex-col items-center space-y-1.5 overflow-y-auto scrollbar-none px-1 py-0.5 min-h-0">
+        <div
+          v-for="nb in noteStore.notebooks"
+          :key="nb.object_id"
+          class="relative group w-full flex justify-center"
+        >
+          <button
+            @click="selectTab(nb.object_id)"
+            @contextmenu.prevent="openContextMenu($event, nb)"
+            :class="[
+              'w-[42px] rounded-lg flex items-center justify-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+              activeTabId === nb.object_id
+                ? 'h-[160px] flex-col pt-2.5 pb-2 bg-syno-blue text-white shadow-sm'
+                : 'h-[42px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400'
+            ]"
+            :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
+          >
+            <!-- 图标 + 右下角首字角标 -->
+            <div class="relative shrink-0 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746-0.332-4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+
+              <!-- 首字角标 (Badge) -->
+              <span
+                :class="[
+                  'absolute -bottom-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full text-[9px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
+                  activeTabId === nb.object_id
+                    ? 'bg-white text-syno-blue border border-blue-200'
+                    : 'bg-white dark:bg-slate-800 text-syno-blue dark:text-sky-400 border border-slate-200 dark:border-slate-700'
+                ]"
+              >
+                {{ getFirstChar(nb.title) }}
+              </span>
+            </div>
+
+            <!-- 激活态竖排文字 -->
+            <div
+              v-if="activeTabId === nb.object_id"
+              class="mt-2 flex-1 flex items-center justify-center text-xs font-semibold tracking-wider text-center select-none overflow-hidden"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.15em;"
+            >
+              {{ formatVerticalTitle(nb.title) }}
+            </div>
+          </button>
+
+          <!-- Hover Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2.5 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span class="font-medium mr-1.5">{{ nb.title || t('sidebar.notebooks') }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">
+              {{ getNotebookCount(nb) }}
+            </span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 微细分割线 -->
+      <div class="h-px w-6 bg-slate-200 dark:bg-slate-800 my-2 shrink-0"></div>
+
+      <!-- 1.3 底部快捷新建笔记本按钮 -->
+      <div class="shrink-0 flex flex-col items-center pt-0.5 pb-1">
+        <div class="relative group">
+          <button
+            @click="openCreateModal"
+            class="w-[38px] h-[38px] rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-syno-blue dark:hover:text-sky-400 hover:bg-slate-200/80 dark:hover:bg-slate-800/80 transition cursor-pointer"
+            :title="t('sidebar.addNotebook')"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+          <!-- Tooltip -->
+          <div
+            class="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 z-40 hidden group-hover:flex items-center px-2 py-1 bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs rounded-md shadow-lg border border-slate-700/60 whitespace-nowrap"
+          >
+            <span>{{ t('sidebar.addNotebook') }}</span>
+            <div class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/90 dark:bg-slate-800/95 rotate-45 border-l border-b border-slate-700/60"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 2. 右侧一体化便签列表区 (Note List Surface) ================= -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-100/70 dark:bg-slate-900/70">
+      <!-- 2.1 顶部激活笔记本/分类头部与操作栏 -->
+      <div class="h-10 med:h-12 px-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs med:text-sm font-semibold text-slate-700 dark:text-slate-200 shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs transition-all">
+        <!-- 左侧：笔记本名称 + 数量徽章 -->
+        <div class="flex items-center min-w-0 mr-2 space-x-1.5">
+          <span class="font-semibold text-xs med:text-sm text-slate-800 dark:text-slate-100 truncate" :title="currentCategoryTitle">
+            {{ currentCategoryTitle }}
+          </span>
+          <span class="text-[10px] med:text-xs font-semibold px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+            {{ currentNotesCount }}
+          </span>
+        </div>
+
+        <!-- 右侧：操作按钮组 -->
+        <div class="flex items-center space-x-1 med:space-x-1.5 shrink-0">
+          <!-- 新建便签按钮 (非回收站) -->
+          <button
+            v-if="activeTabId !== '__recycle_bin__'"
+            @click="handleCreateNoteInPanel(activeTabId)"
+            :disabled="noteStore.isCreating"
+            class="h-7 px-2 bg-syno-blue hover:bg-blue-600 text-white rounded text-xs flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
+            :title="t('sidebar.newNote')"
+          >
+            <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg v-else class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="hidden sm:inline">{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
+          </button>
+
+          <!-- 自定义笔记本专属操作：编辑/重命名 -->
+          <button
+            v-if="currentActiveNotebook"
+            @click="openRenameModal(currentActiveNotebook)"
+            class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+            :title="t('sidebar.editNotebook')"
+          >
+            <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+
+          <!-- 自定义笔记本专属操作：删除 (非预置笔记本且笔记本总数>1) -->
+          <button
+            v-if="currentActiveNotebook && !currentActiveNotebook.preset && noteStore.notebooks.length > 1"
+            @click="openDeleteModal(currentActiveNotebook)"
+            class="p-1 med:p-1.5 rounded hover:bg-red-50 dark:hover:bg-rose-950/40 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+            :title="t('sidebar.deleteNotebookTitle')"
+          >
+            <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+
+          <!-- 同步 / 刷新按钮 -->
+          <button
+            @click="handleRefreshAll"
+            :disabled="noteStore.isLoading || noteStore.isSyncingWithServer"
+            class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition disabled:opacity-40 cursor-pointer"
+            :title="t('editor.syncWithServer')"
+          >
+            <svg :class="['w-3.5 h-3.5 med:w-4 med:h-4', (noteStore.isLoading || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <!-- 折叠侧边栏按钮 -->
+          <button
+            @click="layoutStore.toggleSidebar"
+            class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+            :title="t('editor.collapseSidebar')"
+          >
+            <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2.2 搜索栏 (Search Bar Row) -->
+      <div class="p-2 border-b border-slate-200/60 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 shrink-0">
+        <div class="relative w-full flex items-center">
+          <svg v-if="!noteStore.isSearchingServer" class="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <svg v-else class="animate-spin w-3.5 h-3.5 absolute left-2.5 text-syno-blue pointer-events-none" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <input
+            v-model="noteStore.searchQuery"
+            type="text"
+            :placeholder="t('sidebar.searchPlaceholder')"
+            class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
+          />
+          <button
+            v-if="noteStore.searchQuery"
+            @click="noteStore.searchQuery = ''"
+            class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
+            :title="t('sidebar.clearSearch')"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2.3 标签筛选多选下拉行 (Tag Filter Row) -->
+      <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/30 relative shrink-0">
+        <div class="flex items-center justify-between">
+          <!-- Dropdown Trigger Button -->
+          <button
+            type="button"
+            @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
+            :class="[
+              'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
+              noteStore.selectedTags.length > 0
+                ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+            ]"
+          >
+            <div class="flex items-center space-x-1.5 truncate mr-1">
+              <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
+              <span class="truncate">
+                <template v-if="noteStore.selectedTags.length === 0">
+                  {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
+                </template>
+                <template v-else>
+                  {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
+                </template>
+              </span>
+            </div>
+
+            <div class="flex items-center space-x-1 shrink-0">
+              <span
+                v-if="noteStore.selectedTags.length > 0"
+                class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
+              >
+                {{ noteStore.selectedTags.length }}
+              </span>
+              <svg
+                :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Clear Tags Button -->
+          <button
+            v-if="noteStore.selectedTags.length > 0"
+            @click.stop="noteStore.clearTags()"
+            class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
+            :title="t('sidebar.clearTags')"
+          >
+            {{ t('common.clear') }}
+          </button>
+        </div>
+
+        <!-- Dropdown Floating Panel -->
+        <div
+          v-if="isTagDropdownOpen"
+          @click.stop
+          class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
+        >
+          <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
+            <span>{{ t('sidebar.filterByTag') }}</span>
+            <button
+              v-if="noteStore.selectedTags.length > 0"
+              @click="noteStore.clearTags()"
+              class="text-syno-blue hover:underline cursor-pointer"
+            >
+              {{ t('sidebar.clearTags') }}
+            </button>
+          </div>
+
+          <label
+            v-for="tagItem in panelTags"
+            :key="tagItem.name"
+            class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
+          >
+            <div class="flex items-center space-x-2 truncate flex-1 pr-1">
               <input
-                v-model="noteStore.searchQuery"
-                type="text"
-                :placeholder="t('sidebar.searchPlaceholder')"
-                class="w-full pl-8 pr-7 py-1 med:py-1.5 text-xs med:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-syno-blue focus:border-syno-blue placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition"
+                type="checkbox"
+                :checked="noteStore.selectedTags.includes(tagItem.name)"
+                @change="noteStore.toggleTag(tagItem.name)"
+                class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
               />
+              <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
+              {{ tagItem.count }}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2.4 年月吸顶分组便签流容器 (Note Items Container with Year-Month Grouping) -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+        <!-- 便签正在创建中的占位条 -->
+        <div
+          v-if="noteStore.isCreating"
+          class="p-2 rounded-lg border border-syno-blue/40 bg-blue-50/50 animate-pulse flex items-center space-x-2 text-xs text-syno-blue"
+        >
+          <svg class="animate-spin h-3.5 w-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
+        </div>
+
+        <!-- 空状态提示 -->
+        <div
+          v-else-if="groupedNotes.length === 0"
+          class="text-center py-12 text-xs text-slate-400"
+        >
+          {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noNotes') }}
+        </div>
+
+        <!-- 按年月分组的便签流 -->
+        <div
+          v-for="group in groupedNotes"
+          :key="group.key"
+          class="space-y-1"
+        >
+          <!-- 吸顶年月分组头部 -->
+          <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+            <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
+            <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
+              {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
+            </span>
+          </div>
+
+          <!-- 便签卡片列表 -->
+          <div
+            v-for="note in group.notes"
+            :key="note.object_id"
+            @click="noteStore.selectNote(note.object_id)"
+            @contextmenu.prevent="openNoteContextMenu($event, note)"
+            :class="[
+              'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
+              noteStore.activeNoteId === note.object_id
+                ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
+                : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+            ]"
+          >
+            <div class="flex items-start justify-between">
+              <h4
+                class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
+                :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
+              >
+                <!-- Loading Spinner (便签内容加载中) -->
+                <svg
+                  v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                  class="animate-spin w-3.5 h-3.5 shrink-0"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+
+                <!-- Favorite Icon (已收藏星标) -->
+                <svg
+                  v-if="noteStore.isFavorite(note.object_id)"
+                  class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  :title="t('sidebar.addToFavorites')"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+
+                <!-- Share Icon (已共享图标) -->
+                <svg
+                  v-if="isNoteShared(note)"
+                  class="w-3.5 h-3.5 shrink-0"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  :title="t('editor.sharedBadge')"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+
+                <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
+              </h4>
+
+              <!-- Note Menu Button (三点菜单按钮) -->
               <button
-                v-if="noteStore.searchQuery"
-                @click="noteStore.searchQuery = ''"
-                class="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
-                :title="t('sidebar.clearSearch')"
+                @click.stop="openNoteMenuFromButton($event, note)"
+                class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
+                :class="[
+                  noteStore.activeNoteId === note.object_id
+                    ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
+                  noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                    ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                    : ''
+                ]"
+                :title="t('common.actions')"
               >
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
                 </svg>
               </button>
             </div>
-          </div>
 
-          <!-- Tag Dropdown Multi-Select Row inside this Notebook -->
-          <div v-if="panelTags.length > 0" class="px-2 py-1.5 border-b border-slate-200/60 bg-slate-100/50 relative shrink-0">
-            <div class="flex items-center justify-between">
-              <!-- Dropdown Trigger Button -->
-              <button
-                type="button"
-                @click.stop="isTagDropdownOpen = !isTagDropdownOpen"
-                :class="[
-                  'flex-1 flex items-center justify-between px-2 py-1 text-xs rounded border transition cursor-pointer text-left',
-                  noteStore.selectedTags.length > 0
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-syno-blue/40 dark:border-sky-500/40 text-syno-blue dark:text-sky-400 font-medium'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
+            <!-- Tags List on Note Item Card -->
+            <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
+              <span
+                v-for="tg in note.tag"
+                :key="tg"
+                class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
+                :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
+                :title="tg"
               >
-                <div class="flex items-center space-x-1.5 truncate mr-1">
-                  <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span class="truncate">
-                    <template v-if="noteStore.selectedTags.length === 0">
-                      {{ t('sidebar.filterByTag') }} ({{ panelTags.length }})
-                    </template>
-                    <template v-else>
-                      {{ t('sidebar.selectedTagsCount', { count: noteStore.selectedTags.length }) }}: {{ noteStore.selectedTags.map(t => '#' + t).join(', ') }}
-                    </template>
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1 shrink-0">
-                  <span
-                    v-if="noteStore.selectedTags.length > 0"
-                    class="text-[10px] px-1.5 py-0.2 rounded-full bg-syno-blue text-white font-semibold"
-                  >
-                    {{ noteStore.selectedTags.length }}
-                  </span>
-                  <svg
-                    :class="['w-3.5 h-3.5 text-slate-400 transition-transform duration-150', isTagDropdownOpen ? 'transform rotate-180' : '']"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              <!-- Clear Tags Button -->
-              <button
-                v-if="noteStore.selectedTags.length > 0"
-                @click.stop="noteStore.clearTags()"
-                class="ml-1 px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-                :title="t('sidebar.clearTags')"
-              >
-                {{ t('common.clear') }}
-              </button>
+                <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
+                <span class="truncate">{{ tg }}</span>
+              </span>
             </div>
 
-            <!-- Dropdown Floating Panel -->
-            <div
-              v-if="isTagDropdownOpen"
-              @click.stop
-              class="absolute left-2 right-2 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-1.5 max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in duration-100"
-            >
-              <div class="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between mb-1">
-                <span>{{ t('sidebar.filterByTag') }}</span>
-                <button
-                  v-if="noteStore.selectedTags.length > 0"
-                  @click="noteStore.clearTags()"
-                  class="text-syno-blue hover:underline cursor-pointer"
-                >
-                  {{ t('sidebar.clearTags') }}
-                </button>
-              </div>
-
-              <label
-                v-for="tagItem in panelTags"
-                :key="tagItem.name"
-                class="flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer transition select-none"
-              >
-                <div class="flex items-center space-x-2 truncate flex-1 pr-1">
-                  <input
-                    type="checkbox"
-                    :checked="noteStore.selectedTags.includes(tagItem.name)"
-                    @change="noteStore.toggleTag(tagItem.name)"
-                    class="rounded text-syno-blue dark:text-sky-400 focus:ring-syno-blue w-3.5 h-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
-                  />
-                  <span class="truncate text-slate-700 dark:text-slate-200"># {{ tagItem.name }}</span>
-                </div>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-                  {{ tagItem.count }}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Panel Action Bar: Note Count & New Note Button -->
-          <div class="px-2.5 med:px-3.5 py-1.5 med:py-2 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs med:text-sm text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 shrink-0">
-            <span class="text-[11px] med:text-xs font-medium text-slate-500 dark:text-slate-400">
-              {{ t('sidebar.notesList') }} ({{ noteStore.filteredNotes.length }})
-            </span>
-            <button
-              @click="handleCreateNoteInPanel(nb.object_id)"
-              :disabled="noteStore.isCreating"
-              class="h-6 med:h-7 px-2 med:px-2.5 bg-syno-blue hover:bg-blue-600 text-white rounded text-[11px] med:text-xs flex items-center shadow-2xs transition disabled:opacity-50 cursor-pointer"
-              :title="t('sidebar.newNote')"
-            >
-              <svg v-if="noteStore.isCreating" class="animate-spin -ml-0.5 mr-1 h-3 w-3 med:h-3.5 med:w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <svg v-else class="w-3 h-3 med:w-3.5 med:h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>{{ noteStore.isCreating ? t('sidebar.creating') : t('sidebar.newNote') }}</span>
-            </button>
-          </div>
-
-          <!-- Note Items Container with Year-Month Grouping (滚动条仅在内部展示) -->
-          <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-            <!-- Loading indicator during note creation -->
-            <div
-              v-if="noteStore.isCreating"
-              class="p-2 rounded-lg border border-syno-blue/40 bg-blue-50/50 animate-pulse flex items-center space-x-2 text-xs text-syno-blue"
-            >
-              <svg class="animate-spin h-3.5 w-3.5 text-syno-blue shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <span class="font-medium">{{ t('sidebar.creatingNoteTip') }}</span>
-            </div>
-
-            <!-- Empty State -->
-            <div
-              v-else-if="groupedNotes.length === 0"
-              class="text-center py-8 text-xs text-slate-400"
-            >
-              {{ noteStore.searchQuery || noteStore.selectedTags.length > 0 ? t('sidebar.emptyNotes') : t('sidebar.noNotes') }}
-            </div>
-
-            <!-- Month Groups -->
-            <div
-              v-for="group in groupedNotes"
-              :key="group.key"
-              class="space-y-1"
-            >
-              <!-- Group Header -->
-              <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-                <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-                <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
-                  {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
-                </span>
-              </div>
-
-              <!-- Note Cards (支持右键上下文菜单) -->
-              <div
-                v-for="note in group.notes"
-                :key="note.object_id"
-                @click="noteStore.selectNote(note.object_id)"
-                @contextmenu.prevent="openNoteContextMenu($event, note)"
-                :class="[
-                  'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
-                  noteStore.activeNoteId === note.object_id
-                    ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
-                    : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                ]"
-              >
-                <div class="flex items-start justify-between">
-                  <h4
-                    class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                    :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
-                  >
-                    <!-- Loading Spinner (便签内容加载中) -->
-                    <svg
-                      v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                      class="animate-spin w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-
-                    <!-- Favorite Icon (已收藏图标) -->
-                    <svg
-                      v-if="noteStore.isFavorite(note.object_id)"
-                      class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      :title="t('sidebar.addToFavorites')"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-
-                    <!-- Share Icon (已共享图标) -->
-                    <svg
-                      v-if="isNoteShared(note)"
-                      class="w-3.5 h-3.5 shrink-0"
-                      :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      :title="t('editor.sharedBadge')"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-
-                    <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
-                  </h4>
-
-                  <!-- Note Menu Button (点击显示操作下拉菜单) -->
-                  <button
-                    @click.stop="openNoteMenuFromButton($event, note)"
-                    class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
-                    :class="[
-                      noteStore.activeNoteId === note.object_id
-                        ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
-                      noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                        ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
-                        : ''
-                    ]"
-                    :title="t('common.actions')"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Tags List on Note Item Card -->
-                <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
-                  <span
-                    v-for="t in note.tag"
-                    :key="t"
-                    class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                    :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
-                    :title="t"
-                  >
-                    <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
-                    <span class="truncate">{{ t }}</span>
-                  </span>
-                </div>
-
-                <!-- Time & Meta -->
-                <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
-                  <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-                  <span v-if="note.tag && note.tag.length > 0">
-                    {{ note.tag.length }} {{ t('sidebar.tags') }}
-                  </span>
-                </div>
-              </div>
+            <!-- Time & Meta -->
+            <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
+              <span>{{ formatTime(note.mtime || note.ctime) }}</span>
+              <span v-if="note.tag && note.tag.length > 0">
+                {{ note.tag.length }} {{ t('sidebar.tags') }}
+              </span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right-Click Context Menu for Notebooks -->
+    <!-- ================= 3. 上下文菜单与模态弹窗 ================= -->
+
+    <!-- Right-Click Context Menu for Notebooks (笔记本右键菜单) -->
     <div
       v-if="contextMenu.isOpen"
       :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
@@ -1780,8 +647,7 @@
       </div>
 
       <!-- 回收站中的便签操作：仅有“恢复”和“彻底删除” -->
-      <template v-if="expandedNotebookId === '__recycle_bin__' || noteContextMenu.targetNote?.recycle">
-        <!-- 1. 恢复 -->
+      <template v-if="activeTabId === '__recycle_bin__' || noteContextMenu.targetNote?.recycle">
         <button
           @click="triggerNoteRestore"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1794,7 +660,6 @@
 
         <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
-        <!-- 2. 彻底删除 -->
         <button
           @click="triggerNotePermanentDelete"
           class="w-full px-3 py-1.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1835,7 +700,7 @@
           <span>{{ noteContextMenu.targetNote && noteStore.isFavorite(noteContextMenu.targetNote.object_id) ? t('sidebar.removeFromFavorites') : t('sidebar.addToFavorites') }}</span>
         </button>
 
-        <!-- 3. 移动到.. (Requirement 2) -->
+        <!-- 3. 移动到.. -->
         <button
           @click="triggerNoteMove"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1857,7 +722,7 @@
           <span>{{ t('editor.shareManage') }}</span>
         </button>
 
-        <!-- 5. 同步到其他NAS (跨NAS便签同步) -->
+        <!-- 5. 同步到其他NAS -->
         <button
           @click="triggerNoteSync"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1890,7 +755,7 @@
           <span>{{ t('editor.exportMd') }}</span>
         </button>
 
-        <!-- 8. 打印 (Requirement 1) -->
+        <!-- 8. 打印 -->
         <button
           @click="triggerNotePrint"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1901,7 +766,7 @@
           <span>{{ t('sidebar.printNote') }}</span>
         </button>
 
-        <!-- 9. 复制便签链接 (Requirement 1) -->
+        <!-- 9. 复制便签链接 -->
         <button
           @click="triggerNoteCopyLink"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1912,7 +777,7 @@
           <span>{{ t('sidebar.copyLink') }}</span>
         </button>
 
-        <!-- 10. 信息 (Requirement 1) -->
+        <!-- 10. 信息 -->
         <button
           @click="triggerNoteInfo"
           class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2 transition cursor-pointer"
@@ -1938,7 +803,7 @@
       </template>
     </div>
 
-    <!-- Create / Rename Notebook Custom Modal -->
+    <!-- Create / Rename Notebook Custom Modal (新建/重命名笔记本对话框) -->
     <div
       v-if="notebookModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -2004,7 +869,7 @@
       </div>
     </div>
 
-    <!-- Move Note Custom Modal (移动便签至其他笔记本) -->
+    <!-- Move Note Custom Modal (移动便签至其他笔记本对话框) -->
     <div
       v-if="moveNoteModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -2083,7 +948,7 @@
       </div>
     </div>
 
-    <!-- Delete Notebook Confirmation Modal -->
+    <!-- Delete Notebook Confirmation Modal (删除笔记本确认对话框) -->
     <div
       v-if="deleteModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -2100,10 +965,7 @@
             <div class="flex-1">
               <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('sidebar.deleteNotebookTitle') }}</h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                {{ t('sidebar.deleteNotebookConfirm', { title: deleteModal.targetNotebook?.title || '' }) }}
-              </p>
-              <p class="text-[11px] text-amber-600 mt-2 bg-amber-50 p-2 rounded-md border border-amber-200/60">
-                {{ t('sidebar.deleteNotebookWarning') }}
+                {{ t('sidebar.deleteNotebookConfirm', { title: deleteModal.targetNotebook?.title || t('sidebar.notebooks') }) }}
               </p>
             </div>
           </div>
@@ -2131,14 +993,14 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ deleteModal.loading ? t('editor.deleting') : t('common.delete') }}</span>
+              <span>{{ deleteModal.loading ? t('editor.deleting') : t('sidebar.deleteNotebookTitle') }}</span>
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Delete Note Custom Confirmation Modal (No window.confirm!) -->
+    <!-- Delete Note Custom Confirmation Modal (删除便签移入回收站确认) -->
     <div
       v-if="deleteNoteModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -2154,7 +1016,7 @@
             </div>
             <div class="flex-1">
               <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ t('sidebar.deleteNoteTitle') }}</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                 {{ t('sidebar.deleteNotePrompt', { title: deleteNoteModal.targetNote?.title || t('editor.untitledNote') }) }}
               </p>
             </div>
@@ -2190,7 +1052,7 @@
       </div>
     </div>
 
-    <!-- Permanent Delete Note Custom Confirmation Modal -->
+    <!-- Permanent Delete Note Custom Confirmation Modal (彻底删除便签对话框) -->
     <div
       v-if="permanentDeleteNoteModal.isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -2266,7 +1128,6 @@ import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportM
 import { showToast } from '@/utils/toast';
 import { isNoteShared } from '@/utils/shareUtils';
 import NoteInfoModal from '@/components/NoteInfoModal.vue';
-import { printNote } from '@/utils/printNote';
 
 const emit = defineEmits<{
   (e: 'open-import'): void;
@@ -2282,56 +1143,138 @@ const layoutStore = useLayoutStore();
 
 const titleInputRef = ref<HTMLInputElement | null>(null);
 
-// Strict single-expanded accordion state ("展开时隐藏其他面板，收起时重新显示所有面板")
-const expandedNotebookId = ref<string>('__all_notes__');
+// 当前选中的 Tab 项 ID（预置项为 __all_notes__, __favorites__, __shared_notes__, __recycle_bin__；自定义项为 notebook 的 object_id）
+const activeTabId = ref<string>('__all_notes__');
 
-// Tag dropdown multi-select toggle state
+// 标签筛选多选下拉框的展开/收起状态
 const isTagDropdownOpen = ref<boolean>(false);
 
-// Sync expanded accordion with active notebook if active notebook changes externally
+// 外部 activeNotebookId 变化时自动同步到 activeTabId
 watch(
   () => noteStore.activeNotebookId,
   (newId) => {
-    if (newId && expandedNotebookId.value !== newId) {
-      expandedNotebookId.value = newId;
+    if (newId && activeTabId.value !== newId) {
+      activeTabId.value = newId;
     }
   },
   { immediate: true }
 );
 
 /**
- * Toggle accordion panel (展开面板时独占并隐藏其他面板，再次点击收起时恢复显示其他所有面板)
+ * 切换选中的选项卡
  */
-function toggleAccordion(notebookId: string) {
+function selectTab(id: string) {
   isTagDropdownOpen.value = false;
-  if (expandedNotebookId.value === notebookId) {
-    // If user clicks the currently expanded panel, toggle it closed
-    expandedNotebookId.value = '';
-  } else {
-    expandedNotebookId.value = notebookId;
-    noteStore.searchQuery = '';
-    noteStore.clearTags();
-    noteStore.selectNotebook(notebookId);
-  }
+  activeTabId.value = id;
+  noteStore.searchQuery = '';
+  noteStore.clearTags();
+  noteStore.selectNotebook(id);
 }
 
 /**
- * Calculate tags for the currently expanded notebook
+ * 首字提取算法：中文取首个汉字，日文假名取首字符，英文/数字取前1~2个字母转大写
+ */
+function getFirstChar(title?: string): string {
+  if (!title) return '便';
+  const trimmed = title.trim();
+  if (!trimmed) return '便';
+
+  const firstChar = trimmed[0];
+  // 匹配中文或日文假名
+  if (/[\u4e00-\u9fa5\u3040-\u30ff]/.test(firstChar)) {
+    return firstChar;
+  }
+  // 英文/数字取 1~2 字符并大写
+  const match = trimmed.match(/^[a-zA-Z0-9]{1,2}/);
+  if (match) {
+    return match[0].toUpperCase();
+  }
+  return firstChar.toUpperCase();
+}
+
+/**
+ * 竖排标题截断：超过指定字符（默认 6 字符）末尾以 … 省略
+ */
+function formatVerticalTitle(title?: string, maxLen: number = 6): string {
+  if (!title) return '';
+  const trimmed = title.trim();
+  if (trimmed.length <= maxLen) {
+    return trimmed;
+  }
+  return trimmed.slice(0, maxLen - 1) + '…';
+}
+
+/**
+ * 当前激活分类/笔记本的完整显示标题
+ */
+const currentCategoryTitle = computed<string>(() => {
+  if (activeTabId.value === '__all_notes__') return t('sidebar.allNotes');
+  if (activeTabId.value === '__favorites__') return t('sidebar.favorites');
+  if (activeTabId.value === '__shared_notes__') return t('sidebar.sharedNotes');
+  if (activeTabId.value === '__recycle_bin__') return t('sidebar.recycleBin');
+
+  const nb = noteStore.notebooks.find(
+    n => String(n.object_id) === activeTabId.value || String((n as any).notebook_id || '') === activeTabId.value
+  );
+  return nb?.title || t('sidebar.notebooks');
+});
+
+/**
+ * 获取指定笔记本的便签数量
+ */
+function getNotebookCount(nb: SynoNotebook): number {
+  return noteStore.getNotebookNoteCount(nb);
+}
+
+/**
+ * 当前激活项的便签总数
+ */
+const currentNotesCount = computed<number>(() => {
+  if (activeTabId.value === '__all_notes__') return noteStore.notes.length;
+  if (activeTabId.value === '__favorites__') return noteStore.favoriteNotes.length;
+  if (activeTabId.value === '__shared_notes__') return sharedNotesCount.value;
+  if (activeTabId.value === '__recycle_bin__') return noteStore.recycledNotes.length;
+
+  const nb = noteStore.notebooks.find(
+    n => String(n.object_id) === activeTabId.value || String((n as any).notebook_id || '') === activeTabId.value
+  );
+  return nb ? getNotebookCount(nb) : 0;
+});
+
+/**
+ * 当前激活的是否为普通自定义笔记本（非系统项）
+ */
+const currentActiveNotebook = computed<SynoNotebook | undefined>(() => {
+  if (activeTabId.value.startsWith('__')) return undefined;
+  return noteStore.notebooks.find(
+    n => String(n.object_id) === activeTabId.value || String((n as any).notebook_id || '') === activeTabId.value
+  );
+});
+
+/**
+ * 共享便签数量
+ */
+const sharedNotesCount = computed(() => {
+  return noteStore.notes.filter(n => isNoteShared(n)).length;
+});
+
+/**
+ * 计算当前选中笔记本/分类下的可用标签与数量
  */
 const panelTags = computed<{ name: string; count: number }[]>(() => {
-  const currentNbId = expandedNotebookId.value;
+  const currentTab = activeTabId.value;
   let targetNotes = noteStore.notes;
 
-  if (currentNbId && currentNbId !== '__all_notes__') {
-    if (currentNbId === '__recycle_bin__') {
+  if (currentTab && currentTab !== '__all_notes__') {
+    if (currentTab === '__recycle_bin__') {
       targetNotes = noteStore.recycledNotes;
-    } else if (currentNbId === '__favorites__') {
+    } else if (currentTab === '__favorites__') {
       targetNotes = noteStore.favoriteNotes;
-    } else if (currentNbId === '__shared_notes__') {
+    } else if (currentTab === '__shared_notes__') {
       targetNotes = targetNotes.filter(n => isNoteShared(n));
     } else {
       const targetNb = noteStore.notebooks.find(
-        nb => String(nb.object_id) === currentNbId || String((nb as any).notebook_id || '') === currentNbId
+        nb => String(nb.object_id) === currentTab || String((nb as any).notebook_id || '') === currentTab
       );
       const targetNbItems = new Set(targetNb?.items?.map(i => String(i)) || []);
 
@@ -2339,15 +1282,15 @@ const panelTags = computed<{ name: string; count: number }[]>(() => {
         const pId = String(n.parent_id || '');
         const nbId = String((n as any).notebook_id || '');
         const oId = String(n.object_id || '');
-        return pId === currentNbId || nbId === currentNbId || targetNbItems.has(oId);
+        return pId === currentTab || nbId === currentTab || targetNbItems.has(oId);
       });
     }
   }
 
   const tagMap = new Map<string, number>();
   for (const n of targetNotes) {
-    for (const t of n.tag || []) {
-      const clean = t?.trim();
+    for (const tg of n.tag || []) {
+      const clean = tg?.trim();
       if (clean) {
         tagMap.set(clean, (tagMap.get(clean) || 0) + 1);
       }
@@ -2359,10 +1302,6 @@ const panelTags = computed<{ name: string; count: number }[]>(() => {
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 });
 
-const sharedNotesCount = computed(() => {
-  return noteStore.notes.filter(n => isNoteShared(n)).length;
-});
-
 interface NoteMonthGroup {
   key: string;
   label: string;
@@ -2370,7 +1309,7 @@ interface NoteMonthGroup {
 }
 
 /**
- * Group filtered notes by Year-Month for the expanded notebook
+ * 将过滤后的便签按 年-月 进行分组
  */
 const groupedNotes = computed<NoteMonthGroup[]>(() => {
   const sorted = [...noteStore.filteredNotes].sort((a, b) => {
@@ -2419,12 +1358,15 @@ function formatTime(timestamp?: number): string {
   return date.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
 }
 
-async function handleCreateNoteInPanel(targetNotebookId: string) {
+/**
+ * 在当前选项卡中新建便签
+ */
+async function handleCreateNoteInPanel(targetTabId: string) {
   if (noteStore.isCreating) return;
   try {
-    if (targetNotebookId && targetNotebookId !== '__all_notes__' && targetNotebookId !== '__shared_notes__') {
-      await noteStore.selectNotebook(targetNotebookId);
-    } else if (!noteStore.activeNotebookId || noteStore.activeNotebookId === '__all_notes__' || noteStore.activeNotebookId === '__shared_notes__') {
+    if (targetTabId && !targetTabId.startsWith('__')) {
+      await noteStore.selectNotebook(targetTabId);
+    } else if (!noteStore.activeNotebookId || noteStore.activeNotebookId.startsWith('__')) {
       const firstNb = noteStore.notebooks[0];
       if (firstNb) {
         await noteStore.selectNotebook(firstNb.object_id);
@@ -2496,7 +1438,7 @@ const permanentDeleteNoteModal = reactive({
   error: ''
 });
 
-// Move Note Modal State (新增“移动至其他笔记本”对话框)
+// Move Note Modal State (移动便签至其他笔记本对话框)
 const moveNoteModal = reactive({
   isOpen: false,
   targetNote: null as SynoNote | null,
@@ -2800,7 +1742,7 @@ async function submitNotebookModal() {
     if (notebookModal.mode === 'create') {
       const created = await noteStore.createNotebook(title);
       if (created) {
-        expandedNotebookId.value = created.object_id;
+        activeTabId.value = created.object_id;
       }
     } else if (notebookModal.mode === 'rename' && notebookModal.targetNotebook) {
       await noteStore.renameNotebook(notebookModal.targetNotebook.object_id, title);
@@ -2839,7 +1781,7 @@ async function confirmDeleteNotebook() {
     await noteStore.deleteNotebook(deleteModal.targetNotebook.object_id);
     deleteModal.isOpen = false;
     deleteModal.targetNotebook = null;
-    expandedNotebookId.value = noteStore.notebooks[0]?.object_id || '__all_notes__';
+    activeTabId.value = noteStore.notebooks[0]?.object_id || '__all_notes__';
   } catch (e: any) {
     deleteModal.error = `删除失败: ${e?.message || e}`;
   } finally {
