@@ -145,6 +145,78 @@
         </svg>
       </button>
 
+      <!-- UI Density Switcher Dropdown (自适应 / 常规模式 / 紧凑模式) -->
+      <div class="relative">
+        <button
+          @click="isDensityMenuOpen = !isDensityMenuOpen"
+          class="flex items-center space-x-1 p-1.5 med:p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+          :title="`${t('tabBar.density')}: ${currentDensityModeName}`"
+        >
+          <!-- Density / Layout Icon -->
+          <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+          <span class="text-[11px] med:text-xs font-medium hidden sm:inline">{{ currentDensityShortName }}</span>
+        </button>
+
+        <!-- Density Dropdown Menu -->
+        <div
+          v-if="isDensityMenuOpen"
+          v-click-outside="() => isDensityMenuOpen = false"
+          class="absolute right-0 top-full mt-1.5 w-52 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50 text-xs flex flex-col"
+        >
+          <!-- 自适应 (默认) -->
+          <button
+            @click="selectDensityMode('auto')"
+            class="flex items-center justify-between px-3 py-2 text-left transition-colors cursor-pointer"
+            :class="layoutStore.uiDensityMode === 'auto' ? 'bg-syno-blue text-white font-medium' : 'text-slate-300 hover:bg-slate-700/70 hover:text-white'"
+          >
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span>{{ t('tabBar.densityAuto') }}</span>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-slate-700 text-slate-300">默认</span>
+              </div>
+              <span class="text-[10px] opacity-75 mt-0.5">
+                {{ layoutStore.isMediumDensity ? '≥1440px (常规)' : '<1440px (紧凑)' }}
+              </span>
+            </div>
+            <svg v-if="layoutStore.uiDensityMode === 'auto'" class="w-3.5 h-3.5 ml-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+
+          <!-- 常规模式 -->
+          <button
+            @click="selectDensityMode('medium')"
+            class="flex items-center justify-between px-3 py-2 text-left transition-colors cursor-pointer"
+            :class="layoutStore.uiDensityMode === 'medium' ? 'bg-syno-blue text-white font-medium' : 'text-slate-300 hover:bg-slate-700/70 hover:text-white'"
+          >
+            <div class="flex flex-col">
+              <span>{{ t('tabBar.densityMedium') }}</span>
+              <span class="text-[10px] opacity-75 mt-0.5">{{ t('tabBar.densityMediumDesc') }}</span>
+            </div>
+            <svg v-if="layoutStore.uiDensityMode === 'medium'" class="w-3.5 h-3.5 ml-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+
+          <!-- 紧凑模式 -->
+          <button
+            @click="selectDensityMode('compact')"
+            class="flex items-center justify-between px-3 py-2 text-left transition-colors cursor-pointer"
+            :class="layoutStore.uiDensityMode === 'compact' ? 'bg-syno-blue text-white font-medium' : 'text-slate-300 hover:bg-slate-700/70 hover:text-white'"
+          >
+            <div class="flex flex-col">
+              <span>{{ t('tabBar.densityCompact') }}</span>
+              <span class="text-[10px] opacity-75 mt-0.5">{{ t('tabBar.densityCompactDesc') }}</span>
+            </div>
+            <svg v-if="layoutStore.uiDensityMode === 'compact'" class="w-3.5 h-3.5 ml-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Language Selector Dropdown -->
       <div class="relative">
         <button
@@ -215,6 +287,7 @@ import { ref, computed } from 'vue';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { useLayoutStore, UiDensityMode } from '@/stores/layoutStore';
 import { t, currentLocale, setLocale, SUPPORTED_LOCALES, SupportedLocale } from '@/i18n';
 import { ServerProfile } from '@/types/synology';
 
@@ -231,8 +304,27 @@ const emit = defineEmits(['add-server', 'edit-server', 'open-pin-settings', 'loc
 const sessionStore = useSessionStore();
 const noteStore = useNoteStore();
 const themeStore = useThemeStore();
+const layoutStore = useLayoutStore();
 
 const isLangMenuOpen = ref(false);
+const isDensityMenuOpen = ref(false);
+
+const currentDensityShortName = computed(() => {
+  if (layoutStore.uiDensityMode === 'auto') return t('tabBar.densityAuto').slice(0, 3);
+  if (layoutStore.uiDensityMode === 'medium') return t('tabBar.densityMedium').slice(0, 2);
+  return t('tabBar.densityCompact').slice(0, 2);
+});
+
+const currentDensityModeName = computed(() => {
+  if (layoutStore.uiDensityMode === 'auto') return t('tabBar.densityAuto');
+  if (layoutStore.uiDensityMode === 'medium') return t('tabBar.densityMedium');
+  return t('tabBar.densityCompact');
+});
+
+function selectDensityMode(mode: UiDensityMode) {
+  layoutStore.setUiDensityMode(mode);
+  isDensityMenuOpen.value = false;
+}
 
 const currentLangShortName = computed(() => {
   const map: Record<SupportedLocale, string> = {

@@ -48,6 +48,13 @@ export const jaJP: TranslationMessages = {
     themeDark: 'ダークテーマ',
     themeToggle: 'テーマ切り替え (ライト / ダーク)',
     language: '言語',
+    density: 'UI表示密度',
+    densityAuto: '自動適応モード',
+    densityMedium: '標準モード',
+    densityCompact: 'コンパクトモード',
+    densityAutoDesc: 'ウィンドウ幅に応じて自動切替（≥1440で標準、<1440でコンパクト）',
+    densityMediumDesc: '標準サイズ仕様（快適な余白と見やすいフォント）',
+    densityCompactDesc: 'コンパクト仕様（高密度表示）',
     removeServerConfirm: 'サーバー「{alias}」を削除してもよろしいですか？NAS上のデータには影響しません。',
     editServer: 'サーバー設定を編集',
     removeServer: 'このサーバーを削除'

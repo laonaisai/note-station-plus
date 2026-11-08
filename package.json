@@ -16,6 +16,13 @@
   "build": {
     "appId": "com.laonaisai.notestationplus",
     "productName": "Note Station Plus",
+    "electronLanguages": [
+      "zh-CN",
+      "zh-TW",
+      "ja",
+      "en-US"
+    ],
+    "afterPack": "scripts/clean-locales.cjs",
     "directories": {
       "output": "release"
     },

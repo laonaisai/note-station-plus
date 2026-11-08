@@ -61,6 +61,13 @@ export interface TranslationMessages {
     themeDark: string;
     themeToggle: string;
     language: string;
+    density: string;
+    densityAuto: string;
+    densityMedium: string;
+    densityCompact: string;
+    densityAutoDesc: string;
+    densityMediumDesc: string;
+    densityCompactDesc: string;
     removeServerConfirm: string;
     editServer: string;
     removeServer: string;

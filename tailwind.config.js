@@ -1,4 +1,5 @@
 import typography from '@tailwindcss/typography';
+import plugin from 'tailwindcss/plugin';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -9,10 +10,6 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      screens: {
-        'med': '1440px',
-        'medium': '1440px',
-      },
       colors: {
         syno: {
           blue: '#0086d6',
@@ -25,6 +22,16 @@ export default {
   },
   plugins: [
     typography,
+    plugin(function({ addVariant }) {
+      addVariant('med', [
+        ':root[data-ui-density="medium"] &',
+        '&[data-ui-density="medium"]',
+      ]);
+      addVariant('medium', [
+        ':root[data-ui-density="medium"] &',
+        '&[data-ui-density="medium"]',
+      ]);
+    }),
   ],
 }
 

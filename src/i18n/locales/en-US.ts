@@ -48,6 +48,13 @@ export const enUS: TranslationMessages = {
     themeDark: 'Dark Theme',
     themeToggle: 'Toggle Theme (Light / Dark)',
     language: 'Language',
+    density: 'UI Density',
+    densityAuto: 'Auto (Responsive)',
+    densityMedium: 'Regular Mode',
+    densityCompact: 'Compact Mode',
+    densityAutoDesc: 'Auto adapt by window width (≥1440 Regular, <1440 Compact)',
+    densityMediumDesc: 'Regular mode (comfortable spacing & font size)',
+    densityCompactDesc: 'Compact mode (high information density)',
     removeServerConfirm: 'Are you sure you want to remove server "{alias}"? NAS data will not be affected.',
     editServer: 'Edit server configuration',
     removeServer: 'Remove this server'

@@ -107,5 +107,27 @@ describe('Layout Store 侧边栏与专注模式状态管理测试', () => {
       expect(layout.uiDensity).toBe('medium');
       expect(document.documentElement.getAttribute('data-ui-density')).toBe('medium');
     });
+
+    it('7. 切换密度模式能够持久化至 localStorage 并在重新初始化时正确恢复', () => {
+      const layout = useLayoutStore();
+      layout.setUiDensityMode('medium');
+      expect(localStorage.getItem('note_plus_ui_density_mode')).toBe('medium');
+
+      // 重置 pinia 并以 localStorage 中保存的 'medium' 重新加载
+      setActivePinia(createPinia());
+      const newLayout = useLayoutStore();
+      expect(newLayout.uiDensityMode).toBe('medium');
+      expect(newLayout.isMediumDensity).toBe(true);
+      expect(newLayout.uiDensity).toBe('medium');
+
+      // 切换为 compact
+      newLayout.setUiDensityMode('compact');
+      expect(localStorage.getItem('note_plus_ui_density_mode')).toBe('compact');
+      expect(newLayout.uiDensity).toBe('compact');
+
+      // 切换回 auto
+      newLayout.setUiDensityMode('auto');
+      expect(localStorage.getItem('note_plus_ui_density_mode')).toBe('auto');
+    });
   });
 });

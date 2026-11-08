@@ -29,9 +29,22 @@ export const useLayoutStore = defineStore('layout', () => {
   const isSidebarCollapsed = ref<boolean>(getStorage('note_plus_sidebar_collapsed'));
   const isNoteListCollapsed = ref<boolean>(getStorage('note_plus_notelist_collapsed'));
 
+  const DENSITY_STORAGE_KEY = 'note_plus_ui_density_mode';
+  const getDensityModeStorage = (): UiDensityMode => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(DENSITY_STORAGE_KEY);
+        if (saved === 'auto' || saved === 'medium' || saved === 'compact') {
+          return saved;
+        }
+      }
+    } catch {}
+    return 'auto';
+  };
+
   // Responsive UI Density State (>= 1440px: medium, < 1440px: compact)
   const windowWidth = ref<number>(typeof window !== 'undefined' ? window.innerWidth : 1280);
-  const uiDensityMode = ref<UiDensityMode>('auto');
+  const uiDensityMode = ref<UiDensityMode>(getDensityModeStorage());
 
   const isMediumDensity = computed<boolean>(() => {
     if (uiDensityMode.value === 'medium') return true;
@@ -77,6 +90,11 @@ export const useLayoutStore = defineStore('layout', () => {
 
   function setUiDensityMode(mode: UiDensityMode) {
     uiDensityMode.value = mode;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(DENSITY_STORAGE_KEY, mode);
+      }
+    } catch {}
   }
 
   watch(isSidebarCollapsed, (val) => {

@@ -48,6 +48,13 @@ export const zhCN: TranslationMessages = {
     themeDark: '深色主题',
     themeToggle: '切换主题方案 (浅色/深色)',
     language: '界面语言',
+    density: '界面规格',
+    densityAuto: '自适应模式',
+    densityMedium: '常规模式',
+    densityCompact: '紧凑模式',
+    densityAutoDesc: '根据窗口宽度自动适配（≥1440 为常规，<1440 为紧凑）',
+    densityMediumDesc: '适中规格（舒适间距与清晰字号）',
+    densityCompactDesc: '紧凑规格（高密度展示）',
     removeServerConfirm: '确定要移除服务【{alias}】吗？这不会影响 NAS 上的数据。',
     editServer: '编辑服务器配置',
     removeServer: '移除此服务器'

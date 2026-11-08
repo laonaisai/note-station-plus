@@ -7,6 +7,15 @@
     <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Note Station Plus</title>
+    <script>
+      (function() {
+        try {
+          var mode = localStorage.getItem('note_plus_ui_density_mode') || 'auto';
+          var isMed = mode === 'medium' || (mode === 'auto' && window.innerWidth >= 1440);
+          document.documentElement.setAttribute('data-ui-density', isMed ? 'medium' : 'compact');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden select-none">
     <div id="app" class="h-full w-full"></div>

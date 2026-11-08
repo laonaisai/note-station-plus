@@ -48,6 +48,13 @@ export const zhTW: TranslationMessages = {
     themeDark: '深色主題',
     themeToggle: '切換主題方案 (淺色/深色)',
     language: '介面語言',
+    density: '介面規格',
+    densityAuto: '自適應模式',
+    densityMedium: '常規模式',
+    densityCompact: '緊湊模式',
+    densityAutoDesc: '依視窗寬度自動切換（≥1440 為常規，<1440 為緊湊）',
+    densityMediumDesc: '適中規格（舒適間距與清晰字級）',
+    densityCompactDesc: '緊湊規格（高密度展示）',
     removeServerConfirm: '確定要移除服務【{alias}】嗎？這不會影響 NAS 上的資料。',
     editServer: '編輯伺服器設定',
     removeServer: '移除此伺服器'
