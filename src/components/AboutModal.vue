@@ -59,7 +59,7 @@
             <span class="font-semibold text-slate-800 dark:text-slate-100">Note Station Plus</span>
           </div>
 
-          <!-- 版本号 -->
+          <!-- 版本号与检查更新 -->
           <div class="px-3.5 py-2.5 flex items-center justify-between">
             <span class="text-slate-500 dark:text-slate-400 font-medium flex items-center">
               <svg class="w-3.5 h-3.5 mr-1.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,7 +67,25 @@
               </svg>
               {{ t('about.version') }}
             </span>
-            <span class="font-mono text-slate-700 dark:text-slate-300">v{{ appVersion }}</span>
+            <div class="flex items-center space-x-2">
+              <span class="font-mono text-slate-700 dark:text-slate-300">v{{ appVersion }}</span>
+              <button
+                @click="handleCheckUpdates"
+                :disabled="isCheckingUpdate"
+                class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded font-medium transition cursor-pointer flex items-center disabled:opacity-50"
+                :title="t('about.checkUpdates')"
+              >
+                <svg
+                  :class="['w-3 h-3 mr-1 text-slate-400', isCheckingUpdate ? 'animate-spin text-syno-blue' : '']"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{{ isCheckingUpdate ? t('about.checkingUpdates') : t('about.checkUpdates') }}</span>
+              </button>
+            </div>
           </div>
 
           <!-- 开发者 -->
@@ -113,6 +131,76 @@
             </div>
           </div>
         </div>
+
+        <!-- 版本检查结果提示卡片 -->
+        <!-- 1. 发现新版本 -->
+        <div
+          v-if="updateResult?.hasUpdate"
+          class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 flex items-center justify-between animate-in fade-in duration-200"
+        >
+          <div class="flex items-center space-x-2.5 min-w-0 pr-2">
+            <span class="flex h-2.5 w-2.5 relative shrink-0">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-syno-blue"></span>
+            </span>
+            <div class="text-xs truncate">
+              <div class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-1 truncate">
+                <span>{{ t('about.newVersionAvailable') }}:</span>
+                <span class="font-mono font-bold text-syno-blue dark:text-sky-400">v{{ updateResult.latestVersion }}</span>
+              </div>
+              <div v-if="updateResult.releaseName && updateResult.releaseName !== updateResult.latestTagName" class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                {{ updateResult.releaseName }}
+              </div>
+            </div>
+          </div>
+          <button
+            @click="openReleaseUrl(updateResult.releaseUrl)"
+            class="px-3 py-1.5 text-xs bg-syno-blue hover:bg-blue-600 text-white font-medium rounded-lg shadow-2xs transition shrink-0 cursor-pointer flex items-center space-x-1"
+          >
+            <span>{{ t('about.updateNow') }}</span>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- 2. 已是最新版本 -->
+        <div
+          v-else-if="updateResult && !updateResult.hasUpdate"
+          class="p-2.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/40 flex items-center space-x-2 text-xs text-emerald-700 dark:text-emerald-400 animate-in fade-in duration-200"
+        >
+          <svg class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-medium">{{ t('about.isLatestVersion') }} (v{{ appVersion }})</span>
+        </div>
+
+        <!-- 3. 检查更新异常 -->
+        <div
+          v-else-if="updateError"
+          class="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 animate-in fade-in duration-200"
+        >
+          <div class="flex items-center space-x-2 truncate pr-2">
+            <svg class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="truncate">{{ updateError }}</span>
+          </div>
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <button
+              @click="handleCheckUpdates"
+              class="px-2 py-0.5 text-[11px] bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-800 rounded text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer font-medium"
+            >
+              {{ t('about.retryCheck') }}
+            </button>
+            <button
+              @click="openReleaseUrl(GITHUB_RELEASES_URL)"
+              class="px-2 py-0.5 text-[11px] bg-amber-600 text-white rounded hover:bg-amber-700 transition cursor-pointer font-medium"
+            >
+              {{ t('about.viewAllReleases') }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Modal Footer -->
@@ -139,10 +227,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { t } from '@/i18n';
 import pkg from '../../package.json';
 import { showToast } from '@/utils/toast';
+import { checkForUpdates, GITHUB_RELEASES_URL, type UpdateCheckResult } from '@/services/updateChecker';
+import { openInExternalBrowser } from '@/utils/openUrl';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -153,13 +243,42 @@ const emit = defineEmits<{
   (e: 'open-logs'): void;
 }>();
 
+// Read query param test_version if present (for dev testing)
+const queryTestVersion = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('test_version') : null;
 const appVersion = ref(
-  (typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__)
+  queryTestVersion ||
+  ((typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__)
     ? __APP_VERSION__
-    : (pkg.version || '20261105.19.35')
+    : (pkg.version || '20261105.19.35'))
 );
 const sourceUrl = 'https://github.com/laonaisai/note-station-plus';
 const isCopied = ref(false);
+
+const isCheckingUpdate = ref(false);
+const updateResult = ref<UpdateCheckResult | null>(null);
+const updateError = ref<string | null>(null);
+
+async function handleCheckUpdates() {
+  if (isCheckingUpdate.value) return;
+  isCheckingUpdate.value = true;
+  updateError.value = null;
+
+  try {
+    const res = await checkForUpdates(appVersion.value);
+    updateResult.value = res;
+    if (res.hasUpdate) {
+      showToast(`${t('about.newVersionAvailable')}: v${res.latestVersion}`, 'info');
+    }
+  } catch (err: any) {
+    updateError.value = err?.message || t('about.updateCheckFailed');
+  } finally {
+    isCheckingUpdate.value = false;
+  }
+}
+
+async function openReleaseUrl(url?: string) {
+  await openInExternalBrowser(url || GITHUB_RELEASES_URL);
+}
 
 async function copySourceUrl() {
   try {
@@ -180,15 +299,30 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
+// Automatically check updates when About modal opens
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      if (!updateResult.value && !isCheckingUpdate.value) {
+        handleCheckUpdates();
+      }
+    }
+  }
+);
+
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown);
-  if (window.electronAPI?.getAppVersion) {
+  if (!queryTestVersion && window.electronAPI?.getAppVersion) {
     try {
       const ver = await window.electronAPI.getAppVersion();
       if (ver) {
         appVersion.value = ver;
       }
     } catch {}
+  }
+  if (props.isOpen && !updateResult.value) {
+    handleCheckUpdates();
   }
 });
 

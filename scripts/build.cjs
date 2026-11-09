@@ -12,7 +12,30 @@ function generateVersion() {
   return `${yyyy}${MM}${dd}.${HH}.${mm}`;
 }
 
-const dynamicVersion = process.env.VITE_APP_VERSION || generateVersion();
+const rawArgs = process.argv.slice(2);
+let customVersion = process.env.VITE_APP_VERSION;
+const extraArgs = [];
+
+for (let i = 0; i < rawArgs.length; i++) {
+  const arg = rawArgs[i];
+  if (arg.startsWith('--version=')) {
+    customVersion = arg.split('=')[1];
+  } else if (arg === '--version' && i + 1 < rawArgs.length) {
+    customVersion = rawArgs[++i];
+  } else if (arg.startsWith('--test-version=')) {
+    customVersion = arg.split('=')[1];
+  } else if (arg === '--test-version' && i + 1 < rawArgs.length) {
+    customVersion = rawArgs[++i];
+  } else if (arg.startsWith('--app-version=')) {
+    customVersion = arg.split('=')[1];
+  } else if (arg === '--app-version' && i + 1 < rawArgs.length) {
+    customVersion = rawArgs[++i];
+  } else {
+    extraArgs.push(arg);
+  }
+}
+
+const dynamicVersion = customVersion || generateVersion();
 process.env.VITE_APP_VERSION = dynamicVersion;
 
 console.log(`\n📦 [Build] Dynamic version initialized: ${dynamicVersion}`);
@@ -46,7 +69,6 @@ if (viteRes.status !== 0) {
 
 // Step 3: Package installer with electron-builder
 console.log('\n▶ [3/3] Packaging installer with electron-builder...');
-const extraArgs = process.argv.slice(2);
 const builderArgs = [
   'electron-builder',
   `--config.extraMetadata.version=${dynamicVersion}`,

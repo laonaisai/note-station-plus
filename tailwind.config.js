@@ -10,6 +10,14 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+          },
+        },
+      },
       spacing: {
         '4.5': '1.125rem',
       },

@@ -308,7 +308,15 @@ export const zhTW: TranslationMessages = {
     copySourceUrl: '複製原始碼網址',
     sourceCopied: '已複製原始碼網址至剪貼簿',
     copyFailed: '複製失敗，請手動選取複製',
-    viewLogs: '檢視執行日誌'
+    viewLogs: '檢視執行日誌',
+    checkUpdates: '檢查更新',
+    checkingUpdates: '檢查中...',
+    isLatestVersion: '已是最新版本',
+    newVersionAvailable: '發現新版本',
+    updateNow: '前往更新',
+    updateCheckFailed: '檢查更新失敗',
+    retryCheck: '重試',
+    viewAllReleases: '查看發布頁'
   },
   sync: {
     modalTitle: '跨服務便箋同步',

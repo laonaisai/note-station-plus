@@ -20,4 +20,29 @@ describe('关于 Note Station Plus (About Modal) 模块测试', () => {
     expect(sourceUrl).toBe('https://github.com/laonaisai/note-station-plus');
     expect(sourceUrl.startsWith('https://github.com/')).toBe(true);
   });
+
+  it('3. 验证多语言中包含检查更新相关的全部文案', async () => {
+    const { zhCN } = await import('../../src/i18n/locales/zh-CN');
+    const { enUS } = await import('../../src/i18n/locales/en-US');
+    const { zhTW } = await import('../../src/i18n/locales/zh-TW');
+    const { jaJP } = await import('../../src/i18n/locales/ja-JP');
+
+    const requiredKeys = [
+      'checkUpdates',
+      'checkingUpdates',
+      'isLatestVersion',
+      'newVersionAvailable',
+      'updateNow',
+      'updateCheckFailed',
+      'retryCheck',
+      'viewAllReleases'
+    ] as const;
+
+    for (const key of requiredKeys) {
+      expect(zhCN.about[key], `zh-CN missing ${key}`).toBeDefined();
+      expect(enUS.about[key], `en-US missing ${key}`).toBeDefined();
+      expect(zhTW.about[key], `zh-TW missing ${key}`).toBeDefined();
+      expect(jaJP.about[key], `ja-JP missing ${key}`).toBeDefined();
+    }
+  });
 });

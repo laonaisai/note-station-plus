@@ -322,6 +322,14 @@ export interface TranslationMessages {
     sourceCopied: string;
     copyFailed: string;
     viewLogs: string;
+    checkUpdates: string;
+    checkingUpdates: string;
+    isLatestVersion: string;
+    newVersionAvailable: string;
+    updateNow: string;
+    updateCheckFailed: string;
+    retryCheck: string;
+    viewAllReleases: string;
   };
   sync: {
     modalTitle: string;

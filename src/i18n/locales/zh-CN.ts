@@ -308,7 +308,15 @@ export const zhCN: TranslationMessages = {
     copySourceUrl: '复制源码地址',
     sourceCopied: '已复制源码地址到剪贴板',
     copyFailed: '复制失败，请手动选中复制',
-    viewLogs: '查看运行日志'
+    viewLogs: '查看运行日志',
+    checkUpdates: '检查更新',
+    checkingUpdates: '检查中...',
+    isLatestVersion: '已是最新版本',
+    newVersionAvailable: '发现新版本',
+    updateNow: '前往更新',
+    updateCheckFailed: '检查更新失败',
+    retryCheck: '重试',
+    viewAllReleases: '查看发布页'
   },
   sync: {
     modalTitle: '跨服务便签同步',

@@ -308,7 +308,15 @@ export const enUS: TranslationMessages = {
     copySourceUrl: 'Copy Source URL',
     sourceCopied: 'Source URL copied to clipboard',
     copyFailed: 'Failed to copy, please select and copy manually',
-    viewLogs: 'View Logs'
+    viewLogs: 'View Logs',
+    checkUpdates: 'Check for Updates',
+    checkingUpdates: 'Checking...',
+    isLatestVersion: 'Up to date',
+    newVersionAvailable: 'New version available',
+    updateNow: 'Update Now',
+    updateCheckFailed: 'Failed to check updates',
+    retryCheck: 'Retry',
+    viewAllReleases: 'View Releases'
   },
   sync: {
     modalTitle: 'Cross-Server Note Sync',

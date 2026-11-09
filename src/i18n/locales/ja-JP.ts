@@ -308,7 +308,15 @@ export const jaJP: TranslationMessages = {
     copySourceUrl: 'ソースコードURLをコピー',
     sourceCopied: 'ソースコードのURLをクリップボードにコピーしました',
     copyFailed: 'コピーに失敗しました。手動でコピーしてください',
-    viewLogs: 'ログを確認'
+    viewLogs: 'ログを確認',
+    checkUpdates: '更新を確認',
+    checkingUpdates: '確認中...',
+    isLatestVersion: '最新バージョンです',
+    newVersionAvailable: '新しいバージョンがあります',
+    updateNow: '今すぐ更新',
+    updateCheckFailed: '更新の確認に失敗しました',
+    retryCheck: '再試行',
+    viewAllReleases: 'リリース一覧'
   },
   sync: {
     modalTitle: 'サーバー間ノート同期',

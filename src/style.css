@@ -193,6 +193,17 @@ html, body, #app {
   font-weight: 500;
 }
 
+/* 消除 @tailwindcss/typography 默认在 inline code 前后伪元素注入的反引号 (`) 字符 */
+.prose :where(code):not(:where([class~="not-prose"] *))::before,
+.prose :where(code):not(:where([class~="not-prose"] *))::after,
+.prose code::before,
+.prose code::after,
+.markdown-preview code::before,
+.markdown-preview code::after {
+  content: "" !important;
+  display: none !important;
+}
+
 .markdown-preview hr {
   border: 0;
   border-top: 1px solid #e2e8f0;
