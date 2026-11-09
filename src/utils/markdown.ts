@@ -15,6 +15,12 @@ const turndown = new TurndownService({
   codeBlockStyle: 'fenced'
 });
 
+// Prevent Turndown from aggressively escaping markdown symbols (_, *, +, ~, `, #, etc.)
+// which ruins variable names like user_id, math equations like 10 * 20, or combined symbols like _*
+turndown.escape = function (string: string) {
+  return string;
+};
+
 const MD_COMMENT_PREFIX = '<!-- note-station-plus:markdown';
 const MD_COMMENT_SUFFIX = '\n-->';
 
@@ -23,7 +29,11 @@ const MD_COMMENT_SUFFIX = '\n-->';
  */
 export function hashHtmlBody(html: string): string {
   if (!html) return '';
-  const normalized = html.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+  const normalized = html
+    .replace(/\r\n/g, '\n')
+    .replace(/\s+/g, ' ')
+    .replace(/>\s+</g, '><')
+    .trim();
   let hash = 5381;
   for (let i = 0; i < normalized.length; i++) {
     hash = (hash * 33) ^ normalized.charCodeAt(i);
@@ -272,7 +282,7 @@ export function noteHtmlToMarkdown(html: string, options?: HtmlToMarkdownOptions
   if (!html || typeof html !== 'string') return '';
 
   try {
-    const commentRegex = /<!-- note-station-plus:markdown(?:\s+hash=["']([0-9a-fA-F]+)["'])?\n([\s\S]*?)\n-->/;
+    const commentRegex = /<!-- note-station-plus:markdown(?:\s+hash=["']([0-9a-fA-F]+)["'])?\s*\r?\n([\s\S]*?)\r?\n-->/;
     const match = html.match(commentRegex);
     const cleanHtmlWithoutComment = html.replace(commentRegex, '').trim();
 

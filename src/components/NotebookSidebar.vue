@@ -31,7 +31,7 @@
           <!-- 便签数量 (未激活与激活态均展示在图标下方，字体 12px) -->
           <div
             :class="[
-              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__all_notes__'
                 ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
@@ -46,7 +46,7 @@
             class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
-              class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
               style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
             >
               {{ formatVerticalTitle(t('sidebar.allNotes')) }}
@@ -76,7 +76,7 @@
           <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__favorites__'
                 ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
@@ -91,7 +91,7 @@
             class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
-              class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
               style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
             >
               {{ formatVerticalTitle(t('sidebar.favorites')) }}
@@ -121,7 +121,7 @@
           <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__shared_notes__'
                 ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
@@ -136,7 +136,7 @@
             class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
-              class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
               style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
             >
               {{ formatVerticalTitle(t('sidebar.sharedNotes')) }}
@@ -166,7 +166,7 @@
           <!-- 便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === '__recycle_bin__'
                 ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
@@ -181,7 +181,7 @@
             class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
-              class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
               style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
             >
               {{ formatVerticalTitle(t('sidebar.recycleBin')) }}
@@ -219,7 +219,7 @@
             <!-- 首字角标 (Badge: 字体 11px) -->
             <span
               :class="[
-                'absolute -bottom-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full text-[11px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
+                'absolute -bottom-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full text-[11px] font-medium flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
                 activeTabId === nb.object_id
                   ? 'bg-white text-syno-blue border border-blue-200'
                   : 'bg-white dark:bg-slate-800 text-syno-blue dark:text-sky-400 border border-slate-200 dark:border-slate-700'
@@ -232,7 +232,7 @@
           <!-- 图标底下：便签数量 (字体 12px) -->
           <div
             :class="[
-              'text-[12px] font-semibold leading-none font-mono shrink-0 select-none mt-0.5',
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
               activeTabId === nb.object_id
                 ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                 : 'text-slate-400 dark:text-slate-500'
@@ -247,7 +247,7 @@
             class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
           >
             <span
-              class="text-[0.875rem] font-semibold tracking-wider text-center select-none leading-tight"
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
               style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
             >
               {{ formatVerticalTitle(nb.title) }}
@@ -553,8 +553,8 @@
         >
           <!-- 吸顶年月分组头部 -->
           <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-            <span class="text-[11px] med:text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-            <span class="text-[10px] med:text-xs font-semibold px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
+            <span class="text-[11px] med:text-xs font-medium text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
+            <span class="text-[10px] med:text-xs font-medium px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
               {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
             </span>
           </div>
@@ -566,16 +566,16 @@
             @click="noteStore.selectNote(note.object_id)"
             @contextmenu.prevent="openNoteContextMenu($event, note)"
             :class="[
-              'group relative p-2 med:p-3 rounded-lg cursor-pointer transition border',
+              'group relative p-2 med:p-3 rounded-lg cursor-pointer transition-all duration-150 border',
               noteStore.activeNoteId === note.object_id
-                ? 'bg-slate-800 dark:bg-blue-950/60 border-slate-700 dark:border-sky-500 shadow-md text-white'
-                : 'bg-white/70 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                ? 'bg-blue-50/90 dark:bg-blue-950/50 border-l-[3.5px] border-l-syno-blue border-t-blue-200/80 border-r-blue-200/80 border-b-blue-200/80 dark:border-sky-500/50 shadow-xs'
+                : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50/90 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs'
             ]"
           >
             <div class="flex items-start justify-between">
               <h4
-                class="text-xs med:text-sm font-semibold truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                :class="noteStore.activeNoteId === note.object_id ? 'text-white' : 'text-slate-800 dark:text-slate-200'"
+                class="text-xs med:text-sm font-medium tracking-tight truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
+                :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300 font-semibold' : 'text-slate-900 dark:text-slate-100'"
               >
                 <!-- Loading Spinner (便签内容加载中) -->
                 <svg
@@ -604,7 +604,7 @@
                 <svg
                   v-if="isNoteShared(note)"
                   class="w-3.5 h-3.5 shrink-0"
-                  :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300' : 'text-syno-blue'"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -622,10 +622,10 @@
                 class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
                 :class="[
                   noteStore.activeNoteId === note.object_id
-                    ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200',
+                    ? 'text-slate-500 hover:text-syno-blue hover:bg-blue-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200 dark:hover:text-slate-200 dark:hover:bg-slate-700',
                   noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                    ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-slate-700 text-white' : '!opacity-100 bg-slate-200 text-slate-700')
+                    ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-blue-100 text-syno-blue dark:bg-slate-700 dark:text-white' : '!opacity-100 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200')
                     : ''
                 ]"
                 :title="t('common.actions')"
@@ -642,16 +642,16 @@
                 v-for="tg in note.tag"
                 :key="tg"
                 class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                :class="noteStore.activeNoteId === note.object_id ? 'bg-slate-700/80 text-blue-200 border border-slate-600' : 'bg-blue-50 text-syno-blue border border-blue-100'"
+                :class="noteStore.activeNoteId === note.object_id ? 'bg-blue-100/90 text-syno-blue border border-blue-200/90 dark:bg-blue-900/40 dark:text-sky-300 dark:border-blue-800/50' : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600/60'"
                 :title="tg"
               >
-                <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-blue-300' : 'text-blue-400'">#</span>
+                <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'">#</span>
                 <span class="truncate">{{ tg }}</span>
               </span>
             </div>
 
             <!-- Time & Meta -->
-            <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-400">
+            <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-500 dark:text-slate-400 font-normal">
               <span>{{ formatTime(note.mtime || note.ctime) }}</span>
               <span v-if="note.tag && note.tag.length > 0">
                 {{ note.tag.length }} {{ t('sidebar.tags') }}
