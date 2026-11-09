@@ -316,7 +316,19 @@ export const enUS: TranslationMessages = {
     updateNow: 'Update Now',
     updateCheckFailed: 'Failed to check updates',
     retryCheck: 'Retry',
-    viewAllReleases: 'View Releases'
+    viewAllReleases: 'View Releases',
+    downloadingUpdate: 'Downloading new application package...',
+    downloadComplete: 'Download Complete',
+    readyToInstall: 'The update package has been downloaded. Install now?',
+    installNow: 'Install Now',
+    openFolder: 'Open Folder',
+    installLater: 'Later',
+    downloadFailed: 'Download failed. Please click to download manually',
+    cancelDownload: 'Cancel',
+    browserDownloadStarted: 'Browser download started. Please run the installer once downloaded.',
+    targetAsset: 'Package',
+    manualDownload: 'Web Download',
+    downloadProgress: '{percent}% ({received} / {total})'
   },
   sync: {
     modalTitle: 'Cross-Server Note Sync',

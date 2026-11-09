@@ -316,7 +316,19 @@ export const jaJP: TranslationMessages = {
     updateNow: '今すぐ更新',
     updateCheckFailed: '更新の確認に失敗しました',
     retryCheck: '再試行',
-    viewAllReleases: 'リリース一覧'
+    viewAllReleases: 'リリース一覧',
+    downloadingUpdate: '新しいパッケージをダウンロード中...',
+    downloadComplete: 'ダウンロード完了',
+    readyToInstall: '新しいバージョンのダウンロードが完了しました。今すぐインストールしますか？',
+    installNow: '今すぐインストール',
+    openFolder: 'フォルダーを開く',
+    installLater: '後で',
+    downloadFailed: 'ダウンロードに失敗しました。手動でダウンロードしてください',
+    cancelDownload: 'キャンセル',
+    browserDownloadStarted: 'ブラウザでのダウンロードを開始しました。完了後にインストーラーを実行してください。',
+    targetAsset: '対象パッケージ',
+    manualDownload: 'Webダウンロード',
+    downloadProgress: '{percent}% ({received} / {total})'
   },
   sync: {
     modalTitle: 'サーバー間ノート同期',

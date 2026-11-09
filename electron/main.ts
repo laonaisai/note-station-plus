@@ -224,6 +224,147 @@ ipcMain.handle('print:direct', async (_event, { html }: { html: string }) => {
   }
 });
 
+// IPC handlers for in-app application updates and installation
+let currentDownloadAbortController: AbortController | null = null;
+
+ipcMain.handle('updater:download', async (event, { url, fileName }: { url: string; fileName: string }) => {
+  if (!url) return { success: false, error: '下载地址不能为空' };
+
+  try {
+    const downloadsDir = app.getPath('downloads');
+    if (!fs.existsSync(downloadsDir)) {
+      fs.mkdirSync(downloadsDir, { recursive: true });
+    }
+    const safeFileName = (fileName || path.basename(new URL(url).pathname) || 'note-station-plus-update').replace(/[\\/:*?"<>|]/g, '_');
+    const targetPath = path.join(downloadsDir, safeFileName);
+
+    currentDownloadAbortController = new AbortController();
+    const response = await fetch(url, {
+      signal: currentDownloadAbortController.signal,
+      headers: {
+        'User-Agent': 'NoteStationPlus-AppUpdater'
+      }
+    });
+
+    if (!response.ok || !response.body) {
+      return { success: false, error: `下载响应异常 HTTP ${response.status}: ${response.statusText}` };
+    }
+
+    const totalBytes = parseInt(response.headers.get('content-length') || '0', 10);
+    let receivedBytes = 0;
+    let lastTime = Date.now();
+    let lastBytes = 0;
+    let currentSpeed = 0;
+
+    const fileStream = fs.createWriteStream(targetPath);
+    const { Readable } = await import('stream');
+    const nodeReadable = Readable.fromWeb(response.body as any);
+
+    return await new Promise<{ success: boolean; filePath?: string; fileName?: string; error?: string }>((resolve) => {
+      nodeReadable.on('data', (chunk: Buffer) => {
+        receivedBytes += chunk.length;
+        fileStream.write(chunk);
+
+        const now = Date.now();
+        if (now - lastTime >= 250) {
+          const deltaBytes = receivedBytes - lastBytes;
+          const deltaTime = (now - lastTime) / 1000;
+          currentSpeed = deltaTime > 0 ? Math.round(deltaBytes / deltaTime) : 0;
+          lastTime = now;
+          lastBytes = receivedBytes;
+
+          const percent = totalBytes > 0 ? Math.min(100, Math.round((receivedBytes / totalBytes) * 100)) : 0;
+          event.sender.send('updater:downloadProgress', {
+            percent,
+            receivedBytes,
+            totalBytes,
+            speedBytesPerSec: currentSpeed,
+            isComplete: false
+          });
+        }
+      });
+
+      nodeReadable.on('end', () => {
+        fileStream.end();
+        currentDownloadAbortController = null;
+
+        // On Linux, make AppImage executable
+        if (process.platform === 'linux' && targetPath.toLowerCase().endsWith('.appimage')) {
+          try {
+            fs.chmodSync(targetPath, 0o755);
+          } catch (e) {
+            console.warn('[updater] Failed to chmod AppImage:', e);
+          }
+        }
+
+        event.sender.send('updater:downloadProgress', {
+          percent: 100,
+          receivedBytes,
+          totalBytes: totalBytes || receivedBytes,
+          speedBytesPerSec: 0,
+          isComplete: true
+        });
+
+        resolve({ success: true, filePath: targetPath, fileName: safeFileName });
+      });
+
+      nodeReadable.on('error', (err: any) => {
+        fileStream.close();
+        try { fs.unlinkSync(targetPath); } catch {}
+        currentDownloadAbortController = null;
+        resolve({ success: false, error: err?.message || String(err) });
+      });
+
+      fileStream.on('error', (err: any) => {
+        nodeReadable.destroy();
+        try { fs.unlinkSync(targetPath); } catch {}
+        currentDownloadAbortController = null;
+        resolve({ success: false, error: err?.message || String(err) });
+      });
+    });
+  } catch (err: any) {
+    currentDownloadAbortController = null;
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('updater:cancelDownload', () => {
+  if (currentDownloadAbortController) {
+    currentDownloadAbortController.abort();
+    currentDownloadAbortController = null;
+    return { success: true };
+  }
+  return { success: false, error: '当前没有正在进行的下载' };
+});
+
+ipcMain.handle('updater:install', async (_event, { filePath }: { filePath: string }) => {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return { success: false, error: '安装包文件不存在: ' + filePath };
+  }
+  try {
+    if (process.platform === 'linux' && filePath.toLowerCase().endsWith('.appimage')) {
+      try {
+        fs.chmodSync(filePath, 0o755);
+      } catch {}
+    }
+    const openRes = await shell.openPath(filePath);
+    if (openRes) {
+      return { success: false, error: openRes };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('updater:showItemInFolder', (_event, { filePath }: { filePath: string }) => {
+  if (filePath && fs.existsSync(filePath)) {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  }
+  return { success: false, error: '文件不存在' };
+});
+
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 

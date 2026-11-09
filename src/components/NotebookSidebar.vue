@@ -18,13 +18,13 @@
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__all_notes__'
               ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200 justify-center py-0.5'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-200 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.allNotes')} (${noteStore.notes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
 
@@ -63,13 +63,13 @@
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__favorites__'
               ? 'max-h-[200px] bg-amber-500 text-white shadow-sm justify-start pt-1.5 pb-1'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400 justify-center py-0.5'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-500 dark:hover:text-amber-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.favorites')} (${noteStore.favoriteNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           </div>
 
@@ -108,13 +108,13 @@
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__shared_notes__'
               ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.sharedNotes')} (${sharedNotesCount})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </div>
 
@@ -153,13 +153,13 @@
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === '__recycle_bin__'
               ? 'max-h-[200px] bg-rose-600 text-white shadow-sm justify-start pt-1.5 pb-1'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500 justify-center py-0.5'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-rose-500 justify-center py-0.5'
           ]"
           :title="`${t('sidebar.recycleBin')} (${noteStore.recycledNotes.length})`"
         >
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
 
@@ -206,20 +206,20 @@
             'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
             activeTabId === nb.object_id
               ? 'max-h-[200px] bg-syno-blue text-white shadow-sm justify-start pt-1.5 pb-1'
-              : 'h-[50px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-syno-blue dark:hover:text-sky-400 justify-center py-0.5'
           ]"
           :title="`${nb.title || t('sidebar.notebooks')} (${getNotebookCount(nb)})`"
         >
-          <!-- 图标 + 右下角首字角标 (图标 32*32 锁定, 首字 12px) -->
-          <div class="relative shrink-0 flex items-center justify-center w-8 h-8">
-            <svg class="w-8 h-8 shrink-0" fill="none" viewBox="2 4 20 16.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <!-- 图标 + 右下角首字角标 (图标 24*24 锁定, 线条轻盈 1.5px, 首字 11px) -->
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
 
-            <!-- 首字角标 (Badge: 字体 12px) -->
+            <!-- 首字角标 (Badge: 字体 11px) -->
             <span
               :class="[
-                'absolute -bottom-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full text-[12px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
+                'absolute -bottom-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full text-[11px] font-bold flex items-center justify-center leading-none shadow-2xs select-none transition-colors pointer-events-none',
                 activeTabId === nb.object_id
                   ? 'bg-white text-syno-blue border border-blue-200'
                   : 'bg-white dark:bg-slate-800 text-syno-blue dark:text-sky-400 border border-slate-200 dark:border-slate-700'

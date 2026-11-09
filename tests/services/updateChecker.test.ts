@@ -1,7 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   cleanVersion,
   compareVersions,
+  classifyAsset,
+  matchAssetForPlatform,
+  formatBytes,
+  generateDefaultAssets,
   checkForUpdates,
   GITHUB_LATEST_API_URL,
   GITHUB_ATOM_FEED_URL
@@ -20,6 +24,62 @@ describe('updateChecker 版本检测服务', () => {
       expect(cleanVersion('')).toBe('0.0.0');
       expect(cleanVersion(null)).toBe('0.0.0');
       expect(cleanVersion(undefined)).toBe('0.0.0');
+    });
+  });
+
+  describe('formatBytes 字节大小转换', () => {
+    it('正确转换不同量级的字节为可读文本', () => {
+      expect(formatBytes(500)).toBe('500 B');
+      expect(formatBytes(1024)).toBe('1.0 KB');
+      expect(formatBytes(1024 * 1024 * 81)).toBe('81.0 MB');
+      expect(formatBytes(0)).toBe('');
+    });
+  });
+
+  describe('classifyAsset 安装包分类与平台推断', () => {
+    it('Windows Setup 安装程序与便携版', () => {
+      const setup = classifyAsset('Note.Station.Plus.Setup.20261108.23.21.exe', 'http://example.com/setup.exe');
+      expect(setup.platform).toBe('windows');
+      expect(setup.kind).toBe('installer');
+
+      const portable = classifyAsset('Note.Station.Plus.20261108.23.21.exe', 'http://example.com/portable.exe');
+      expect(portable.platform).toBe('windows');
+      expect(portable.kind).toBe('portable');
+    });
+
+    it('Linux AppImage 与 deb 安装包', () => {
+      const appImage = classifyAsset('Note.Station.Plus-20261108.23.21.AppImage', 'http://example.com/app.AppImage');
+      expect(appImage.platform).toBe('linux');
+      expect(appImage.kind).toBe('appimage');
+
+      const deb = classifyAsset('note-station-plus_20261108.23.21_amd64.deb', 'http://example.com/app.deb');
+      expect(deb.platform).toBe('linux');
+      expect(deb.kind).toBe('deb');
+    });
+  });
+
+  describe('matchAssetForPlatform 平台精准匹配', () => {
+    const assets = [
+      classifyAsset('Note.Station.Plus.Setup.20261108.23.21.exe', 'http://example.com/setup.exe'),
+      classifyAsset('Note.Station.Plus.20261108.23.21.exe', 'http://example.com/portable.exe'),
+      classifyAsset('Note.Station.Plus-20261108.23.21.AppImage', 'http://example.com/app.AppImage'),
+      classifyAsset('note-station-plus_20261108.23.21_amd64.deb', 'http://example.com/app.deb')
+    ];
+
+    it('Windows 平台优先匹配 Setup 安装包', () => {
+      const matched = matchAssetForPlatform(assets, 'windows');
+      expect(matched?.name).toBe('Note.Station.Plus.Setup.20261108.23.21.exe');
+    });
+
+    it('Linux 平台优先匹配通用 AppImage', () => {
+      const matched = matchAssetForPlatform(assets, 'linux');
+      expect(matched?.name).toBe('Note.Station.Plus-20261108.23.21.AppImage');
+    });
+
+    it('Linux 仅有 deb 时能够匹配 deb', () => {
+      const debOnly = [classifyAsset('note-station-plus_amd64.deb', 'http://example.com/app.deb')];
+      const matched = matchAssetForPlatform(debOnly, 'linux');
+      expect(matched?.name).toBe('note-station-plus_amd64.deb');
     });
   });
 
@@ -50,6 +110,16 @@ describe('updateChecker 版本检测服务', () => {
     });
   });
 
+  describe('generateDefaultAssets 生成默认四端产物', () => {
+    it('正确生成包含 Windows exe 与 Linux AppImage/deb 的安装包列表', () => {
+      const assets = generateDefaultAssets('v20261108.23.21', '20261108.23.21');
+      expect(assets.length).toBe(4);
+      expect(assets.some((a) => a.kind === 'installer' && a.platform === 'windows')).toBe(true);
+      expect(assets.some((a) => a.kind === 'appimage' && a.platform === 'linux')).toBe(true);
+      expect(assets.some((a) => a.kind === 'deb' && a.platform === 'linux')).toBe(true);
+    });
+  });
+
   describe('checkForUpdates 远程版本检测', () => {
     const originalFetch = globalThis.fetch;
 
@@ -58,13 +128,25 @@ describe('updateChecker 版本检测服务', () => {
       vi.restoreAllMocks();
     });
 
-    it('通过 GitHub REST API 成功检测到新版本', async () => {
+    it('通过 GitHub REST API 成功检测到新版本及平台对应安装包', async () => {
       const mockRelease = {
         tag_name: 'v20261108.23.21',
         name: 'v20261108.23.21 - 全平台正式发布',
         html_url: 'https://github.com/laonaisai/note-station-plus/releases/tag/v20261108.23.21',
         published_at: '2026-11-08T15:21:00Z',
-        body: '修复若干问题并优化体验'
+        body: '修复若干问题并优化体验',
+        assets: [
+          {
+            name: 'Note.Station.Plus.Setup.20261108.23.21.exe',
+            browser_download_url: 'https://github.com/laonaisai/note-station-plus/releases/download/v20261108.23.21/Note.Station.Plus.Setup.20261108.23.21.exe',
+            size: 85000000
+          },
+          {
+            name: 'Note.Station.Plus-20261108.23.21.AppImage',
+            browser_download_url: 'https://github.com/laonaisai/note-station-plus/releases/download/v20261108.23.21/Note.Station.Plus-20261108.23.21.AppImage',
+            size: 110000000
+          }
+        ]
       };
 
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
@@ -82,21 +164,23 @@ describe('updateChecker 版本检测服务', () => {
       expect(res.hasUpdate).toBe(true);
       expect(res.latestVersion).toBe('20261108.23.21');
       expect(res.latestTagName).toBe('v20261108.23.21');
-      expect(res.releaseName).toBe('v20261108.23.21 - 全平台正式发布');
-      expect(res.releaseUrl).toBe(mockRelease.html_url);
+      expect(res.assets.length).toBe(2);
+      expect(res.matchedAsset).not.toBeNull();
     });
 
     it('当前版本等于最新版本时 hasUpdate 为 false', async () => {
       const mockRelease = {
         tag_name: 'v20261108.23.21',
         name: 'v20261108.23.21',
-        html_url: 'https://github.com/laonaisai/note-station-plus/releases/tag/v20261108.23.21'
+        html_url: 'https://github.com/laonaisai/note-station-plus/releases/tag/v20261108.23.21',
+        assets: []
       };
 
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve(mockRelease)
+        json: () => Promise.resolve(mockRelease),
+        text: () => Promise.resolve('')
       } as Response);
 
       const res = await checkForUpdates('20261108.23.21');
@@ -132,6 +216,13 @@ describe('updateChecker 版本检测服务', () => {
             text: () => Promise.resolve(mockAtomXml)
           } as Response);
         }
+        // expanded_assets
+        if (url.includes('expanded_assets')) {
+          return Promise.resolve({
+            ok: false,
+            status: 404
+          } as Response);
+        }
         return Promise.reject(new Error('Unknown URL'));
       });
 
@@ -139,7 +230,8 @@ describe('updateChecker 版本检测服务', () => {
       expect(res.hasUpdate).toBe(true);
       expect(res.latestVersion).toBe('20261108.23.21');
       expect(res.latestTagName).toBe('v20261108.23.21');
-      expect(res.releaseUrl).toContain('releases/tag/v20261108.23.21');
+      expect(res.assets.length).toBeGreaterThan(0);
+      expect(res.matchedAsset).toBeDefined();
     });
 
     it('网络请求全部失败时抛出错误', async () => {

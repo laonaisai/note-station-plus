@@ -19,6 +19,17 @@ const api = {
   print: {
     toPdf: (params: { html: string; title: string }) => ipcRenderer.invoke('print:toPdf', params),
     direct: (params: { html: string }) => ipcRenderer.invoke('print:direct', params)
+  },
+  updater: {
+    download: (params: { url: string; fileName: string }) => ipcRenderer.invoke('updater:download', params),
+    cancelDownload: () => ipcRenderer.invoke('updater:cancelDownload'),
+    install: (params: { filePath: string }) => ipcRenderer.invoke('updater:install', params),
+    showItemInFolder: (params: { filePath: string }) => ipcRenderer.invoke('updater:showItemInFolder', params),
+    onDownloadProgress: (callback: (progress: { percent: number; receivedBytes: number; totalBytes: number; speedBytesPerSec: number; isComplete: boolean }) => void) => {
+      const handler = (_event: any, p: any) => callback(p);
+      ipcRenderer.on('updater:downloadProgress', handler);
+      return () => ipcRenderer.removeListener('updater:downloadProgress', handler);
+    }
   }
 };
 

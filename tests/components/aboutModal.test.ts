@@ -35,7 +35,19 @@ describe('关于 Note Station Plus (About Modal) 模块测试', () => {
       'updateNow',
       'updateCheckFailed',
       'retryCheck',
-      'viewAllReleases'
+      'viewAllReleases',
+      'downloadingUpdate',
+      'downloadComplete',
+      'readyToInstall',
+      'installNow',
+      'openFolder',
+      'installLater',
+      'downloadFailed',
+      'cancelDownload',
+      'browserDownloadStarted',
+      'targetAsset',
+      'manualDownload',
+      'downloadProgress'
     ] as const;
 
     for (const key of requiredKeys) {

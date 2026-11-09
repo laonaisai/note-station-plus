@@ -5,6 +5,18 @@ export const GITHUB_RELEASES_URL = 'https://github.com/laonaisai/note-station-pl
 export const GITHUB_LATEST_API_URL = 'https://api.github.com/repos/laonaisai/note-station-plus/releases/latest';
 export const GITHUB_ATOM_FEED_URL = 'https://github.com/laonaisai/note-station-plus/releases.atom';
 
+export type PlatformType = 'windows' | 'linux' | 'mac' | 'other';
+export type AssetKind = 'installer' | 'portable' | 'deb' | 'appimage' | 'archive' | 'other';
+
+export interface ReleaseAsset {
+  name: string;
+  downloadUrl: string;
+  size?: number;
+  sizeFormatted?: string;
+  platform: PlatformType;
+  kind: AssetKind;
+}
+
 export interface ReleaseInfo {
   version: string;
   tagName: string;
@@ -12,6 +24,7 @@ export interface ReleaseInfo {
   htmlUrl: string;
   publishedAt?: string;
   body?: string;
+  assets?: ReleaseAsset[];
 }
 
 export interface UpdateCheckResult {
@@ -23,6 +36,9 @@ export interface UpdateCheckResult {
   releaseUrl: string;
   publishedAt?: string;
   releaseNotes?: string;
+  assets: ReleaseAsset[];
+  matchedAsset: ReleaseAsset | null;
+  platform: PlatformType;
 }
 
 /**
@@ -31,6 +47,110 @@ export interface UpdateCheckResult {
 export function cleanVersion(v?: string | null): string {
   if (!v) return '0.0.0';
   return String(v).trim().replace(/^v/i, '');
+}
+
+/**
+ * 格式化字节大小为可读文本
+ */
+export function formatBytes(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+/**
+ * 根据文件名自动分析归属平台与安装包类型
+ */
+export function classifyAsset(
+  fileName: string,
+  downloadUrl: string,
+  size?: number,
+  sizeFormatted?: string
+): ReleaseAsset {
+  const lower = fileName.toLowerCase();
+  let platform: PlatformType = 'other';
+  let kind: AssetKind = 'other';
+
+  if (lower.endsWith('.exe')) {
+    platform = 'windows';
+    kind = lower.includes('setup') ? 'installer' : 'portable';
+  } else if (lower.endsWith('.appimage')) {
+    platform = 'linux';
+    kind = 'appimage';
+  } else if (lower.endsWith('.deb')) {
+    platform = 'linux';
+    kind = 'deb';
+  } else if (lower.endsWith('.dmg') || lower.endsWith('.pkg')) {
+    platform = 'mac';
+    kind = 'installer';
+  } else if (lower.endsWith('.zip') || lower.endsWith('.tar.gz')) {
+    kind = 'archive';
+  }
+
+  return {
+    name: fileName,
+    downloadUrl,
+    size,
+    sizeFormatted: sizeFormatted || (size ? formatBytes(size) : undefined),
+    platform,
+    kind
+  };
+}
+
+/**
+ * 检测当前系统运行平台
+ */
+export function detectCurrentPlatform(): PlatformType {
+  if (typeof window !== 'undefined' && (window as any).electronAPI?.platform) {
+    const p = String((window as any).electronAPI.platform).toLowerCase();
+    if (p.includes('win')) return 'windows';
+    if (p.includes('linux')) return 'linux';
+    if (p.includes('darwin') || p.includes('mac')) return 'mac';
+  }
+  if (typeof navigator !== 'undefined') {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (ua.includes('win')) return 'windows';
+    if (ua.includes('mac')) return 'mac';
+    if (ua.includes('linux')) return 'linux';
+  }
+  return 'other';
+}
+
+/**
+ * 匹配适合当前操作系统平台的安装产物
+ */
+export function matchAssetForPlatform(
+  assets: ReleaseAsset[],
+  targetPlatform: PlatformType = detectCurrentPlatform()
+): ReleaseAsset | null {
+  if (!assets || assets.length === 0) return null;
+
+  if (targetPlatform === 'windows') {
+    // 1. 安装包 (Setup.exe)
+    const setup = assets.find((a) => a.platform === 'windows' && a.kind === 'installer');
+    if (setup) return setup;
+    // 2. 便携版或其它 .exe
+    return assets.find((a) => a.platform === 'windows') || null;
+  }
+
+  if (targetPlatform === 'linux') {
+    // 1. AppImage 便携包 (全 Linux 发行版通用)
+    const appImage = assets.find((a) => a.platform === 'linux' && a.kind === 'appimage');
+    if (appImage) return appImage;
+    // 2. deb 安装包
+    const deb = assets.find((a) => a.platform === 'linux' && a.kind === 'deb');
+    if (deb) return deb;
+    return assets.find((a) => a.platform === 'linux') || null;
+  }
+
+  if (targetPlatform === 'mac') {
+    const dmg = assets.find((a) => a.platform === 'mac');
+    if (dmg) return dmg;
+  }
+
+  return assets.find((a) => a.platform === targetPlatform) || assets[0] || null;
 }
 
 /**
@@ -67,7 +187,72 @@ export function compareVersions(v1?: string | null, v2?: string | null): number 
 }
 
 /**
- * 从 GitHub API 或 Atom Feed 中检测最新版本
+ * 从 GitHub expanded_assets HTML 页面解析已上传的各平台安装包产物
+ */
+export async function fetchExpandedAssets(tagName: string, timeoutMs: number = 6000): Promise<ReleaseAsset[]> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(`${GITHUB_RELEASES_URL}/expanded_assets/${tagName}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (!resp.ok || typeof resp.text !== 'function') return [];
+
+    const html = await resp.text();
+    const linkMatches = [...html.matchAll(/href="(\/laonaisai\/note-station-plus\/releases\/download\/[^"]+)"/g)];
+    const assets: ReleaseAsset[] = [];
+    const seenUrls = new Set<string>();
+
+    for (const match of linkMatches) {
+      const relPath = match[1];
+      const fullUrl = `https://github.com${relPath}`;
+      if (seenUrls.has(fullUrl)) continue;
+      seenUrls.add(fullUrl);
+
+      const fileName = decodeURIComponent(relPath.split('/').pop() || '');
+      if (!fileName) continue;
+
+      const afterSlice = html.slice(match.index || 0, (match.index || 0) + 1200);
+      const sizeMatch = afterSlice.match(/class="[^"]*color-fg-muted[^"]*"[^>]*>\s*([0-9.]+\s*(?:MB|KB|GB|B))\s*</i);
+      const sizeFormatted = sizeMatch ? sizeMatch[1].trim() : undefined;
+
+      assets.push(classifyAsset(fileName, fullUrl, undefined, sizeFormatted));
+    }
+    return assets;
+  } catch (err) {
+    logger.warn('system', 'fetchExpandedAssetsError', '获取 expanded_assets 列表失败', err);
+    return [];
+  }
+}
+
+/**
+ * 当未获取到动态列表时，根据发版规范生成默认的 4 个全平台安装包地址
+ */
+export function generateDefaultAssets(tagName: string, version: string): ReleaseAsset[] {
+  const v = cleanVersion(version);
+  return [
+    classifyAsset(
+      `Note.Station.Plus.Setup.${v}.exe`,
+      `https://github.com/laonaisai/note-station-plus/releases/download/${tagName}/Note.Station.Plus.Setup.${v}.exe`
+    ),
+    classifyAsset(
+      `Note.Station.Plus.${v}.exe`,
+      `https://github.com/laonaisai/note-station-plus/releases/download/${tagName}/Note.Station.Plus.${v}.exe`
+    ),
+    classifyAsset(
+      `Note.Station.Plus-${v}.AppImage`,
+      `https://github.com/laonaisai/note-station-plus/releases/download/${tagName}/Note.Station.Plus-${v}.AppImage`
+    ),
+    classifyAsset(
+      `note-station-plus_${v}_amd64.deb`,
+      `https://github.com/laonaisai/note-station-plus/releases/download/${tagName}/note-station-plus_${v}_amd64.deb`
+    )
+  ];
+}
+
+/**
+ * 从 GitHub API 或 Atom Feed 中检测最新版本及对应平台的安装包
  * @param currentVersion 当前应用版本号
  * @param timeoutMs 超时时间 (毫秒)
  */
@@ -76,9 +261,15 @@ export async function checkForUpdates(
   timeoutMs: number = 8000
 ): Promise<UpdateCheckResult> {
   const normCurrent = cleanVersion(currentVersion);
-  logger.info('system', 'checkUpdateStart', '开始检查应用版本更新', { currentVersion: normCurrent });
+  const currentPlatform = detectCurrentPlatform();
+
+  logger.info('system', 'checkUpdateStart', '开始检查应用版本更新', {
+    currentVersion: normCurrent,
+    platform: currentPlatform
+  });
 
   let releaseInfo: ReleaseInfo | null = null;
+  let assets: ReleaseAsset[] = [];
 
   // 1. 首选 GitHub REST API 获取 latest release
   try {
@@ -97,13 +288,19 @@ export async function checkForUpdates(
       const data = await resp.json();
       if (data && data.tag_name) {
         const tagName = String(data.tag_name);
+        if (Array.isArray(data.assets) && data.assets.length > 0) {
+          assets = data.assets.map((ast: any) =>
+            classifyAsset(ast.name, ast.browser_download_url, ast.size)
+          );
+        }
         releaseInfo = {
           version: cleanVersion(tagName),
           tagName,
           name: data.name || tagName,
           htmlUrl: data.html_url || `${GITHUB_RELEASES_URL}/tag/${tagName}`,
           publishedAt: data.published_at,
-          body: data.body
+          body: data.body,
+          assets
         };
       }
     } else {
@@ -154,13 +351,25 @@ export async function checkForUpdates(
     throw new Error('无法连接至 GitHub Releases 检查最新版本');
   }
 
+  // 若 API 未提供 assets，则尝试从 expanded_assets HTML 中解析
+  if (assets.length === 0) {
+    assets = await fetchExpandedAssets(releaseInfo.tagName, timeoutMs);
+  }
+
+  // 若仍未获取到（如完全断网或特殊限制），生成规则兜底 assets
+  if (assets.length === 0) {
+    assets = generateDefaultAssets(releaseInfo.tagName, releaseInfo.version);
+  }
+
+  const matchedAsset = matchAssetForPlatform(assets, currentPlatform);
   const cmp = compareVersions(releaseInfo.version, normCurrent);
   const hasUpdate = cmp > 0;
 
   logger.info('system', 'checkUpdateFinish', '版本检查完成', {
     current: normCurrent,
     latest: releaseInfo.version,
-    hasUpdate
+    hasUpdate,
+    matchedAsset: matchedAsset?.name
   });
 
   return {
@@ -171,6 +380,9 @@ export async function checkForUpdates(
     releaseName: releaseInfo.name,
     releaseUrl: releaseInfo.htmlUrl,
     publishedAt: releaseInfo.publishedAt,
-    releaseNotes: releaseInfo.body
+    releaseNotes: releaseInfo.body,
+    assets,
+    matchedAsset,
+    platform: currentPlatform
   };
 }

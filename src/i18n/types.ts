@@ -330,6 +330,18 @@ export interface TranslationMessages {
     updateCheckFailed: string;
     retryCheck: string;
     viewAllReleases: string;
+    downloadingUpdate: string;
+    downloadComplete: string;
+    readyToInstall: string;
+    installNow: string;
+    openFolder: string;
+    installLater: string;
+    downloadFailed: string;
+    cancelDownload: string;
+    browserDownloadStarted: string;
+    targetAsset: string;
+    manualDownload: string;
+    downloadProgress: string;
   };
   sync: {
     modalTitle: string;

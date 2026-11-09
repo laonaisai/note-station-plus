@@ -12,6 +12,13 @@ export interface ElectronAPI {
     toPdf: (params: { html: string; title: string }) => Promise<{ success: boolean; filePath?: string; canceled?: boolean; error?: string }>;
     direct: (params: { html: string }) => Promise<{ success: boolean; error?: string }>;
   };
+  updater?: {
+    download: (params: { url: string; fileName: string }) => Promise<{ success: boolean; filePath?: string; fileName?: string; error?: string }>;
+    cancelDownload: () => Promise<{ success: boolean; error?: string }>;
+    install: (params: { filePath: string }) => Promise<{ success: boolean; error?: string }>;
+    showItemInFolder: (params: { filePath: string }) => Promise<{ success: boolean; error?: string }>;
+    onDownloadProgress: (callback: (progress: { percent: number; receivedBytes: number; totalBytes: number; speedBytesPerSec: number; isComplete: boolean }) => void) => () => void;
+  };
 }
 
 declare global {
