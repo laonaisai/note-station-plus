@@ -334,6 +334,7 @@ export interface TranslationMessages {
     downloadComplete: string;
     readyToInstall: string;
     installNow: string;
+    installingToast: string;
     openFolder: string;
     installLater: string;
     downloadFailed: string;

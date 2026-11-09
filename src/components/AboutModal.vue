@@ -541,6 +541,7 @@ async function handleInstall() {
   if (!downloadedFilePath.value) return;
   if (typeof window !== 'undefined' && window.electronAPI?.updater?.install) {
     try {
+      showToast(t('about.installingToast'), 'info');
       const res = await window.electronAPI.updater.install({ filePath: downloadedFilePath.value });
       if (!res.success && res.error) {
         showToast(`启动安装失败: ${res.error}`, 'error');

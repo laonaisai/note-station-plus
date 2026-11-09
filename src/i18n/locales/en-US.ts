@@ -321,6 +321,7 @@ export const enUS: TranslationMessages = {
     downloadComplete: 'Download Complete',
     readyToInstall: 'The update package has been downloaded. Install now?',
     installNow: 'Install Now',
+    installingToast: 'Launching installer, application will close shortly to complete update...',
     openFolder: 'Open Folder',
     installLater: 'Later',
     downloadFailed: 'Download failed. Please click to download manually',

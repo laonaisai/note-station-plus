@@ -226,6 +226,7 @@ ipcMain.handle('print:direct', async (_event, { html }: { html: string }) => {
 
 // IPC handlers for in-app application updates and installation
 let currentDownloadAbortController: AbortController | null = null;
+let isQuitting = false;
 
 ipcMain.handle('updater:download', async (event, { url, fileName }: { url: string; fileName: string }) => {
   if (!url) return { success: false, error: '下载地址不能为空' };
@@ -342,16 +343,87 @@ ipcMain.handle('updater:install', async (_event, { filePath }: { filePath: strin
     return { success: false, error: '安装包文件不存在: ' + filePath };
   }
   try {
-    if (process.platform === 'linux' && filePath.toLowerCase().endsWith('.appimage')) {
-      try {
-        fs.chmodSync(filePath, 0o755);
-      } catch {}
+    const ext = path.extname(filePath).toLowerCase();
+    const { spawn } = await import('child_process');
+
+    if (process.platform === 'win32') {
+      // Windows: .exe (NSIS Setup 安装程序或便携版)
+      // 使用 detached 独立进程组启动，避免安装包成为 Electron 子进程被误杀
+      let hasError = false;
+      const child = spawn(filePath, [], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.on('error', (err) => {
+        hasError = true;
+        console.error('[updater] 启动 Windows 安装程序失败:', err);
+      });
+      child.unref();
+
+      // 延时 1 秒优雅退出当前应用，释放文件句柄锁，以便安装包顺畅覆盖并更新
+      setTimeout(() => {
+        if (!hasError) {
+          isQuitting = true;
+          app.exit(0);
+        }
+      }, 1000);
+
+      return { success: true };
+    } else if (process.platform === 'linux') {
+      if (ext === '.appimage') {
+        // Linux AppImage:
+        // 1. 确保可执行权限 (chmod +x)
+        try {
+          fs.chmodSync(filePath, 0o755);
+        } catch (e) {
+          console.warn('[updater] chmod AppImage 失败:', e);
+        }
+
+        // 2. 注入 APPIMAGE_EXTRACT_AND_RUN=1，确保在未安装 libfuse2 的现代 Linux 系统（如 Ubuntu 22.04+）上无需 FUSE 即可正常启动
+        let hasError = false;
+        const env = { ...process.env, APPIMAGE_EXTRACT_AND_RUN: '1' };
+        const child = spawn(filePath, [], {
+          detached: true,
+          stdio: 'ignore',
+          env
+        });
+        child.on('error', (err) => {
+          hasError = true;
+          console.error('[updater] 启动 Linux AppImage 失败:', err);
+        });
+        child.unref();
+
+        // 3. 延时 1 秒退出当前应用，让出 singleInstanceLock，保证新 AppImage 顺利拉起
+        setTimeout(() => {
+          if (!hasError) {
+            isQuitting = true;
+            app.exit(0);
+          }
+        }, 1000);
+
+        return { success: true };
+      } else if (ext === '.deb') {
+        // Debian/Ubuntu deb 安装包：在文件管理器中定位并尝试调用系统安装器
+        shell.showItemInFolder(filePath);
+        try {
+          await shell.openPath(filePath);
+        } catch {}
+        return { success: true };
+      } else {
+        const openRes = await shell.openPath(filePath);
+        if (openRes) {
+          return { success: false, error: openRes };
+        }
+        return { success: true };
+      }
+    } else {
+      // macOS / 其他平台
+      const openRes = await shell.openPath(filePath);
+      if (openRes) {
+        return { success: false, error: openRes };
+      }
+      return { success: true };
     }
-    const openRes = await shell.openPath(filePath);
-    if (openRes) {
-      return { success: false, error: openRes };
-    }
-    return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || String(err) };
   }
@@ -366,7 +438,6 @@ ipcMain.handle('updater:showItemInFolder', (_event, { filePath }: { filePath: st
 });
 
 let mainWindow: BrowserWindow | null = null;
-let isQuitting = false;
 
 app.on('before-quit', () => {
   isQuitting = true;

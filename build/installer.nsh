@@ -23,14 +23,13 @@
     # 2 = 安装包版本 < 已安装版本 (降级)
     ${VersionCompare} "${VERSION}" "$R0" $R1
 
-    ${if} $R1 == 0
-    ${orIf} $R1 == 2
-      # 安装包版本号小于等于当前已安装版本时，提示并退出安装
-      MessageBox MB_ICONSTOP|MB_OK "安装包版本已安装或旧于已安装版本。$\r$\n$\r$\n当前安装包版本: ${VERSION}$\r$\n已安装程序版本: $R0$\r$\n$\r$\n安装程序即将退出。"
+    ${if} $R1 == 2
+      # 安装包版本号小于当前已安装版本时，提示并退出安装
+      MessageBox MB_ICONSTOP|MB_OK "当前机器已安装更高版本 ($R0)。$\r$\n$\r$\n安装包版本 (${VERSION}) 无法降级安装。$\r$\n安装程序即将退出。"
       Quit
     ${else}
-      # 安装包版本比已安装版本新：先关闭已运行程序
-      nsExec::Exec 'taskkill /F /IM "${APP_EXECUTABLE_FILENAME}" /T'
+      # 新版本升级或同版本覆盖：先关闭已运行程序 (严禁加 /T，避免杀掉安装包自身进程树)
+      nsExec::Exec 'taskkill /F /IM "${APP_EXECUTABLE_FILENAME}"'
       Sleep 800
     ${endif}
   ${endif}
@@ -38,7 +37,7 @@
 
 # 在安装执行阶段确保已运行程序被自动关闭，以便静默卸载旧版本并安装新版本
 !macro customCheckAppRunning
-  nsExec::Exec 'taskkill /F /IM "${APP_EXECUTABLE_FILENAME}" /T'
+  nsExec::Exec 'taskkill /F /IM "${APP_EXECUTABLE_FILENAME}"'
   Sleep 500
 !macroend
 

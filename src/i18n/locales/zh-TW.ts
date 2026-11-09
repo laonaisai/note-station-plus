@@ -321,6 +321,7 @@ export const zhTW: TranslationMessages = {
     downloadComplete: '新版本下載完成',
     readyToInstall: '安裝包已下載完成，是否立即安裝？',
     installNow: '立即安裝',
+    installingToast: '正在啟動安裝程式，應用程式即將關閉完成更新...',
     openFolder: '開啟目錄',
     installLater: '稍後安裝',
     downloadFailed: '下載失敗，請點選手動下載',

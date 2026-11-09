@@ -321,6 +321,7 @@ export const jaJP: TranslationMessages = {
     downloadComplete: 'ダウンロード完了',
     readyToInstall: '新しいバージョンのダウンロードが完了しました。今すぐインストールしますか？',
     installNow: '今すぐインストール',
+    installingToast: 'インストーラーを起動しています。更新完了のためアプリはまもなく終了します...',
     openFolder: 'フォルダーを開く',
     installLater: '後で',
     downloadFailed: 'ダウンロードに失敗しました。手動でダウンロードしてください',

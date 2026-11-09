@@ -321,6 +321,7 @@ export const zhCN: TranslationMessages = {
     downloadComplete: '新版本下载完成',
     readyToInstall: '安装包已下载完成，是否立即安装？',
     installNow: '立即安装',
+    installingToast: '正在启动安装程序，应用即将关闭完成更新...',
     openFolder: '打开目录',
     installLater: '稍后安装',
     downloadFailed: '下载失败，请点击手动下载',
