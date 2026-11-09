@@ -23,18 +23,19 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true
 });
 
-describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
+describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP, ko-KR', () => {
   beforeEach(() => {
     localStorage.clear();
     setLocale('zh-CN');
   });
 
-  it('1. 包含完整的 4 种语言支持列表', () => {
+  it('1. 包含完整的 5 种语言支持列表', () => {
     const codes = SUPPORTED_LOCALES.map(l => l.code);
     expect(codes).toContain('zh-CN');
     expect(codes).toContain('zh-TW');
     expect(codes).toContain('en-US');
     expect(codes).toContain('ja-JP');
+    expect(codes).toContain('ko-KR');
   });
 
   it('2. 简体中文翻译正确输出并支持变量插值', () => {
@@ -84,7 +85,20 @@ describe('i18n: Localization across zh-CN, en-US, zh-TW, ja-JP', () => {
     expect(t('logs.modalTitle')).toBe('アプリケーション実行ログ');
   });
 
-  it('6. 缺失键应安全优雅回退至简体中文，避免界面白屏或空白', () => {
+  it('6. 韩语翻译正确切换并支持变量插值', () => {
+    setLocale('ko-KR');
+    expect(currentLocale.value).toBe('ko-KR');
+    expect(t('common.save')).toBe('저장');
+    expect(t('sidebar.allNotes')).toBe('모든 노트');
+    expect(t('sidebar.favorites')).toBe('즐겨찾기');
+    expect(t('about.appName')).toBe('앱 이름');
+    expect(t('editor.syncToOtherServer')).toBe('다른 NAS로 동기화');
+    expect(t('editor.syncWithServer')).toBe('현재 NAS 동기화');
+    expect(t('logs.modalTitle')).toBe('애플리케이션 실행 로그');
+    expect(t('editor.saveFailed', { err: '네트워크 시간 초과' })).toBe('노트 저장 실패: 네트워크 시간 초과');
+  });
+
+  it('7. 缺失键应安全优雅回退至简体中文，避免界面白屏或空白', () => {
     setLocale('en-US');
     const res = t('common.save');
     expect(res).toBeTruthy();

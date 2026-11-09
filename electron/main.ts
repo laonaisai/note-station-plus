@@ -58,7 +58,7 @@ ipcMain.handle('shell:openExternal', async (_event, url: string) => {
 });
 
 // Localized strings for main process dialogs and menus
-type AppLocale = 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP';
+type AppLocale = 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP' | 'ko-KR';
 
 const quitDialogMessages: Record<AppLocale, { title: string; message: string; detail: string; confirm: string; cancel: string }> = {
   'zh-CN': {
@@ -88,6 +88,13 @@ const quitDialogMessages: Record<AppLocale, { title: string; message: string; de
     detail: '終了する前にノートの編集が保存されていることを確認してください。',
     confirm: '終了する',
     cancel: 'キャンセル'
+  },
+  'ko-KR': {
+    title: '앱 종료 확인',
+    message: 'Note Station Plus를 종료하시겠습니까?',
+    detail: '종료하기 전에 현재 노트 편집이 저장되었는지 확인해 주세요.',
+    confirm: '종료',
+    cancel: '취소'
   }
 };
 
@@ -102,7 +109,8 @@ const contextMenuMessages: Record<AppLocale, {
   'zh-CN': { copy: '复制', cut: '剪切', paste: '粘贴', selectAll: '全选', undo: '撤销', redo: '重做' },
   'zh-TW': { copy: '複製', cut: '剪下', paste: '貼上', selectAll: '全選', undo: '復原', redo: '重做' },
   'en-US': { copy: 'Copy', cut: 'Cut', paste: 'Paste', selectAll: 'Select All', undo: 'Undo', redo: 'Redo' },
-  'ja-JP': { copy: 'コピー', cut: '切り取り', paste: '貼り付け', selectAll: 'すべて選択', undo: '元に戻す', redo: 'やり直し' }
+  'ja-JP': { copy: 'コピー', cut: '切り取り', paste: '貼り付け', selectAll: 'すべて選択', undo: '元に戻す', redo: 'やり直し' },
+  'ko-KR': { copy: '복사', cut: '잘라내기', paste: '붙여넣기', selectAll: '모두 선택', undo: '실행 취소', redo: '다시 실행' }
 };
 
 function normalizeLocale(rawLocale?: string): AppLocale {
@@ -116,6 +124,9 @@ function normalizeLocale(rawLocale?: string): AppLocale {
   }
   if (lower.startsWith('ja')) {
     return 'ja-JP';
+  }
+  if (lower.startsWith('ko')) {
+    return 'ko-KR';
   }
   if (lower.startsWith('en')) {
     return 'en-US';

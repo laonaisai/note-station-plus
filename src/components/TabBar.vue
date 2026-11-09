@@ -345,7 +345,8 @@ const currentLangShortName = computed(() => {
     'zh-CN': '简',
     'zh-TW': '繁',
     'en-US': 'EN',
-    'ja-JP': '日'
+    'ja-JP': '日',
+    'ko-KR': '한'
   };
   return map[currentLocale.value] || '简';
 });

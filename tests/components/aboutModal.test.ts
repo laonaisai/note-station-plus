@@ -26,6 +26,7 @@ describe('关于 Note Station Plus (About Modal) 模块测试', () => {
     const { enUS } = await import('../../src/i18n/locales/en-US');
     const { zhTW } = await import('../../src/i18n/locales/zh-TW');
     const { jaJP } = await import('../../src/i18n/locales/ja-JP');
+    const { koKR } = await import('../../src/i18n/locales/ko-KR');
 
     const requiredKeys = [
       'checkUpdates',
@@ -55,6 +56,7 @@ describe('关于 Note Station Plus (About Modal) 模块测试', () => {
       expect(enUS.about[key], `en-US missing ${key}`).toBeDefined();
       expect(zhTW.about[key], `zh-TW missing ${key}`).toBeDefined();
       expect(jaJP.about[key], `ja-JP missing ${key}`).toBeDefined();
+      expect(koKR.about[key], `ko-KR missing ${key}`).toBeDefined();
     }
   });
 });

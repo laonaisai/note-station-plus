@@ -1,4 +1,4 @@
-export type SupportedLocale = 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP';
+export type SupportedLocale = 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP' | 'ko-KR';
 
 export interface LocaleOption {
   code: SupportedLocale;
@@ -10,7 +10,8 @@ export const SUPPORTED_LOCALES: LocaleOption[] = [
   { code: 'zh-CN', name: '简体中文' },
   { code: 'zh-TW', name: '繁體中文' },
   { code: 'en-US', name: 'English' },
-  { code: 'ja-JP', name: '日本語' }
+  { code: 'ja-JP', name: '日本語' },
+  { code: 'ko-KR', name: '한국어' }
 ];
 
 export interface TranslationMessages {

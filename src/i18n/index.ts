@@ -4,6 +4,7 @@ import { zhCN } from './locales/zh-CN';
 import { zhTW } from './locales/zh-TW';
 import { enUS } from './locales/en-US';
 import { jaJP } from './locales/ja-JP';
+import { koKR } from './locales/ko-KR';
 
 export * from './types';
 
@@ -13,7 +14,8 @@ const messagesMap: Record<SupportedLocale, TranslationMessages> = {
   'zh-CN': zhCN,
   'zh-TW': zhTW,
   'en-US': enUS,
-  'ja-JP': jaJP
+  'ja-JP': jaJP,
+  'ko-KR': koKR
 };
 
 function getSavedLocale(): SupportedLocale {
@@ -35,6 +37,9 @@ function getSavedLocale(): SupportedLocale {
     }
     if (lang.startsWith('ja')) {
       return 'ja-JP';
+    }
+    if (lang.startsWith('ko')) {
+      return 'ko-KR';
     }
     if (lang.startsWith('en')) {
       return 'en-US';

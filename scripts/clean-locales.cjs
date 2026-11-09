@@ -3,10 +3,10 @@ const path = require('path');
 
 /**
  * electron-builder afterPack hook
- * Ensures only supported locales (zh-CN, zh-TW, ja, en-US) are packaged into the application.
+ * Ensures only supported locales (zh-CN, zh-TW, ja, en-US, ko) are packaged into the application.
  */
 exports.default = async function(context) {
-  const allowed = new Set(['zh-CN.pak', 'zh-TW.pak', 'ja.pak', 'en-US.pak']);
+  const allowed = new Set(['zh-CN.pak', 'zh-TW.pak', 'ja.pak', 'en-US.pak', 'ko.pak']);
   
   // Potential locales directories depending on platform (Linux/Windows: <appOutDir>/locales)
   const candidateDirs = [
