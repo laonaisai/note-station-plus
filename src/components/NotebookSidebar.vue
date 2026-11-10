@@ -566,96 +566,110 @@
             @click="noteStore.selectNote(note.object_id)"
             @contextmenu.prevent="openNoteContextMenu($event, note)"
             :class="[
-              'group relative p-2 med:p-3 rounded-lg cursor-pointer transition-all duration-150 border',
+              'group relative p-2 med:p-2.5 rounded-lg cursor-pointer transition-all duration-150 border flex items-center gap-2.5',
               noteStore.activeNoteId === note.object_id
                 ? 'bg-blue-50/90 dark:bg-blue-950/50 border-l-[3.5px] border-l-syno-blue border-t-blue-200/80 border-r-blue-200/80 border-b-blue-200/80 dark:border-sky-500/50 shadow-xs'
                 : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50/90 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs'
             ]"
           >
-            <div class="flex items-start justify-between">
-              <h4
-                class="text-xs med:text-sm font-medium tracking-tight truncate flex-1 pr-1 flex items-center gap-1.5 min-w-0"
-                :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300 font-semibold' : 'text-slate-900 dark:text-slate-100'"
-              >
-                <!-- Loading Spinner (便签内容加载中) -->
-                <svg
-                  v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
-                  class="animate-spin w-3.5 h-3.5 shrink-0"
-                  :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
-
-                <!-- Favorite Icon (已收藏星标) -->
-                <svg
-                  v-if="noteStore.isFavorite(note.object_id)"
-                  class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  :title="t('sidebar.addToFavorites')"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-
-                <!-- Share Icon (已共享图标) -->
-                <svg
-                  v-if="isNoteShared(note)"
-                  class="w-3.5 h-3.5 shrink-0"
-                  :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300' : 'text-syno-blue'"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  :title="t('editor.sharedBadge')"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-
-                <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
-              </h4>
-
-              <!-- Note Menu Button (三点菜单按钮) -->
-              <button
-                @click.stop="openNoteMenuFromButton($event, note)"
-                class="opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded transition cursor-pointer shrink-0"
-                :class="[
-                  noteStore.activeNoteId === note.object_id
-                    ? 'text-slate-500 hover:text-syno-blue hover:bg-blue-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200 dark:hover:text-slate-200 dark:hover:bg-slate-700',
-                  noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
-                    ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-blue-100 text-syno-blue dark:bg-slate-700 dark:text-white' : '!opacity-100 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200')
-                    : ''
-                ]"
-                :title="t('common.actions')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Tags List on Note Item Card -->
-            <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1">
+            <!-- 左列：日期的 day (24px) 与下方的现在显示时间 -->
+            <div
+              class="shrink-0 flex flex-col items-center justify-center w-[52px] text-center select-none py-0.5 pr-2.5 border-r"
+              :class="noteStore.activeNoteId === note.object_id ? 'border-blue-200/80 dark:border-sky-800/60' : 'border-slate-200/60 dark:border-slate-700/60'"
+            >
               <span
-                v-for="tg in note.tag"
-                :key="tg"
-                class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
-                :class="noteStore.activeNoteId === note.object_id ? 'bg-blue-100/90 text-syno-blue border border-blue-200/90 dark:bg-blue-900/40 dark:text-sky-300 dark:border-blue-800/50' : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600/60'"
-                :title="tg"
+                class="text-[24px] font-bold leading-none font-mono tracking-tight"
+                :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300' : 'text-slate-800 dark:text-slate-200'"
               >
-                <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'">#</span>
-                <span class="truncate">{{ tg }}</span>
+                {{ formatDay(note.mtime || note.ctime) }}
+              </span>
+              <span
+                class="text-[10px] font-mono leading-tight mt-1 truncate max-w-full"
+                :class="noteStore.activeNoteId === note.object_id ? 'text-blue-600/90 dark:text-sky-400/90' : 'text-slate-400 dark:text-slate-500'"
+              >
+                {{ formatTime(note.mtime || note.ctime) }}
               </span>
             </div>
 
-            <!-- Time & Meta -->
-            <div class="flex items-center justify-between mt-1 text-[10px] med:text-xs text-slate-500 dark:text-slate-400 font-normal">
-              <span>{{ formatTime(note.mtime || note.ctime) }}</span>
-              <span v-if="note.tag && note.tag.length > 0">
-                {{ note.tag.length }} {{ t('sidebar.tags') }}
-              </span>
+            <!-- 右列：当前便签项内容及标签 -->
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+              <div class="flex items-start justify-between gap-1">
+                <h4
+                  class="text-xs med:text-sm font-medium tracking-tight truncate flex-1 min-w-0 flex items-center gap-1.5"
+                  :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300 font-semibold' : 'text-slate-900 dark:text-slate-100'"
+                >
+                  <!-- Loading Spinner (便签内容加载中) -->
+                  <svg
+                    v-if="noteStore.isLoadingNote && noteStore.activeNoteId === note.object_id"
+                    class="animate-spin w-3.5 h-3.5 shrink-0"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-sky-300' : 'text-syno-blue'"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+
+                  <!-- Favorite Icon (已收藏星标) -->
+                  <svg
+                    v-if="noteStore.isFavorite(note.object_id)"
+                    class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    :title="t('sidebar.addToFavorites')"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+
+                  <!-- Share Icon (已共享图标) -->
+                  <svg
+                    v-if="isNoteShared(note)"
+                    class="w-3.5 h-3.5 shrink-0"
+                    :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-300' : 'text-syno-blue'"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    :title="t('editor.sharedBadge')"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+
+                  <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
+                </h4>
+
+                <!-- Note Menu Button (常显示) -->
+                <button
+                  @click.stop="openNoteMenuFromButton($event, note)"
+                  class="p-1 -mr-1 -mt-0.5 rounded transition cursor-pointer shrink-0 opacity-70 hover:opacity-100"
+                  :class="[
+                    noteStore.activeNoteId === note.object_id
+                      ? 'text-slate-500 hover:text-syno-blue hover:bg-blue-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700'
+                      : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200 dark:hover:text-slate-200 dark:hover:bg-slate-700',
+                    noteContextMenu.isOpen && noteContextMenu.targetNote?.object_id === note.object_id
+                      ? (noteStore.activeNoteId === note.object_id ? '!opacity-100 bg-blue-100 text-syno-blue dark:bg-slate-700 dark:text-white' : '!opacity-100 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200')
+                      : ''
+                  ]"
+                  :title="t('common.actions')"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Tags List on Note Item Card -->
+              <div v-if="note.tag && note.tag.length > 0" class="flex items-center flex-wrap gap-1 mt-1.5">
+                <span
+                  v-for="tg in note.tag"
+                  :key="tg"
+                  class="inline-flex items-center px-1.5 med:px-2 py-0.2 med:py-0.5 rounded text-[10px] med:text-xs font-medium leading-none max-w-[100px] med:max-w-[140px] truncate"
+                  :class="noteStore.activeNoteId === note.object_id ? 'bg-blue-100/90 text-syno-blue border border-blue-200/90 dark:bg-blue-900/40 dark:text-sky-300 dark:border-blue-800/50' : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600/60'"
+                  :title="tg"
+                >
+                  <span class="mr-0.5" :class="noteStore.activeNoteId === note.object_id ? 'text-syno-blue dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'">#</span>
+                  <span class="truncate">{{ tg }}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1465,6 +1479,13 @@ const groupedNotes = computed<NoteMonthGroup[]>(() => {
     notes: data.notes
   }));
 });
+
+function formatDay(timestamp?: number): string {
+  if (!timestamp) return '';
+  const ms = timestamp > 10000000000 ? timestamp : timestamp * 1000;
+  const date = new Date(ms);
+  return String(date.getDate()).padStart(2, '0');
+}
 
 function formatTime(timestamp?: number): string {
   if (!timestamp) return '';

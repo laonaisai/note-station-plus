@@ -97,4 +97,55 @@ describe('NotebookSidebar: Vertical Tab Rail 算法与逻辑单元测试', () =>
       expect(store.activeNotebookId).toBe('nb-123');
     });
   });
+
+  describe('便签项两列布局格式化辅助算法 (formatDay / formatTime)', () => {
+    function formatDay(timestamp?: number): string {
+      if (!timestamp) return '';
+      const ms = timestamp > 10000000000 ? timestamp : timestamp * 1000;
+      const date = new Date(ms);
+      return String(date.getDate()).padStart(2, '0');
+    }
+
+    function formatTime(timestamp?: number, mockNow?: Date): string {
+      if (!timestamp) return '';
+      const ms = timestamp > 10000000000 ? timestamp : timestamp * 1000;
+      const date = new Date(ms);
+      const now = mockNow || new Date();
+      if (date.toDateString() === now.toDateString()) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      return date.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
+    }
+
+    it('formatDay 正确返回两位数字的 day', () => {
+      // 2026-11-05
+      const ts1 = new Date(2026, 10, 5, 14, 30).getTime() / 1000;
+      expect(formatDay(ts1)).toBe('05');
+
+      // 2026-11-28
+      const ts2 = new Date(2026, 10, 28, 9, 15).getTime() / 1000;
+      expect(formatDay(ts2)).toBe('28');
+
+      // 毫秒级时间戳兼容
+      const ts3 = new Date(2026, 0, 1, 0, 0).getTime();
+      expect(formatDay(ts3)).toBe('01');
+
+      // 空值或无效时间戳兜底
+      expect(formatDay(undefined)).toBe('');
+      expect(formatDay(0)).toBe('');
+    });
+
+    it('formatTime 在当天返回时间，在非当天返回月/日', () => {
+      const today = new Date(2026, 10, 10, 12, 0);
+      const sameDayTs = new Date(2026, 10, 10, 15, 45).getTime() / 1000;
+      const otherDayTs = new Date(2026, 10, 8, 10, 20).getTime() / 1000;
+
+      const sameDayResult = formatTime(sameDayTs, today);
+      expect(sameDayResult).toContain(':');
+
+      const otherDayResult = formatTime(otherDayTs, today);
+      expect(otherDayResult.length).toBeGreaterThan(0);
+      expect(formatTime(undefined)).toBe('');
+    });
+  });
 });
