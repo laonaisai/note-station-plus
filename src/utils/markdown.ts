@@ -21,6 +21,165 @@ turndown.escape = function (string: string) {
   return string;
 };
 
+// --- GitHub Flavored Markdown (GFM) extensions for Turndown ---
+
+function cleanTableCellContent(content: string): string {
+  if (!content) return '';
+  return content
+    .replace(/&nbsp;|\u00a0/g, ' ')
+    .replace(/\s*<br\s*\/?>\s*/gi, '<br>')
+    .replace(/\s*\r?\n+\s*/g, '<br>')
+    .replace(/(?:<br>\s*)+/g, '<br>')
+    .replace(/^<br>|<br>$/g, '')
+    .replace(/(?<!\\)\|/g, '\\|')
+    .trim();
+}
+
+function getDirectTableRows(table: any): any[] {
+  const rows: any[] = [];
+  function collect(node: any) {
+    if (!node || !node.childNodes) return;
+    for (let i = 0; i < node.childNodes.length; i++) {
+      const child = node.childNodes[i];
+      if (child.nodeName === 'TR') {
+        rows.push(child);
+      } else if (child.nodeName !== 'TABLE') {
+        collect(child);
+      }
+    }
+  }
+  collect(table);
+  return rows;
+}
+
+function getRowCells(tr: any): any[] {
+  const cells: any[] = [];
+  if (!tr || !tr.childNodes) return cells;
+  for (let i = 0; i < tr.childNodes.length; i++) {
+    const child = tr.childNodes[i];
+    if (child.nodeName === 'TH' || child.nodeName === 'TD') {
+      cells.push(child);
+    }
+  }
+  return cells;
+}
+
+function getRowEffectiveColCount(tr: any): number {
+  const cells = getRowCells(tr);
+  let count = 0;
+  for (const c of cells) {
+    const cs = parseInt(c.getAttribute?.('colspan') || '1', 10);
+    count += cs > 1 ? cs : 1;
+  }
+  return count;
+}
+
+function findParentTable(node: any): any {
+  let parent = node.parentNode;
+  while (parent && parent.nodeName !== 'TABLE') {
+    parent = parent.parentNode;
+  }
+  return parent;
+}
+
+// 1. Table Cells (th, td)
+turndown.addRule('tableCell', {
+  filter: ['th', 'td'],
+  replacement: function (content, node: any) {
+    const parent = node.parentNode;
+    const cells = getRowCells(parent);
+    const index = cells.indexOf(node);
+    const cleaned = cleanTableCellContent(content);
+    const colspan = parseInt(node.getAttribute?.('colspan') || '1', 10);
+    let extraPipes = '';
+    if (colspan > 1) {
+      extraPipes = ' |'.repeat(colspan - 1);
+    }
+    return (index === 0 ? '| ' : '') + cleaned + ' |' + extraPipes + ' ';
+  }
+});
+
+// 2. Table Rows (tr)
+turndown.addRule('tableRow', {
+  filter: 'tr',
+  replacement: function (content, node: any) {
+    const parentTable = findParentTable(node);
+    const allRows = parentTable ? getDirectTableRows(parentTable) : [];
+    const rowIndex = allRows.indexOf(node);
+    const isHeader = (node.parentNode && node.parentNode.nodeName === 'THEAD') || rowIndex === 0;
+    const effCount = getRowEffectiveColCount(node);
+
+    let maxCols = effCount;
+    if (parentTable) {
+      for (const r of allRows) {
+        const rc = getRowEffectiveColCount(r);
+        if (rc > maxCols) maxCols = rc;
+      }
+    }
+
+    let trimmedContent = content.trim();
+    if (effCount < maxCols) {
+      trimmedContent += ' |'.repeat(maxCols - effCount);
+    }
+
+    let borderRow = '';
+    if (isHeader && maxCols > 0) {
+      const borders: string[] = [];
+      const cells = getRowCells(node);
+      for (let i = 0; i < maxCols; i++) {
+        const cell = cells[i];
+        let align = '---';
+        if (cell) {
+          const alignAttr = (cell.getAttribute?.('align') || (cell.style && cell.style.textAlign) || '').toLowerCase();
+          if (alignAttr === 'center') align = ':---:';
+          else if (alignAttr === 'right') align = '---:';
+          else if (alignAttr === 'left') align = ':---';
+        }
+        borders.push(align);
+      }
+      borderRow = '\n| ' + borders.join(' | ') + ' |';
+    }
+
+    return '\n' + trimmedContent + borderRow;
+  }
+});
+
+// 3. Table Sections (thead, tbody, tfoot)
+turndown.addRule('tableSection', {
+  filter: ['thead', 'tbody', 'tfoot'],
+  replacement: function (content) {
+    return content;
+  }
+});
+
+// 4. Tables
+turndown.addRule('table', {
+  filter: 'table',
+  replacement: function (content) {
+    const trimmed = content.trim();
+    if (!trimmed) return '';
+    return '\n\n' + trimmed + '\n\n';
+  }
+});
+
+// 5. Strikethrough (del, s, strike)
+turndown.addRule('strikethrough', {
+  filter: ['del', 's', 'strike' as any],
+  replacement: function (content) {
+    return '~~' + content + '~~';
+  }
+});
+
+// 6. Task List Checkboxes
+turndown.addRule('taskListItems', {
+  filter: function (node: any) {
+    return node.type === 'checkbox' && node.parentNode && node.parentNode.nodeName === 'LI';
+  },
+  replacement: function (content, node: any) {
+    return (node.checked ? '[x]' : '[ ]') + ' ';
+  }
+});
+
 const MD_COMMENT_PREFIX = '<!-- note-station-plus:markdown';
 const MD_COMMENT_SUFFIX = '\n-->';
 
