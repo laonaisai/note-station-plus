@@ -178,6 +178,10 @@ export interface TranslationMessages {
     restore: string;
     permDelete: string;
     sync: string;
+    syncMenu: string;
+    syncMenuTitle: string;
+    syncWithServerTip: string;
+    syncToOtherServerTip: string;
     syncToOtherServer: string;
     syncWithServer: string;
     syncWithServerSuccess: string;

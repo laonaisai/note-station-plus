@@ -197,35 +197,95 @@
               {{ t('common.save') }}
             </button>
 
-            <!-- Sync with server button (同步当前NAS: 获取最新便签版本，保存新版到服务) -->
-            <button
-              @click="handleSyncWithServer"
-              :disabled="isSyncingWithServer || noteStore.isLoading || noteStore.isSyncingWithServer"
-              class="px-2 med:px-2.5 py-1 med:py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md font-medium transition flex items-center cursor-pointer disabled:opacity-50 text-xs med:text-sm"
-              :title="t('editor.syncWithServer')"
-            >
-              <svg :class="['w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400', (isSyncingWithServer || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {{ t('editor.syncWithServer') }}
-            </button>
+            <!-- Sync Actions Dropdown (整合同步当前NAS与同步到其他NAS为下拉菜单) -->
+            <div class="relative inline-flex items-center">
+              <button
+                @click.stop="toggleSyncMenu"
+                :class="[
+                  'px-2 med:px-2.5 py-1 med:py-1.5 rounded-md font-medium transition flex items-center border cursor-pointer text-xs med:text-sm',
+                  isSyncMenuOpen
+                    ? 'bg-blue-100 dark:bg-blue-950/60 text-syno-blue dark:text-sky-300 border-blue-300 dark:border-blue-700'
+                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
+                ]"
+                :title="t('editor.syncMenuTitle')"
+              >
+                <!-- Sync Icon: spins if currently syncing -->
+                <svg
+                  :class="[
+                    'w-3.5 h-3.5 med:w-4 med:h-4 mr-1',
+                    (isSyncingWithServer || noteStore.isSyncingWithServer)
+                      ? 'animate-spin text-syno-blue'
+                      : (isSyncMenuOpen ? 'text-syno-blue dark:text-sky-300' : 'text-slate-500 dark:text-slate-400')
+                  ]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{{ t('editor.syncMenu') }}</span>
+                <svg
+                  class="w-3 h-3 med:w-3.5 med:h-3.5 ml-1 transition-transform duration-150"
+                  :class="[
+                    isSyncMenuOpen ? 'rotate-180 text-syno-blue dark:text-sky-300' : 'text-slate-400 dark:text-slate-500'
+                  ]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            <!-- Sync to other servers button (同步到其他NAS) -->
-            <button
-              @click="handleOpenSync"
-              class="px-2.5 med:px-3 py-1 med:py-1.5 bg-syno-blue hover:bg-blue-600 text-white rounded-md font-medium shadow-2xs transition flex items-center cursor-pointer text-xs med:text-sm"
-              :title="t('editor.syncToOtherServer')"
-            >
-              <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              {{ t('editor.syncToOtherServer') }}
-            </button>
+              <!-- Sync Dropdown Menu -->
+              <div
+                v-if="isSyncMenuOpen"
+                @click.stop
+                class="absolute right-0 top-full mt-1.5 w-52 med:w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 med:py-2 z-40 text-xs med:text-sm animate-in fade-in duration-150"
+              >
+                <!-- 同步当前NAS -->
+                <button
+                  @click="handleSyncFromDropdown"
+                  :disabled="isSyncingWithServer || noteStore.isLoading || noteStore.isSyncingWithServer"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    :class="[
+                      'w-3.5 h-3.5 med:w-4 med:h-4 shrink-0',
+                      (isSyncingWithServer || noteStore.isSyncingWithServer) ? 'animate-spin text-syno-blue' : 'text-slate-400 dark:text-slate-500'
+                    ]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <div class="flex flex-col min-w-0">
+                    <span class="font-medium truncate">{{ t('editor.syncWithServer') }}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ t('editor.syncWithServerTip') }}</span>
+                  </div>
+                </button>
+
+                <!-- 同步到其他NAS -->
+                <button
+                  @click="handleOpenSyncFromDropdown"
+                  class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-syno-blue dark:hover:text-sky-400 flex items-center space-x-2.5 transition cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <div class="flex flex-col min-w-0">
+                    <span class="font-medium truncate">{{ t('editor.syncToOtherServer') }}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ t('editor.syncToOtherServerTip') }}</span>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
             <div class="relative inline-flex items-center">
               <button
-                @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
+                @click.stop="toggleMoreMenu"
                 :class="[
                   'px-2 med:px-2.5 py-1 med:py-1.5 rounded-md font-medium transition flex items-center border cursor-pointer text-xs med:text-sm',
                   isMoreMenuOpen ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
@@ -764,6 +824,7 @@ const md = new MarkdownIt({
 });
 injectLineNumbersPlugin(md);
 
+const isSyncMenuOpen = ref(false);
 const isMoreMenuOpen = ref(false);
 const isInfoModalOpen = ref(false);
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
@@ -921,6 +982,7 @@ watch(
     }
     isAddingTag.value = false;
     newTagText.value = '';
+    isSyncMenuOpen.value = false;
     isMoreMenuOpen.value = false;
   },
   { immediate: true }
@@ -1199,6 +1261,30 @@ async function handleOpenSync() {
   emit('open-sync');
 }
 
+function toggleSyncMenu() {
+  isSyncMenuOpen.value = !isSyncMenuOpen.value;
+  if (isSyncMenuOpen.value) {
+    isMoreMenuOpen.value = false;
+  }
+}
+
+function toggleMoreMenu() {
+  isMoreMenuOpen.value = !isMoreMenuOpen.value;
+  if (isMoreMenuOpen.value) {
+    isSyncMenuOpen.value = false;
+  }
+}
+
+function handleSyncFromDropdown() {
+  isSyncMenuOpen.value = false;
+  handleSyncWithServer();
+}
+
+function handleOpenSyncFromDropdown() {
+  isSyncMenuOpen.value = false;
+  handleOpenSync();
+}
+
 function triggerImport() {
   isMoreMenuOpen.value = false;
   emit('open-import', noteStore.activeNoteId);
@@ -1423,6 +1509,9 @@ function formatFileSize(bytes?: number): string {
 }
 
 function onDocumentClick() {
+  if (isSyncMenuOpen.value) {
+    isSyncMenuOpen.value = false;
+  }
   if (isMoreMenuOpen.value) {
     isMoreMenuOpen.value = false;
   }

@@ -552,9 +552,9 @@
           class="space-y-1"
         >
           <!-- 吸顶年月分组头部 -->
-          <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1 med:py-1.5 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
-            <span class="text-[11px] med:text-xs font-medium text-slate-800 dark:text-slate-200 tracking-tight">{{ group.label }}</span>
-            <span class="text-[10px] med:text-xs font-medium px-1.5 med:px-2 py-0.2 med:py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
+          <div class="sticky top-0 z-10 px-2 med:px-2.5 py-1.5 med:py-2 bg-gradient-to-r from-blue-50/95 via-sky-50/90 to-slate-100/90 dark:from-slate-800/95 dark:via-slate-800/90 dark:to-slate-900/90 backdrop-blur-md rounded flex items-center justify-between border-l-[3.5px] border-l-syno-blue border border-blue-200/70 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs mb-1">
+            <span class="text-xs med:text-sm font-semibold text-slate-800 dark:text-slate-100 tracking-tight">{{ group.label }}</span>
+            <span class="text-[11px] med:text-xs font-medium px-2 py-0.5 rounded-full bg-syno-blue text-white shadow-2xs shrink-0">
               {{ group.notes.length }} {{ t('sidebar.noteCountSuffix') }}
             </span>
           </div>
@@ -1230,7 +1230,7 @@ import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } 
 import { useNoteStore } from '@/stores/noteStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useLayoutStore } from '@/stores/layoutStore';
-import { t } from '@/i18n';
+import { t, currentLocale } from '@/i18n';
 import { SynoNotebook, SynoNote } from '@/types/synology';
 import { exportNotebookAsZip, exportSingleNoteAsMarkdown } from '@/utils/exportMarkdown';
 import { showToast } from '@/utils/toast';
@@ -1464,7 +1464,7 @@ const groupedNotes = computed<NoteMonthGroup[]>(() => {
       const y = d.getFullYear();
       const m = d.getMonth() + 1;
       key = `${y}-${m.toString().padStart(2, '0')}`;
-      label = `${y}-${m.toString().padStart(2, '0')}`;
+      label = formatMonthGroupLabel(y, m);
     }
 
     if (!groupMap.has(key)) {
@@ -1479,6 +1479,16 @@ const groupedNotes = computed<NoteMonthGroup[]>(() => {
     notes: data.notes
   }));
 });
+
+function formatMonthGroupLabel(year: number, month: number, localeStr: string = currentLocale.value): string {
+  if (localeStr.startsWith('zh')) {
+    const zhMonths = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+    const mStr = zhMonths[month - 1] || `${month}月`;
+    return `${mStr} ${year}`;
+  }
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
+}
 
 function formatDay(timestamp?: number): string {
   if (!timestamp) return '';

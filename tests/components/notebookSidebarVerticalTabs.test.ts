@@ -147,5 +147,26 @@ describe('NotebookSidebar: Vertical Tab Rail 算法与逻辑单元测试', () =>
       expect(otherDayResult.length).toBeGreaterThan(0);
       expect(formatTime(undefined)).toBe('');
     });
+
+    it('formatMonthGroupLabel 在中文环境返回”十一月 2026“，在英文环境返回”November 2026“', () => {
+      function formatMonthGroupLabel(year: number, month: number, localeStr: string): string {
+        if (localeStr.startsWith('zh')) {
+          const zhMonths = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+          const mStr = zhMonths[month - 1] || `${month}月`;
+          return `${mStr} ${year}`;
+        }
+        const date = new Date(year, month - 1, 1);
+        return date.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
+      }
+
+      // 中文环境下
+      expect(formatMonthGroupLabel(2026, 11, 'zh-CN')).toBe('十一月 2026');
+      expect(formatMonthGroupLabel(2026, 1, 'zh-CN')).toBe('一月 2026');
+      expect(formatMonthGroupLabel(2026, 12, 'zh-TW')).toBe('十二月 2026');
+
+      // 英文环境下
+      expect(formatMonthGroupLabel(2026, 11, 'en-US')).toBe('November 2026');
+      expect(formatMonthGroupLabel(2026, 1, 'en-US')).toBe('January 2026');
+    });
   });
 });
