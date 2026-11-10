@@ -331,6 +331,27 @@
             </div>
           </template>
 
+          <!-- Synchronous Scrolling Toggle Button (仅分屏模式显示) -->
+          <button
+            v-if="editorMode === 'split'"
+            @click="toggleSyncScroll"
+            :class="[
+              'px-2 med:px-2.5 py-1 med:py-1.5 rounded-lg border text-xs font-medium transition cursor-pointer flex items-center space-x-1.5 select-none mr-2',
+              isSyncScrollEnabled
+                ? 'bg-blue-50/90 dark:bg-blue-950/50 border-blue-200/90 dark:border-blue-800 text-syno-blue dark:text-sky-300 shadow-2xs'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            ]"
+            :title="isSyncScrollEnabled ? t('editor.syncScrollEnabled') : t('editor.syncScrollDisabled')"
+          >
+            <svg v-if="isSyncScrollEnabled" class="w-3.5 h-3.5 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <svg v-else class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <span class="text-[11px] med:text-xs font-medium">{{ isSyncScrollEnabled ? t('editor.syncScrollOn') : t('editor.syncScrollOff') }}</span>
+          </button>
+
           <!-- Mode Toggle: Split / Edit / Preview -->
           <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 med:p-1 rounded-lg border border-slate-200 dark:border-slate-700">
             <button
@@ -586,6 +607,9 @@
           <textarea
             ref="textareaRef"
             v-model="editMarkdown"
+            @scroll="onEditorScroll"
+            @mouseenter="setActiveScroller('editor')"
+            @touchstart.passive="setActiveScroller('editor')"
             @input="onContentChanged"
             @keydown="handleTextareaKeydown"
             @paste="handlePaste"
@@ -599,7 +623,11 @@
 
         <!-- Markdown Preview Area -->
         <div
+          ref="previewContainerRef"
           v-show="editorMode === 'split' || editorMode === 'preview'"
+          @scroll="onPreviewScroll"
+          @mouseenter="setActiveScroller('preview')"
+          @touchstart.passive="setActiveScroller('preview')"
           :class="[
             'h-full overflow-y-auto p-6 med:p-8 bg-slate-50/50 dark:bg-slate-900/40 select-text relative group',
             editorMode === 'split' ? 'w-1/2' : 'w-full'
@@ -706,6 +734,14 @@ import { printNote } from '@/utils/printNote';
 import { healLegacyImagePlaceholders } from '@/utils/markdown';
 import { openExternalLinkPrompt } from '@/utils/externalLinkModal';
 import { normalizeExternalUrl } from '@/utils/openUrl';
+import {
+  injectLineNumbersPlugin,
+  computeTextareaLineOffsets,
+  getPreviewAnchors,
+  calculatePreviewScrollTop,
+  calculateTextareaScrollTop,
+  type ScrollAnchor
+} from '@/utils/syncScroll';
 import NoteInfoModal from '@/components/NoteInfoModal.vue';
 
 const emit = defineEmits<{
@@ -726,17 +762,126 @@ const md = new MarkdownIt({
   typographer: true,
   breaks: true
 });
+injectLineNumbersPlugin(md);
 
 const isMoreMenuOpen = ref(false);
 const isInfoModalOpen = ref(false);
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
+const isSyncScrollEnabled = ref(
+  localStorage.getItem('note_station_sync_scroll') !== 'false'
+);
 const editTitle = ref('');
 const editMarkdown = ref('');
 const editTags = ref<string[]>([]);
 const isModified = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const previewContainerRef = ref<HTMLElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const attachmentInputRef = ref<HTMLInputElement | null>(null);
+
+// 同步滚动核心缓存与状态
+let cachedTextareaOffsets: number[] = [];
+let cachedPreviewAnchors: ScrollAnchor[] = [];
+let isAnchorsDirty = true;
+let activeScroller: 'editor' | 'preview' | null = null;
+let isSyncingScroll = false;
+let clearActiveScrollerTimer: any = null;
+
+function setActiveScroller(type: 'editor' | 'preview') {
+  activeScroller = type;
+  clearTimeout(clearActiveScrollerTimer);
+  clearActiveScrollerTimer = setTimeout(() => {
+    activeScroller = null;
+  }, 150);
+}
+
+function updateAnchors() {
+  if (!textareaRef.value || !previewContainerRef.value) return;
+  const markdown = editMarkdown.value || '';
+  cachedTextareaOffsets = computeTextareaLineOffsets(markdown, textareaRef.value);
+  cachedPreviewAnchors = getPreviewAnchors(previewContainerRef.value, markdown.split('\n').length);
+  isAnchorsDirty = false;
+}
+
+function onEditorScroll() {
+  if (!isSyncScrollEnabled.value || editorMode.value !== 'split') return;
+  if (isSyncingScroll) return;
+  if (activeScroller === 'preview') return;
+
+  setActiveScroller('editor');
+  syncEditorToPreview();
+}
+
+function syncEditorToPreview() {
+  if (!textareaRef.value || !previewContainerRef.value) return;
+  if (isAnchorsDirty || cachedTextareaOffsets.length === 0 || cachedPreviewAnchors.length === 0) {
+    updateAnchors();
+  }
+
+  const targetTop = calculatePreviewScrollTop(
+    textareaRef.value.scrollTop,
+    textareaRef.value,
+    previewContainerRef.value,
+    cachedTextareaOffsets,
+    cachedPreviewAnchors
+  );
+
+  isSyncingScroll = true;
+  previewContainerRef.value.scrollTop = targetTop;
+  requestAnimationFrame(() => {
+    isSyncingScroll = false;
+  });
+}
+
+function onPreviewScroll() {
+  if (!isSyncScrollEnabled.value || editorMode.value !== 'split') return;
+  if (isSyncingScroll) return;
+  if (activeScroller === 'editor') return;
+
+  setActiveScroller('preview');
+  syncPreviewToEditor();
+}
+
+function syncPreviewToEditor() {
+  if (!textareaRef.value || !previewContainerRef.value) return;
+  if (isAnchorsDirty || cachedTextareaOffsets.length === 0 || cachedPreviewAnchors.length === 0) {
+    updateAnchors();
+  }
+
+  const targetTop = calculateTextareaScrollTop(
+    previewContainerRef.value.scrollTop,
+    textareaRef.value,
+    previewContainerRef.value,
+    cachedTextareaOffsets,
+    cachedPreviewAnchors
+  );
+
+  isSyncingScroll = true;
+  textareaRef.value.scrollTop = targetTop;
+  requestAnimationFrame(() => {
+    isSyncingScroll = false;
+  });
+}
+
+function toggleSyncScroll() {
+  isSyncScrollEnabled.value = !isSyncScrollEnabled.value;
+  try {
+    localStorage.setItem('note_station_sync_scroll', String(isSyncScrollEnabled.value));
+  } catch (_) {}
+  if (isSyncScrollEnabled.value && editorMode.value === 'split') {
+    nextTick(() => {
+      updateAnchors();
+      syncEditorToPreview();
+    });
+  }
+}
+
+function handleWindowResize() {
+  isAnchorsDirty = true;
+  if (editorMode.value === 'split') {
+    updateAnchors();
+  }
+}
 
 // Tag editing state
 const isAddingTag = ref(false);
@@ -763,11 +908,13 @@ watch(
         editMarkdown.value = note.markdownContent || '';
         editTags.value = Array.isArray(note.tag) ? [...note.tag] : [];
         isModified.value = false;
+        isAnchorsDirty = true;
       } else {
         editTitle.value = '';
         editMarkdown.value = '';
         editTags.value = [];
         isModified.value = false;
+        isAnchorsDirty = true;
       }
     } catch (err) {
       console.error('Error handling active note change in editor:', err);
@@ -777,6 +924,20 @@ watch(
     isMoreMenuOpen.value = false;
   },
   { immediate: true }
+);
+
+watch(
+  () => editorMode.value,
+  (mode) => {
+    if (mode === 'split') {
+      nextTick(() => {
+        updateAnchors();
+        if (isSyncScrollEnabled.value) {
+          syncEditorToPreview();
+        }
+      });
+    }
+  }
 );
 
 // Autocomplete suggestions based on known note tags
@@ -889,6 +1050,7 @@ async function confirmPermanentDelete() {
 function onContentChanged() {
   if (isRecycledNote.value) return;
   isModified.value = true;
+  isAnchorsDirty = true;
   clearTimeout(saveTimer);
   // Auto-save debounced after 2.5 seconds of inactivity
   saveTimer = setTimeout(() => {
@@ -1323,11 +1485,22 @@ function handleTextareaKeydown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('keydown', handleGlobalKeydown);
   document.addEventListener('click', onDocumentClick);
+  window.addEventListener('resize', handleWindowResize);
+  if (editorMode.value === 'split') {
+    nextTick(() => {
+      updateAnchors();
+      if (isSyncScrollEnabled.value) {
+        syncEditorToPreview();
+      }
+    });
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleGlobalKeydown);
   document.removeEventListener('click', onDocumentClick);
+  window.removeEventListener('resize', handleWindowResize);
   clearTimeout(saveTimer);
+  clearTimeout(clearActiveScrollerTimer);
 });
 </script>

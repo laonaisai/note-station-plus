@@ -155,6 +155,10 @@ export interface TranslationMessages {
     modeEdit: string;
     modePreview: string;
     modeSplit: string;
+    syncScrollOn: string;
+    syncScrollOff: string;
+    syncScrollEnabled: string;
+    syncScrollDisabled: string;
     offlineMode: string;
     connectedMode: string;
     uploadImage: string;

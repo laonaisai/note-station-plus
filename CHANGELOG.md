@@ -6,6 +6,17 @@
 
 ---
 
+## [Unreleased]
+
+### 🚀 新功能与改进 (Features & Improvements)
+- **Markdown 编辑区与预览区双向同步滚动定位 (Synchronous Scrolling)**：
+  - 基于 AST 行号映射（`markdown-it` 块级 Token `data-source-line` 注入）与分段线性插值（Piecewise Linear Interpolation）算法，实现 Markdown 源码与渲染预览的高精度段落级对齐同步，彻底消除大图、表格与长代码块造成的滚动漂移现象。
+  - 支持单向滚动驱动锁（通过鼠标悬停 / 触控交互动态判定主动发起端），彻底杜绝双向触发死循环与抖动。
+  - 分屏模式（Split Mode）顶部工具栏新增 **“同步滚动 / 独立滚动”** 快捷切换开关，支持状态持久化记忆，在需要对比查阅时可一键切换为独立自由滚动。
+  - 全面支持中英文、繁体中文、日文、韩文 5 种语言本地化提示。
+
+---
+
 ## [v20261110.11.05] - 2026-11-10
 
 ### 🚀 新功能与改进 (Features & Improvements)
