@@ -596,7 +596,7 @@
       </div>
 
       <!-- Unlocked or Plain Note Main Editor Area -->
-      <template v-else>
+      <div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
       <!-- Tag Editing Strip (Requirement 2: 便签标签编辑) -->
       <div class="px-5 med:px-6 py-1.5 med:py-2 bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs med:text-sm">
         <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] med:text-xs mr-1">
@@ -878,6 +878,7 @@
           ></div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Permanent Delete Confirmation Modal in Editor -->
@@ -929,7 +930,6 @@
           </div>
         </div>
       </div>
-      </template>
     </div>
 
     <!-- Note Information Modal (便签信息对话框) -->
