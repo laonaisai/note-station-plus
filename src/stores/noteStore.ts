@@ -1178,19 +1178,42 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client || !noteId) throw new Error('未连接服务器');
 
-    await client.encryptNote(noteId, password);
-    unlockedPasswords.value.set(noteId, password);
+    if (activeSavePromise) {
+      await activeSavePromise;
+    }
 
-    // Update state in memory
-    const updateTarget = (item?: SynoNote) => {
-      if (item) {
-        item.encrypt = true;
+    const res: any = await client.encryptNote(noteId, password);
+    const newNoteId = res?.object_id || noteId;
+
+    unlockedPasswords.value.delete(noteId);
+    unlockedPasswords.value.set(newNoteId, password);
+
+    if (res?.object_id && res.object_id !== noteId) {
+      const idx = notes.value.findIndex(n => n.object_id === noteId);
+      if (idx !== -1) {
+        notes.value.splice(idx, 1, res);
+      } else {
+        notes.value.unshift(res);
       }
-    };
-    updateTarget(notes.value.find(n => n.object_id === noteId));
-    if (activeNote.value && activeNote.value.object_id === noteId) {
-      activeNote.value.encrypt = true;
-      noteContentCache.set(noteId, { ...activeNote.value });
+      noteContentCache.delete(noteId);
+      noteContentCache.set(newNoteId, { ...res });
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = newNoteId;
+        activeNote.value = res;
+      }
+    } else {
+      const updateTarget = (item?: SynoNote) => {
+        if (item) {
+          item.encrypt = true;
+          item.is_encrypt = true;
+        }
+      };
+      updateTarget(notes.value.find(n => n.object_id === noteId));
+      if (activeNote.value && activeNote.value.object_id === noteId) {
+        activeNote.value.encrypt = true;
+        activeNote.value.is_encrypt = true;
+        noteContentCache.set(noteId, { ...activeNote.value });
+      }
     }
     return true;
   }
@@ -1202,8 +1225,30 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client || !noteId) throw new Error('未连接服务器');
 
-    await client.changeNotePassword(noteId, oldPassword, newPassword);
-    unlockedPasswords.value.set(noteId, newPassword);
+    if (activeSavePromise) {
+      await activeSavePromise;
+    }
+
+    const res: any = await client.changeNotePassword(noteId, oldPassword, newPassword);
+    const newNoteId = res?.object_id || noteId;
+
+    unlockedPasswords.value.delete(noteId);
+    unlockedPasswords.value.set(newNoteId, newPassword);
+
+    if (res?.object_id && res.object_id !== noteId) {
+      const idx = notes.value.findIndex(n => n.object_id === noteId);
+      if (idx !== -1) {
+        notes.value.splice(idx, 1, res);
+      } else {
+        notes.value.unshift(res);
+      }
+      noteContentCache.delete(noteId);
+      noteContentCache.set(newNoteId, { ...res });
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = newNoteId;
+        activeNote.value = res;
+      }
+    }
     return true;
   }
 
@@ -1214,18 +1259,42 @@ export const useNoteStore = defineStore('notes', () => {
     const client = sessionStore.activeClient;
     if (!client || !noteId) throw new Error('未连接服务器');
 
-    await client.removeNoteEncryption(noteId, password);
-    unlockedPasswords.value.delete(noteId);
+    if (activeSavePromise) {
+      await activeSavePromise;
+    }
 
-    const updateTarget = (item?: SynoNote) => {
-      if (item) {
-        item.encrypt = false;
+    const res: any = await client.removeNoteEncryption(noteId, password);
+    const newNoteId = res?.object_id || noteId;
+
+    unlockedPasswords.value.delete(noteId);
+    unlockedPasswords.value.delete(newNoteId);
+
+    if (res?.object_id && res.object_id !== noteId) {
+      const idx = notes.value.findIndex(n => n.object_id === noteId);
+      if (idx !== -1) {
+        notes.value.splice(idx, 1, res);
+      } else {
+        notes.value.unshift(res);
       }
-    };
-    updateTarget(notes.value.find(n => n.object_id === noteId));
-    if (activeNote.value && activeNote.value.object_id === noteId) {
-      activeNote.value.encrypt = false;
-      noteContentCache.set(noteId, { ...activeNote.value });
+      noteContentCache.delete(noteId);
+      noteContentCache.set(newNoteId, { ...res });
+      if (activeNoteId.value === noteId) {
+        activeNoteId.value = newNoteId;
+        activeNote.value = res;
+      }
+    } else {
+      const updateTarget = (item?: SynoNote) => {
+        if (item) {
+          item.encrypt = false;
+          item.is_encrypt = false;
+        }
+      };
+      updateTarget(notes.value.find(n => n.object_id === noteId));
+      if (activeNote.value && activeNote.value.object_id === noteId) {
+        activeNote.value.encrypt = false;
+        activeNote.value.is_encrypt = false;
+        noteContentCache.set(noteId, { ...activeNote.value });
+      }
     }
     return true;
   }

@@ -73,6 +73,8 @@ export interface SynoNote {
   tag: string[];
   recycle?: boolean;
   encrypt?: boolean;
+  is_encrypt?: boolean;
+  tags?: string[];
   acl?: NoteAcl;
   owner?: {
     display_name?: string;

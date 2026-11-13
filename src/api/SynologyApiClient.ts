@@ -14,6 +14,7 @@ import {
   NoteShareInfo
 } from '@/types/synology';
 import { markdownToNoteHtml, noteHtmlToMarkdown, toBase64 } from '@/utils/markdown';
+import { encryptNoteContent, decryptNoteContent } from '@/utils/cryptoNote';
 
 export const SYNO_ERROR_MESSAGES: Record<number, string> = {
   100: '未知错误',
@@ -583,6 +584,20 @@ export class SynologyApiClient {
     }
     note.attachment = normalizedAttachments;
 
+    const isEncrypted = Boolean(note.encrypt || (note as any).is_encrypt);
+    if (isEncrypted && note.content) {
+      if (password) {
+        const decryptRes = decryptNoteContent(note.content, password);
+        if (!decryptRes.success) {
+          throw new Error('密码错误，无法解密便签');
+        }
+        note.content = decryptRes.content;
+      } else {
+        note.markdownContent = '';
+        return note;
+      }
+    }
+
     note.markdownContent = note.content
       ? noteHtmlToMarkdown(note.content, {
           objectId: note.object_id,
@@ -648,7 +663,11 @@ export class SynologyApiClient {
     password?: string
   ): Promise<boolean> {
     const sid = this.requireSid();
-    const htmlContent = markdownToNoteHtml(markdownContent, { objectId, attachments });
+    let htmlContent = markdownToNoteHtml(markdownContent, { objectId, attachments });
+
+    if (password) {
+      htmlContent = encryptNoteContent(htmlContent, password);
+    }
 
     // If a valid 40-char SHA1 hash is provided for ver, use version: 3 matching DSM official client
     const useV3 = Boolean(ver && ver.length === 40);
@@ -662,6 +681,10 @@ export class SynologyApiClient {
       content: htmlContent
     };
 
+    if (password) {
+      payload['brief'] = '';
+    }
+
     if (useV3 && ver) {
       payload['ver'] = ver;
       payload['commit_msg'] = JSON.stringify({ device: 'desktop' });
@@ -669,10 +692,6 @@ export class SynologyApiClient {
 
     if (tags) {
       payload['tag'] = JSON.stringify(tags);
-    }
-
-    if (password) {
-      payload['password'] = password;
     }
 
     const data = new URLSearchParams(payload);
@@ -717,76 +736,162 @@ export class SynologyApiClient {
   }
 
   /**
-   * Encrypt a note with a password using SYNO.NoteStation.Note.Encrypt (method: set)
+   * Helper to build a SynoNote object from raw response data
    */
-  async encryptNote(objectId: string, password: string): Promise<boolean> {
-    const sid = this.requireSid();
-    const payload = new URLSearchParams({
-      api: 'SYNO.NoteStation.Note.Encrypt',
-      version: '1',
-      method: 'set',
-      _sid: sid,
-      object_id: objectId,
-      password: password
-    });
-
-    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
-    if (!res.data.success) {
-      throw this.formatError(res.data);
-    }
-    return true;
+  private formatNoteFromRaw(rawData: any, fallbackNote?: SynoNote): SynoNote {
+    const n = Array.isArray(rawData) ? rawData[0] : rawData;
+    const noteId = String(n?.object_id || n?.note_id || fallbackNote?.object_id || '');
+    const parentId = String(n?.parent_id || n?.notebook_id || fallbackNote?.parent_id || '');
+    return {
+      ...fallbackNote,
+      ...n,
+      object_id: noteId,
+      parent_id: parentId,
+      notebook_id: parentId,
+      ctime: Number(n?.ctime || n?.created_time || fallbackNote?.ctime || Date.now() / 1000),
+      mtime: Number(n?.mtime || n?.updated_time || fallbackNote?.mtime || Date.now() / 1000),
+      tag: Array.isArray(n?.tag) ? n.tag : (fallbackNote?.tag || []),
+      encrypt: Boolean(n?.encrypt ?? fallbackNote?.encrypt ?? true),
+      is_encrypt: Boolean(n?.encrypt ?? fallbackNote?.encrypt ?? true),
+      markdownContent: fallbackNote?.markdownContent || ''
+    };
   }
 
   /**
-   * Change encryption password of a note using SYNO.NoteStation.Note.Encrypt (method: change_password)
+   * Encrypt a note with a password using official client-side AES + copy mechanism.
+   * Copies the note with encrypt: true and ciphertext, then deletes the original note.
+   * Returns the newly created encrypted SynoNote.
    */
-  async changeNotePassword(objectId: string, oldPassword: string, newPassword: string): Promise<boolean> {
+  async encryptNote(objectId: string, password: string): Promise<SynoNote> {
     const sid = this.requireSid();
+    const note = await this.getNote(objectId);
+    const plainHtml = note.content || '';
+    const encryptedContent = encryptNoteContent(plainHtml, password);
+
     const payload = new URLSearchParams({
-      api: 'SYNO.NoteStation.Note.Encrypt',
-      version: '1',
-      method: 'change_password',
+      api: 'SYNO.NoteStation.Note',
+      version: '3',
+      method: 'copy',
       _sid: sid,
       object_id: objectId,
+      ver: note.ver || '',
+      title: note.title,
+      parent_id: note.parent_id,
+      encrypt: 'true',
+      new_password: password,
+      password: password,
+      content: encryptedContent,
+      brief: ''
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
+    if (!res.data.success || !res.data.data) {
+      throw this.formatError(res.data);
+    }
+
+    const newNote = this.formatNoteFromRaw(res.data.data, note);
+    newNote.encrypt = true;
+    newNote.is_encrypt = true;
+    newNote.content = encryptedContent;
+    newNote.markdownContent = note.markdownContent;
+
+    // Delete the original unencrypted note
+    try {
+      await this.deleteNote(objectId);
+    } catch (e) {
+      console.warn('Failed to delete original note after encryption copy:', e);
+    }
+
+    return newNote;
+  }
+
+  /**
+   * Change encryption password of a note using official copy mechanism.
+   */
+  async changeNotePassword(objectId: string, oldPassword: string, newPassword: string): Promise<SynoNote> {
+    const sid = this.requireSid();
+    const note = await this.getNote(objectId, undefined, oldPassword);
+    const plainHtml = note.content || '';
+    const newCipher = encryptNoteContent(plainHtml, newPassword);
+
+    const payload = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note',
+      version: '3',
+      method: 'copy',
+      _sid: sid,
+      object_id: objectId,
+      ver: note.ver || '',
+      title: note.title,
+      parent_id: note.parent_id,
+      encrypt: 'true',
       old_password: oldPassword,
-      new_password: newPassword
+      new_password: newPassword,
+      password: newPassword,
+      content: newCipher,
+      brief: ''
     });
 
     const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
-    if (!res.data.success) {
+    if (!res.data.success || !res.data.data) {
       throw this.formatError(res.data);
     }
-    return true;
+
+    const newNote = this.formatNoteFromRaw(res.data.data, note);
+    newNote.encrypt = true;
+    newNote.is_encrypt = true;
+    newNote.content = newCipher;
+    newNote.markdownContent = note.markdownContent;
+
+    try {
+      await this.deleteNote(objectId);
+    } catch (e) {
+      console.warn('Failed to delete previous note after password change:', e);
+    }
+
+    return newNote;
   }
 
   /**
-   * Remove encryption / clear password of a note using SYNO.NoteStation.Note.Encrypt (method: clear)
+   * Remove encryption / clear password of a note using official copy mechanism.
    */
-  async removeNoteEncryption(objectId: string, password: string): Promise<boolean> {
+  async removeNoteEncryption(objectId: string, password: string): Promise<SynoNote> {
     const sid = this.requireSid();
+    const note = await this.getNote(objectId, undefined, password);
+    const plainHtml = note.content || '';
+
     const payload = new URLSearchParams({
-      api: 'SYNO.NoteStation.Note.Encrypt',
-      version: '1',
-      method: 'clear',
+      api: 'SYNO.NoteStation.Note',
+      version: '3',
+      method: 'copy',
       _sid: sid,
       object_id: objectId,
-      password: password
+      ver: note.ver || '',
+      title: note.title,
+      parent_id: note.parent_id,
+      encrypt: 'false',
+      old_password: password,
+      content: plainHtml,
+      brief: ''
     });
 
     const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
-    if (!res.data.success) {
-      // Some DSM Note Station versions accept 'delete' instead of 'clear'
-      if (res.data.error?.code === 102 || res.data.error?.code === 101) {
-        payload.set('method', 'delete');
-        const retryRes = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
-        if (!retryRes.data.success) {
-          throw this.formatError(retryRes.data);
-        }
-        return true;
-      }
+    if (!res.data.success || !res.data.data) {
       throw this.formatError(res.data);
     }
-    return true;
+
+    const newNote = this.formatNoteFromRaw(res.data.data, note);
+    newNote.encrypt = false;
+    newNote.is_encrypt = false;
+    newNote.content = plainHtml;
+    newNote.markdownContent = note.markdownContent;
+
+    try {
+      await this.deleteNote(objectId);
+    } catch (e) {
+      console.warn('Failed to delete encrypted note after removing encryption:', e);
+    }
+
+    return newNote;
   }
 
   /**

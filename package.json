@@ -66,6 +66,7 @@
   "dependencies": {
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
     "jszip": "^3.10.2",
     "lucide-vue-next": "^0.468.0",
     "markdown-it": "^14.1.0",
@@ -77,6 +78,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.20",
+    "@types/crypto-js": "^4.2.2",
     "@types/iconv-lite": "^0.0.1",
     "@types/jszip": "^3.4.1",
     "@types/markdown-it": "^14.1.2",

@@ -324,6 +324,19 @@ graph TD
   - 群晖官方并未提供名为 `move` 的独立接口，而是通过 `Note` 对象的 `method: 'set'` 更新其 `parent_id` 属性实现迁移。
   - 迁移成功后应立即触发 `listNotebooks()` 刷新所有笔记本中的 `items` 关联列表与计数徽标。
 
+### 12. 便签加密机制与群晖官方 API 对齐规范
+- **官方加密原理**：群晖官方 Note Station 采用**客户端 AES-256 加密**（`CryptoJS.AES`），服务端并不负责加解密运算：
+  - 密文格式：正文添加魔数前缀 `NoTeStAtIoNMaGic` 后进行 AES 加密，密文输出格式为 OpenSSL 兼容 Base64 字符串（以 `U2FsdGVkX1` / `Salted__` 开头）；
+  - 解密验证：解密后检查明文是否以 `NoTeStAtIoNMaGic` 开头，匹配则密码正确，截取掉魔数即为真实正文 HTML；
+  - 摘要脱敏：加密便签保存时摘要 `brief` 必须置空 `""`，防止便签列表或全文索引泄露隐私正文。
+- **API 避坑指南**：
+  - 服务端 **不存在** `SYNO.NoteStation.Note.Encrypt` 的 `set`、`change_password` 等服务端加密方法（调用会报错误 103：`指定方法不存在或权限不足`）；
+  - 官方加密/改密/解除加密流程均基于 `SYNO.NoteStation.Note` `version: 3` 的 `method: 'copy'` 接口：
+    - **加密便签**：调用 `copy` 接口传入 `encrypt: 'true'`, `new_password: pwd`, `password: pwd`, `content: cipherText`, `brief: ''` 创建新加密便签，成功后将原明文便签删除；
+    - **修改密码**：用旧密码解密正文，再用新密码 AES 加密，调用 `copy` 接口传入 `old_password`, `new_password`, `password`, `content: newCipher` 创建新便签后删除旧便签；
+    - **解除加密**：用原密码解密得到明文 HTML，调用 `copy` 接口传入 `encrypt: 'false'`, `old_password: pwd`, `content: plainHtml` 另存为未加密便签后删除旧便签；
+    - **更新保存**：已解锁便签修改后，调用 `SYNO.NoteStation.Note` `method: 'set'` 将重新 AES 加密后的密文提交保存，`brief` 传空。
+
 ---
 
 ## 📂 五、项目核心目录速览
