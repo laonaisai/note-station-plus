@@ -124,10 +124,45 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
+
+            <!-- Encrypted Icon Badge (当前便签已加密) -->
+            <div
+              v-if="noteStore.activeNote?.encrypt"
+              class="mr-2 shrink-0 flex items-center"
+              :title="isCurrentNoteLocked ? t('editor.noteLockedTitle') : t('editor.encryptedBadge')"
+            >
+              <span
+                :class="[
+                  'px-1.5 py-0.5 rounded text-[11px] font-medium flex items-center space-x-1 select-none',
+                  isCurrentNoteLocked
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-300 dark:border-amber-700'
+                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                ]"
+              >
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    v-if="isCurrentNoteLocked"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                  <path
+                    v-else
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>{{ isCurrentNoteLocked ? t('editor.noteLockedTitle') : t('editor.encryptedBadge') }}</span>
+              </span>
+            </div>
+
             <input
               v-model="editTitle"
               @input="onContentChanged"
-              :readonly="isRecycledNote"
+              :readonly="isRecycledNote || isCurrentNoteLocked"
               type="text"
               :placeholder="t('editor.titlePlaceholder')"
               class="text-base med:text-xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 border-none outline-none flex-1 bg-transparent truncate"
@@ -162,8 +197,8 @@
             </button>
           </template>
 
-          <!-- 普通便签操作栏 -->
-          <template v-else>
+          <!-- 普通便签操作栏 (便签未锁定时展示) -->
+          <template v-else-if="!isCurrentNoteLocked">
             <!-- Save status indicator -->
             <span class="text-slate-400 dark:text-slate-500 text-xs med:text-sm flex items-center">
               <span v-if="noteStore.isSaving" class="flex items-center text-amber-500 dark:text-amber-400">
@@ -355,6 +390,56 @@
 
                 <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
+                <!-- 便签加密管理 -->
+                <template v-if="!noteStore.activeNote?.encrypt">
+                  <button
+                    @click="triggerEncrypt('encrypt')"
+                    class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>{{ t('editor.encryptNote') }}</span>
+                  </button>
+                </template>
+                <template v-else>
+                  <!-- 修改密码 -->
+                  <button
+                    @click="triggerEncrypt('change_password')"
+                    class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <span>{{ t('editor.changePassword') }}</span>
+                  </button>
+
+                  <!-- 解除加密 -->
+                  <button
+                    @click="triggerEncrypt('remove')"
+                    class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-rose-600 dark:hover:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                    <span>{{ t('editor.removeEncryption') }}</span>
+                  </button>
+
+                  <!-- 重新锁定 -->
+                  <button
+                    v-if="!isCurrentNoteLocked"
+                    @click="triggerLockNow"
+                    class="w-full px-3 med:px-4 py-2 med:py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>{{ t('editor.lockNote') }}</span>
+                  </button>
+                </template>
+
+                <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
+
                 <!-- 打印 -->
                 <button
                   @click="triggerPrint"
@@ -436,6 +521,82 @@
         </div>
       </div>
 
+      <!-- Locked Note Screen (便签加密锁屏界面) -->
+      <div
+        v-if="isCurrentNoteLocked"
+        class="flex-1 flex flex-col items-center justify-center p-6 bg-slate-50/60 dark:bg-slate-950/60 select-none animate-in fade-in duration-200"
+      >
+        <div class="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xl p-6 med:p-8 flex flex-col items-center text-center">
+          <!-- Animated / Glowing Amber Lock Shield -->
+          <div class="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-center mb-5 text-amber-600 dark:text-amber-400 shadow-sm">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          <h2 class="text-base med:text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">
+            {{ t('editor.noteLockedTitle') }}
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed max-w-xs">
+            {{ t('editor.noteLockedTip') }}
+          </p>
+
+          <!-- Password Form -->
+          <form @submit.prevent="handleUnlockNote" class="w-full space-y-3.5">
+            <div class="relative">
+              <input
+                ref="unlockPasswordInputRef"
+                v-model="unlockPassword"
+                :type="showUnlockPassword ? 'text' : 'password'"
+                :placeholder="t('editor.enterPassword')"
+                class="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-xs med:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition"
+                :disabled="isUnlocking"
+                autofocus
+              />
+              <button
+                type="button"
+                @click="showUnlockPassword = !showUnlockPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                :title="showUnlockPassword ? '隐藏密码' : '显示密码'"
+              >
+                <svg v-if="showUnlockPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Error Feedback -->
+            <div
+              v-if="unlockErrorMessage"
+              class="text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 rounded-lg p-2 text-left animate-in fade-in duration-100 flex items-center space-x-1.5"
+            >
+              <svg class="w-3.5 h-3.5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="truncate">{{ unlockErrorMessage }}</span>
+            </div>
+
+            <button
+              type="submit"
+              :disabled="isUnlocking || !unlockPassword"
+              class="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-medium text-xs med:text-sm rounded-xl shadow-xs transition flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <svg v-if="isUnlocking" class="animate-spin -ml-0.5 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>{{ isUnlocking ? t('editor.unlocking') : t('editor.unlockNote') }}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Unlocked or Plain Note Main Editor Area -->
+      <template v-else>
       <!-- Tag Editing Strip (Requirement 2: 便签标签编辑) -->
       <div class="px-5 med:px-6 py-1.5 med:py-2 bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-1.5 shrink-0 select-none text-xs med:text-sm">
         <span class="flex items-center text-slate-400 dark:text-slate-500 text-[11px] med:text-xs mr-1">
@@ -768,6 +929,7 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
 
     <!-- Note Information Modal (便签信息对话框) -->
@@ -810,11 +972,57 @@ const emit = defineEmits<{
   (e: 'open-share', noteId: string): void;
   (e: 'open-history', noteId: string): void;
   (e: 'open-print', note: any, notebookTitle?: string, markdownOverride?: string): void;
+  (e: 'open-encrypt', note: any, mode: 'encrypt' | 'change_password' | 'remove'): void;
 }>();
 
 const noteStore = useNoteStore();
 const sessionStore = useSessionStore();
 const layoutStore = useLayoutStore();
+
+const isCurrentNoteLocked = computed(() => {
+  const note = noteStore.activeNote;
+  return Boolean(note?.encrypt && !noteStore.isNoteUnlocked(note.object_id));
+});
+
+const unlockPassword = ref('');
+const isUnlocking = ref(false);
+const unlockErrorMessage = ref('');
+const showUnlockPassword = ref(false);
+const unlockPasswordInputRef = ref<HTMLInputElement | null>(null);
+
+function triggerEncrypt(mode: 'encrypt' | 'change_password' | 'remove') {
+  isMoreMenuOpen.value = false;
+  if (noteStore.activeNote) {
+    emit('open-encrypt', noteStore.activeNote, mode);
+  }
+}
+
+function triggerLockNow() {
+  isMoreMenuOpen.value = false;
+  if (noteStore.activeNote) {
+    noteStore.lockNote(noteStore.activeNote.object_id);
+    showToast(t('editor.lockNote'), 'info');
+  }
+}
+
+async function handleUnlockNote() {
+  if (!noteStore.activeNote || !unlockPassword.value.trim()) {
+    unlockErrorMessage.value = t('editor.passwordRequired');
+    return;
+  }
+
+  isUnlocking.value = true;
+  unlockErrorMessage.value = '';
+  try {
+    await noteStore.unlockNote(noteStore.activeNote.object_id, unlockPassword.value);
+    unlockPassword.value = '';
+    showToast(t('editor.unlockNote'), 'success');
+  } catch (err: any) {
+    unlockErrorMessage.value = t('editor.wrongPassword');
+  } finally {
+    isUnlocking.value = false;
+  }
+}
 
 const md = new MarkdownIt({
   html: true,
@@ -956,6 +1164,15 @@ watch(
   () => noteStore.activeNoteId,
   () => {
     clearTimeout(saveTimer);
+    unlockPassword.value = '';
+    unlockErrorMessage.value = '';
+    showUnlockPassword.value = false;
+    isUnlocking.value = false;
+    if (isCurrentNoteLocked.value) {
+      nextTick(() => {
+        unlockPasswordInputRef.value?.focus();
+      });
+    }
   }
 );
 

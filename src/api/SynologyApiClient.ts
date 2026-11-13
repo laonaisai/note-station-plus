@@ -541,8 +541,9 @@ export class SynologyApiClient {
   /**
    * Retrieve full details of a specific note, including Markdown translation.
    * If `ver` is specified, retrieves the note content at that specific historical version.
+   * If `password` is specified, decrypts an encrypted note using the given password.
    */
-  async getNote(objectId: string, ver?: string): Promise<SynoNote> {
+  async getNote(objectId: string, ver?: string, password?: string): Promise<SynoNote> {
     const sid = this.requireSid();
     const params: Record<string, string> = {
       api: 'SYNO.NoteStation.Note',
@@ -553,6 +554,9 @@ export class SynologyApiClient {
     };
     if (ver) {
       params['ver'] = ver;
+    }
+    if (password) {
+      params['password'] = password;
     }
     const res = await this.http.get<SynoApiResponse<SynoNote>>('/webapi/entry.cgi', {
       params
@@ -640,7 +644,8 @@ export class SynologyApiClient {
     markdownContent: string,
     tags?: string[],
     ver?: string,
-    attachments?: SynoAttachment[]
+    attachments?: SynoAttachment[],
+    password?: string
   ): Promise<boolean> {
     const sid = this.requireSid();
     const htmlContent = markdownToNoteHtml(markdownContent, { objectId, attachments });
@@ -666,13 +671,17 @@ export class SynologyApiClient {
       payload['tag'] = JSON.stringify(tags);
     }
 
+    if (password) {
+      payload['password'] = password;
+    }
+
     const data = new URLSearchParams(payload);
     let res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', data.toString());
 
     // If version 3 fails (e.g. Code 100/103 version mismatch), fetch latest note version from server and retry once
     if (!res.data.success && useV3) {
       try {
-        const latestServerNote = await this.getNote(objectId);
+        const latestServerNote = await this.getNote(objectId, undefined, password);
         if (latestServerNote.ver && latestServerNote.ver !== ver) {
           payload['ver'] = latestServerNote.ver;
           const retryData = new URLSearchParams(payload);
@@ -704,6 +713,79 @@ export class SynologyApiClient {
 
     this.lastUpdatedVer = noteData?.ver;
 
+    return true;
+  }
+
+  /**
+   * Encrypt a note with a password using SYNO.NoteStation.Note.Encrypt (method: set)
+   */
+  async encryptNote(objectId: string, password: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const payload = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note.Encrypt',
+      version: '1',
+      method: 'set',
+      _sid: sid,
+      object_id: objectId,
+      password: password
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
+   * Change encryption password of a note using SYNO.NoteStation.Note.Encrypt (method: change_password)
+   */
+  async changeNotePassword(objectId: string, oldPassword: string, newPassword: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const payload = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note.Encrypt',
+      version: '1',
+      method: 'change_password',
+      _sid: sid,
+      object_id: objectId,
+      old_password: oldPassword,
+      new_password: newPassword
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
+    if (!res.data.success) {
+      throw this.formatError(res.data);
+    }
+    return true;
+  }
+
+  /**
+   * Remove encryption / clear password of a note using SYNO.NoteStation.Note.Encrypt (method: clear)
+   */
+  async removeNoteEncryption(objectId: string, password: string): Promise<boolean> {
+    const sid = this.requireSid();
+    const payload = new URLSearchParams({
+      api: 'SYNO.NoteStation.Note.Encrypt',
+      version: '1',
+      method: 'clear',
+      _sid: sid,
+      object_id: objectId,
+      password: password
+    });
+
+    const res = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
+    if (!res.data.success) {
+      // Some DSM Note Station versions accept 'delete' instead of 'clear'
+      if (res.data.error?.code === 102 || res.data.error?.code === 101) {
+        payload.set('method', 'delete');
+        const retryRes = await this.http.post<SynoApiResponse<any>>('/webapi/entry.cgi', payload.toString());
+        if (!retryRes.data.success) {
+          throw this.formatError(retryRes.data);
+        }
+        return true;
+      }
+      throw this.formatError(res.data);
+    }
     return true;
   }
 

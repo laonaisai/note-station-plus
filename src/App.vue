@@ -32,6 +32,7 @@
         @open-history="openHistoryModal"
         @open-print="openPrintModal"
         @open-sync="isSyncModalOpen = true"
+        @open-encrypt="openEncryptionModal"
       />
 
       <!-- Right Column: Markdown Editor / Preview -->
@@ -42,6 +43,7 @@
         @open-share="openShareModal"
         @open-history="openHistoryModal"
         @open-print="openPrintModal"
+        @open-encrypt="openEncryptionModal"
       />
     </div>
 
@@ -110,6 +112,13 @@
       :is-open="isExternalLinkModalOpen"
       :url="externalLinkTargetUrl"
       @close="isExternalLinkModalOpen = false"
+    />
+
+    <NoteEncryptionModal
+      :is-open="isEncryptionModalOpen"
+      :target-note="encryptionModalTargetNote"
+      :mode="encryptionModalMode"
+      @close="isEncryptionModalOpen = false"
     />
 
     <!-- Global Toast Notifications -->
@@ -191,6 +200,7 @@ import AboutModal from '@/components/AboutModal.vue';
 import LogsModal from '@/components/LogsModal.vue';
 import PrintModal from '@/components/PrintModal.vue';
 import ExternalLinkModal from '@/components/ExternalLinkModal.vue';
+import NoteEncryptionModal from '@/components/NoteEncryptionModal.vue';
 import { onExternalLinkPrompt } from '@/utils/externalLinkModal';
 import { normalizeExternalUrl } from '@/utils/openUrl';
 import { logger } from '@/services/logger';
@@ -230,6 +240,16 @@ const isPrintModalOpen = ref(false);
 const printingNote = ref<SynoNote | null>(null);
 const printingNotebookTitle = ref<string>('');
 const printingMarkdownContent = ref<string>('');
+
+const isEncryptionModalOpen = ref(false);
+const encryptionModalTargetNote = ref<SynoNote | null>(null);
+const encryptionModalMode = ref<'encrypt' | 'change_password' | 'remove'>('encrypt');
+
+function openEncryptionModal(note: SynoNote, mode: 'encrypt' | 'change_password' | 'remove') {
+  encryptionModalTargetNote.value = note;
+  encryptionModalMode.value = mode;
+  isEncryptionModalOpen.value = true;
+}
 
 function openPrintModal(note: SynoNote, notebookTitle?: string, markdownOverride?: string) {
   printingNote.value = note;

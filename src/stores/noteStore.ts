@@ -31,6 +31,16 @@ export const useNoteStore = defineStore('notes', () => {
     return notes.value.filter(n => shortcutIds.value.has(n.object_id));
   });
 
+  const encryptedNotes = computed(() => {
+    return notes.value.filter(n => !n.recycle && Boolean(n.encrypt));
+  });
+
+  const unlockedPasswords = ref<Map<string, string>>(new Map());
+
+  function isNoteUnlocked(noteId: string): boolean {
+    return unlockedPasswords.value.has(noteId);
+  }
+
   const searchQuery = ref<string>('');
   const serverMatchedNoteIds = ref<Set<string>>(new Set());
   const isSearchingServer = ref<boolean>(false);
@@ -109,6 +119,9 @@ export const useNoteStore = defineStore('notes', () => {
     if (targetId === '__favorites__') {
       return notes.value.filter(n => !n.recycle && shortcutIds.value.has(n.object_id)).length;
     }
+    if (targetId === '__encrypted_notes__') {
+      return notes.value.filter(n => !n.recycle && Boolean(n.encrypt)).length;
+    }
     if (targetId === '__recycle_bin__') {
       return recycledNotes.value.filter(n => Boolean(n.recycle)).length;
     }
@@ -136,6 +149,8 @@ export const useNoteStore = defineStore('notes', () => {
         list = recycledNotes.value.filter(n => Boolean(n.recycle));
       } else if (activeNotebookId.value === '__favorites__') {
         list = favoriteNotes.value.filter(n => !n.recycle);
+      } else if (activeNotebookId.value === '__encrypted_notes__') {
+        list = encryptedNotes.value;
       } else if (activeNotebookId.value === '__shared_notes__') {
         list = list.filter(n => !n.recycle && isNoteShared(n));
       } else {
@@ -236,6 +251,18 @@ export const useNoteStore = defineStore('notes', () => {
         object_id: '__favorites__',
         title: '收藏夹',
         category: 'shortcut',
+        ctime: 0,
+        mtime: 0,
+        ver: '',
+        preset: true,
+        stack: ''
+      };
+    }
+    if (activeNotebookId.value === '__encrypted_notes__') {
+      return {
+        object_id: '__encrypted_notes__',
+        title: '加密便签',
+        category: 'encrypted',
         ctime: 0,
         mtime: 0,
         ver: '',
@@ -402,6 +429,14 @@ export const useNoteStore = defineStore('notes', () => {
       return;
     }
 
+    if (notebookId === '__encrypted_notes__') {
+      const currentNotes = filteredNotes.value;
+      if (currentNotes.length > 0) {
+        await selectNote(currentNotes[0].object_id);
+      }
+      return;
+    }
+
     if (notebookId === '__recycle_bin__') {
       await fetchRecycledNotes();
       const currentNotes = filteredNotes.value;
@@ -476,6 +511,33 @@ export const useNoteStore = defineStore('notes', () => {
     const seq = ++currentSelectNoteSeq;
     activeNoteId.value = noteId;
 
+    // Check if target note is encrypted
+    const targetItem = notes.value.find(n => n.object_id === noteId) || recycledNotes.value.find(n => n.object_id === noteId);
+    const isEncrypted = Boolean(targetItem?.encrypt);
+
+    // If encrypted and not yet unlocked in memory, immediately show locked screen without throwing network errors
+    if (isEncrypted && !unlockedPasswords.value.has(noteId)) {
+      isLoadingNote.value = false;
+      activeNote.value = {
+        object_id: noteId,
+        parent_id: targetItem?.parent_id || '',
+        notebook_id: (targetItem as any)?.notebook_id || targetItem?.parent_id || '',
+        title: targetItem?.title || '',
+        brief: targetItem?.brief || '',
+        content: '',
+        markdownContent: '',
+        ctime: targetItem?.ctime || 0,
+        mtime: targetItem?.mtime || 0,
+        ver: targetItem?.ver || '',
+        tag: targetItem?.tag ? [...targetItem.tag] : [],
+        encrypt: true,
+        recycle: targetItem?.recycle,
+        owner: targetItem?.owner,
+        acl: targetItem?.acl
+      };
+      return;
+    }
+
     // Use memory cache for instant response if available and not forced
     if (!force && noteContentCache.has(noteId)) {
       const cached = noteContentCache.get(noteId)!;
@@ -486,7 +548,10 @@ export const useNoteStore = defineStore('notes', () => {
 
     isLoadingNote.value = true;
     try {
-      const fullNote = await client.getNote(noteId);
+      const storedPassword = unlockedPasswords.value.get(noteId);
+      const fullNote = storedPassword
+        ? await client.getNote(noteId, undefined, storedPassword)
+        : await client.getNote(noteId);
       // Guard against race conditions if user clicked another note while loading
       if (seq !== currentSelectNoteSeq || activeNoteId.value !== noteId) {
         return;
@@ -654,7 +719,8 @@ export const useNoteStore = defineStore('notes', () => {
 
     if (options.updateObjectId) {
       // Update existing note
-      await client.updateNote(options.updateObjectId, options.title, options.markdownContent, options.tags);
+      const notePassword = unlockedPasswords.value.get(options.updateObjectId);
+      await client.updateNote(options.updateObjectId, options.title, options.markdownContent, options.tags, undefined, undefined, notePassword);
       if (activeNoteId.value === options.updateObjectId && activeNote.value) {
         activeNote.value.title = options.title;
         activeNote.value.markdownContent = options.markdownContent;
@@ -713,14 +779,27 @@ export const useNoteStore = defineStore('notes', () => {
 
     isSaving.value = true;
     try {
-      await client.updateNote(
-        noteId,
-        title,
-        markdownContent,
-        tags,
-        activeNote.value.ver,
-        activeNote.value.attachment
-      );
+      const notePassword = unlockedPasswords.value.get(noteId);
+      if (notePassword) {
+        await client.updateNote(
+          noteId,
+          title,
+          markdownContent,
+          tags,
+          activeNote.value.ver,
+          activeNote.value.attachment,
+          notePassword
+        );
+      } else {
+        await client.updateNote(
+          noteId,
+          title,
+          markdownContent,
+          tags,
+          activeNote.value.ver,
+          activeNote.value.attachment
+        );
+      }
       activeNote.value.title = title;
       activeNote.value.markdownContent = markdownContent;
       if (client.lastUpdatedVer) {
@@ -1055,6 +1134,102 @@ export const useNoteStore = defineStore('notes', () => {
     return ok;
   }
 
+  /**
+   * Unlock an encrypted note with password.
+   * On success, caches decrypted note in memory and stores session password in unlockedPasswords map.
+   */
+  async function unlockNote(noteId: string, password: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) throw new Error('未连接服务器');
+
+    isLoadingNote.value = true;
+    try {
+      const fullNote = await client.getNote(noteId, undefined, password);
+      unlockedPasswords.value.set(noteId, password);
+      noteContentCache.set(noteId, { ...fullNote });
+      if (activeNoteId.value === noteId) {
+        activeNote.value = fullNote;
+      }
+      return true;
+    } finally {
+      isLoadingNote.value = false;
+    }
+  }
+
+  /**
+   * Lock an unlocked encrypted note, clearing memory cache and password.
+   */
+  function lockNote(noteId: string) {
+    unlockedPasswords.value.delete(noteId);
+    noteContentCache.delete(noteId);
+    if (activeNoteId.value === noteId && activeNote.value) {
+      activeNote.value = {
+        ...activeNote.value,
+        content: '',
+        markdownContent: ''
+      };
+    }
+  }
+
+  /**
+   * Encrypt a note with a new password using official API.
+   */
+  async function encryptCurrentNote(noteId: string, password: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) throw new Error('未连接服务器');
+
+    await client.encryptNote(noteId, password);
+    unlockedPasswords.value.set(noteId, password);
+
+    // Update state in memory
+    const updateTarget = (item?: SynoNote) => {
+      if (item) {
+        item.encrypt = true;
+      }
+    };
+    updateTarget(notes.value.find(n => n.object_id === noteId));
+    if (activeNote.value && activeNote.value.object_id === noteId) {
+      activeNote.value.encrypt = true;
+      noteContentCache.set(noteId, { ...activeNote.value });
+    }
+    return true;
+  }
+
+  /**
+   * Change password of an encrypted note.
+   */
+  async function changeCurrentNotePassword(noteId: string, oldPassword: string, newPassword: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) throw new Error('未连接服务器');
+
+    await client.changeNotePassword(noteId, oldPassword, newPassword);
+    unlockedPasswords.value.set(noteId, newPassword);
+    return true;
+  }
+
+  /**
+   * Remove encryption from a note using official API.
+   */
+  async function removeCurrentNoteEncryption(noteId: string, password: string): Promise<boolean> {
+    const client = sessionStore.activeClient;
+    if (!client || !noteId) throw new Error('未连接服务器');
+
+    await client.removeNoteEncryption(noteId, password);
+    unlockedPasswords.value.delete(noteId);
+
+    const updateTarget = (item?: SynoNote) => {
+      if (item) {
+        item.encrypt = false;
+      }
+    };
+    updateTarget(notes.value.find(n => n.object_id === noteId));
+    if (activeNote.value && activeNote.value.object_id === noteId) {
+      activeNote.value.encrypt = false;
+      noteContentCache.set(noteId, { ...activeNote.value });
+    }
+    return true;
+  }
+
   const isUploadingAttachment = ref(false);
   const uploadProgress = ref(0);
 
@@ -1181,6 +1356,7 @@ export const useNoteStore = defineStore('notes', () => {
     isLoadingNote.value = false;
     currentSelectNoteSeq = 0;
     noteContentCache.clear();
+    unlockedPasswords.value.clear();
     isCreating.value = false;
     isSaving.value = false;
     lastSaveTime.value = null;
@@ -1202,6 +1378,9 @@ export const useNoteStore = defineStore('notes', () => {
     recycledNotes,
     shortcutIds,
     favoriteNotes,
+    encryptedNotes,
+    unlockedPasswords,
+    isNoteUnlocked,
     filteredNotes,
     activeNoteId,
     activeNote,
@@ -1243,6 +1422,11 @@ export const useNoteStore = defineStore('notes', () => {
     restoreNoteVersion,
     getNoteShareInfo,
     updateNoteShareSettings,
+    unlockNote,
+    lockNote,
+    encryptCurrentNote,
+    changeCurrentNotePassword,
+    removeCurrentNoteEncryption,
     reset
   };
 });

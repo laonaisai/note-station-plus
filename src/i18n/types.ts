@@ -76,6 +76,9 @@ export interface TranslationMessages {
   sidebar: {
     searchPlaceholder: string;
     allNotes: string;
+    encryptedNotes: string;
+    encryptedNoteBadge: string;
+    noEncryptedNotes: string;
     sharedNotes: string;
     favorites: string;
     recycleBin: string;
@@ -237,6 +240,32 @@ export interface TranslationMessages {
     attachmentInserted: string;
     attachmentDeleted: string;
     deleteAttachmentFailed: string;
+    encryptNote: string;
+    changePassword: string;
+    removeEncryption: string;
+    lockNote: string;
+    encryptedBadge: string;
+    noteLockedTitle: string;
+    noteLockedTip: string;
+    enterPassword: string;
+    unlockNote: string;
+    unlocking: string;
+    wrongPassword: string;
+    passwordRequired: string;
+    newPassword: string;
+    confirmPassword: string;
+    oldPassword: string;
+    passwordsDoNotMatch: string;
+    encryptSuccess: string;
+    encryptFailed: string;
+    decryptSuccess: string;
+    decryptFailed: string;
+    changePasswordSuccess: string;
+    changePasswordFailed: string;
+    encryptModalTitle: string;
+    changePasswordModalTitle: string;
+    removeEncryptionModalTitle: string;
+    removeEncryptionWarning: string;
   };
   import: {
     title: string;

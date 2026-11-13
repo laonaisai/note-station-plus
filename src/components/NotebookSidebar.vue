@@ -99,6 +99,51 @@
           </div>
         </button>
 
+        <!-- 加密便签 -->
+        <button
+          @click="selectTab('__encrypted_notes__')"
+          @mouseenter="handleTabMouseEnter($event, t('sidebar.encryptedNotes'), noteStore.encryptedNotes.length)"
+          @mouseleave="handleTabMouseLeave"
+          :class="[
+            'w-[44px] rounded-lg flex flex-col items-center relative cursor-pointer transition-all duration-250 ease-out select-none',
+            activeTabId === '__encrypted_notes__'
+              ? 'max-h-[200px] bg-amber-600 text-white shadow-sm justify-start pt-1.5 pb-1'
+              : 'h-[46px] text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-amber-600 dark:hover:text-amber-400 justify-center py-0.5'
+          ]"
+          :title="`${t('sidebar.encryptedNotes')} (${noteStore.encryptedNotes.length})`"
+        >
+          <div class="relative shrink-0 flex items-center justify-center w-6 h-6">
+            <svg class="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          <!-- 便签数量 (字体 12px) -->
+          <div
+            :class="[
+              'text-[12px] font-medium leading-none font-mono shrink-0 select-none mt-0.5',
+              activeTabId === '__encrypted_notes__'
+                ? 'px-1.5 py-0.5 rounded-full bg-white/20 text-white'
+                : 'text-slate-400 dark:text-slate-500'
+            ]"
+          >
+            {{ noteStore.encryptedNotes.length }}
+          </div>
+
+          <!-- 激活态竖排文字 -->
+          <div
+            v-if="activeTabId === '__encrypted_notes__'"
+            class="w-full flex-1 min-h-0 flex justify-center items-start overflow-hidden mt-1 pt-0.5 pb-[0.75rem]"
+          >
+            <span
+              class="text-[0.875rem] font-normal tracking-wide text-center select-none leading-tight"
+              style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em;"
+            >
+              {{ formatVerticalTitle(t('sidebar.encryptedNotes')) }}
+            </span>
+          </div>
+        </button>
+
         <!-- 共享便签 -->
         <button
           @click="selectTab('__shared_notes__')"
@@ -634,6 +679,36 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
 
+                  <!-- Encrypted Icon (加密锁图标) -->
+                  <svg
+                    v-if="note.encrypt"
+                    class="w-3.5 h-3.5 shrink-0"
+                    :class="[
+                      noteStore.isNoteUnlocked(note.object_id)
+                        ? 'text-emerald-500 dark:text-emerald-400'
+                        : (noteStore.activeNoteId === note.object_id ? 'text-amber-500 dark:text-amber-300' : 'text-amber-500 dark:text-amber-400')
+                    ]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    :title="noteStore.isNoteUnlocked(note.object_id) ? t('editor.unlockNote') : t('sidebar.encryptedNoteBadge')"
+                  >
+                    <path
+                      v-if="noteStore.isNoteUnlocked(note.object_id)"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                    />
+                    <path
+                      v-else
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+
                   <span class="truncate">{{ note.title || t('editor.untitledNote') }}</span>
                 </h4>
 
@@ -829,6 +904,54 @@
           </svg>
           <span>{{ t('editor.shareManage') }}</span>
         </button>
+
+        <!-- 加密便签 / 加密密码管理 -->
+        <template v-if="!noteContextMenu.targetNote?.encrypt">
+          <button
+            @click="triggerNoteEncrypt"
+            class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>{{ t('editor.encryptNote') }}</span>
+          </button>
+        </template>
+        <template v-else>
+          <!-- 修改密码 -->
+          <button
+            @click="triggerNoteChangePassword"
+            class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            <span>{{ t('editor.changePassword') }}</span>
+          </button>
+
+          <!-- 解除加密 -->
+          <button
+            @click="triggerNoteRemoveEncryption"
+            class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-rose-600 dark:hover:text-rose-400 flex items-center space-x-2 transition cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+            <span>{{ t('editor.removeEncryption') }}</span>
+          </button>
+
+          <!-- 重新锁定 (若已解锁) -->
+          <button
+            v-if="noteContextMenu.targetNote && noteStore.isNoteUnlocked(noteContextMenu.targetNote.object_id)"
+            @click="triggerNoteLock"
+            class="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/70 hover:text-amber-600 dark:hover:text-amber-400 flex items-center space-x-2 transition cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>{{ t('editor.lockNote') }}</span>
+          </button>
+        </template>
 
         <!-- 5. 同步到其他NAS -->
         <button
@@ -1243,6 +1366,7 @@ const emit = defineEmits<{
   (e: 'open-history', noteId: string, noteTitle?: string): void;
   (e: 'open-sync'): void;
   (e: 'open-print', note: SynoNote, notebookTitle?: string): void;
+  (e: 'open-encrypt', note: SynoNote, mode: 'encrypt' | 'change_password' | 'remove'): void;
 }>();
 
 const noteStore = useNoteStore();
@@ -1736,6 +1860,39 @@ function triggerNoteShare() {
   closeNoteContextMenu();
   if (note) {
     emit('open-share', note.object_id, note.title);
+  }
+}
+
+function triggerNoteEncrypt() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    emit('open-encrypt', note, 'encrypt');
+  }
+}
+
+function triggerNoteChangePassword() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    emit('open-encrypt', note, 'change_password');
+  }
+}
+
+function triggerNoteRemoveEncryption() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    emit('open-encrypt', note, 'remove');
+  }
+}
+
+function triggerNoteLock() {
+  const note = noteContextMenu.targetNote;
+  closeNoteContextMenu();
+  if (note) {
+    noteStore.lockNote(note.object_id);
+    showToast(t('editor.lockNote'), 'info');
   }
 }
 
