@@ -162,11 +162,39 @@ turndown.addRule('table', {
   }
 });
 
-// 5. Strikethrough (del, s, strike)
+function wrapStrikethrough(content: string): string {
+  if (!content) return '';
+  const match = content.match(/^(\s*)([\s\S]*?)(\s*)$/);
+  if (!match) return `~~${content}~~`;
+  const leading = match[1];
+  const inner = match[2];
+  const trailing = match[3];
+  if (!inner) return content;
+  if (inner.startsWith('~~') && inner.endsWith('~~') && inner.length >= 4) {
+    return `${leading}${inner}${trailing}`;
+  }
+  return `${leading}~~${inner}~~${trailing}`;
+}
+
+// 5. Strikethrough (del, s, strike, and elements with line-through style like official Synology TinyMCE)
 turndown.addRule('strikethrough', {
-  filter: ['del', 's', 'strike' as any],
+  filter: function (node: any) {
+    if (!node) return false;
+    const tag = (node.nodeName || '').toLowerCase();
+    if (['del', 's', 'strike'].includes(tag)) {
+      return true;
+    }
+    const styleAttr = (node.getAttribute ? (node.getAttribute('style') || '') : '').toLowerCase();
+    if (/text-decoration(?:-line)?\s*:\s*[^;"]*line-through/.test(styleAttr)) {
+      return true;
+    }
+    if (node.style && node.style.textDecoration && /line-through/i.test(node.style.textDecoration)) {
+      return true;
+    }
+    return false;
+  },
   replacement: function (content) {
-    return '~~' + content + '~~';
+    return wrapStrikethrough(content);
   }
 });
 
@@ -361,6 +389,13 @@ export function markdownToNoteHtml(markdown: string, options?: MarkdownToNoteHtm
   try {
     let renderedHtml = md.render(markdown || '');
 
+    // Convert strikethrough (<s>...</s> or <del>...</del>) to official Synology Note Station TinyMCE format
+    // <span style="text-decoration: line-through;">...</span> to ensure 100% fidelity across all official clients
+    renderedHtml = renderedHtml
+      .replace(/<s>([\s\S]*?)<\/s>/gi, '<span style="text-decoration: line-through;">$1</span>')
+      .replace(/<del(?:\s+[^>]*)?>([\s\S]*?)<\/del>/gi, '<span style="text-decoration: line-through;">$1</span>')
+      .replace(/<strike(?:\s+[^>]*)?>([\s\S]*?)<\/strike>/gi, '<span style="text-decoration: line-through;">$1</span>');
+
     // Convert NoteStation image tags to official Synology format
     renderedHtml = renderedHtml.replace(/<img\s+([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi, (fullTag, before, src, after) => {
       try {
@@ -491,6 +526,12 @@ export function noteHtmlToMarkdown(html: string, options?: HtmlToMarkdownOptions
 
     // Fallback for legacy notes or notes edited in official client
     let cleanHtml = cleanHtmlWithoutComment;
+
+    // Pre-process elements with line-through styling from official Synology TinyMCE
+    // 1. Block-level elements with line-through (e.g. <p style="text-decoration: line-through;">text</p>)
+    cleanHtml = cleanHtml.replace(/<(p|div|h[1-6]|li)([^>]*)style=["']([^"']*text-decoration(?:-line)?\s*:\s*[^"';]*line-through[^"']*)["']([^>]*)>([\s\S]*?)<\/\1>/gi,
+      '<$1$2style="$3"$4><del>$5</del></$1>'
+    );
 
     // Filter image attachments for matching
     const imgAtts = options?.attachments?.filter(a => {

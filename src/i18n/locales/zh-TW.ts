@@ -191,6 +191,7 @@ export const zhTW: TranslationMessages = {
     recycledBanner: '此便箋當前位於資源回收筒中，處於唯讀模式。如需編輯，請先還原便箋。',
     bold: '粗體',
     italic: '斜體',
+    strikethrough: '刪除線',
     h1: '一級標題',
     h2: '二級標題',
     ul: '清單',

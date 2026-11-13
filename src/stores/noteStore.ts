@@ -15,6 +15,38 @@ import { logger } from '@/services/logger';
 export const useNoteStore = defineStore('notes', () => {
   const sessionStore = useSessionStore();
 
+  const STORAGE_KEY_SERVER_ACTIVE = 'note_station_server_last_active';
+
+  function getServerActiveRecord(): Record<string, { notebookId?: string; noteId?: string }> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_SERVER_ACTIVE);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveServerActiveState(serverId: string, notebookId?: string | null, noteId?: string | null) {
+    if (!serverId) return;
+    try {
+      const record = getServerActiveRecord();
+      const current = record[serverId] || {};
+      record[serverId] = {
+        notebookId: notebookId !== undefined ? (notebookId ?? undefined) : current.notebookId,
+        noteId: noteId !== undefined ? (noteId ?? undefined) : current.noteId
+      };
+      localStorage.setItem(STORAGE_KEY_SERVER_ACTIVE, JSON.stringify(record));
+    } catch (e) {
+      console.error('Failed to save server active state', e);
+    }
+  }
+
+  function getServerActiveState(serverId: string): { notebookId?: string; noteId?: string } | null {
+    if (!serverId) return null;
+    const record = getServerActiveRecord();
+    return record[serverId] || null;
+  }
+
   const notebooks = ref<SynoNotebook[]>([]);
   const activeNotebookId = ref<string | null>(null);
 
@@ -378,11 +410,23 @@ export const useNoteStore = defineStore('notes', () => {
 
       notebooks.value = list;
 
-      // Select first notebook if none selected or current selection is invalid
+      const currentServerId = sessionStore.activeProfileId;
+      const savedState = getServerActiveState(currentServerId);
+      const savedNotebookId = savedState?.notebookId;
+      const savedNoteId = savedState?.noteId;
+
+      const isVirtualTab = savedNotebookId && ['__all_notes__', '__favorites__', '__encrypted_notes__', '__recycle_bin__'].includes(savedNotebookId);
+      const isExistingNotebook = savedNotebookId && list.some(nb => nb.object_id === savedNotebookId);
+
+      // Select saved notebook if valid, or fallback to first notebook
       if (!activeNotebookId.value || !list.some(nb => nb.object_id === activeNotebookId.value)) {
-        await selectNotebook(list[0].object_id);
+        if (savedNotebookId && (isVirtualTab || isExistingNotebook)) {
+          await selectNotebook(savedNotebookId, savedNoteId);
+        } else {
+          await selectNotebook(list[0].object_id, savedNoteId);
+        }
       } else {
-        await fetchNotes(activeNotebookId.value);
+        await fetchNotes(activeNotebookId.value, true, savedNoteId);
       }
     } catch (e) {
       console.error('Failed to fetch notebooks', e);
@@ -415,24 +459,38 @@ export const useNoteStore = defineStore('notes', () => {
     }
   }
 
-  async function selectNotebook(notebookId: string) {
+  async function selectNotebook(notebookId: string, preferredNoteId?: string) {
     activeNotebookId.value = notebookId;
     activeNoteId.value = null;
     activeNote.value = null;
 
+    if (sessionStore.activeProfileId) {
+      saveServerActiveState(sessionStore.activeProfileId, notebookId, preferredNoteId);
+    }
+
     if (notebookId === '__favorites__') {
       await fetchShortcuts();
-      const currentNotes = filteredNotes.value;
-      if (currentNotes.length > 0) {
-        await selectNote(currentNotes[0].object_id);
+      if (notes.value.length === 0) {
+        await fetchNotes(notebookId, true, preferredNoteId);
+      } else {
+        const currentNotes = filteredNotes.value;
+        if (currentNotes.length > 0) {
+          const target = preferredNoteId ? currentNotes.find(n => n.object_id === preferredNoteId) : null;
+          await selectNote(target ? target.object_id : currentNotes[0].object_id);
+        }
       }
       return;
     }
 
     if (notebookId === '__encrypted_notes__') {
-      const currentNotes = filteredNotes.value;
-      if (currentNotes.length > 0) {
-        await selectNote(currentNotes[0].object_id);
+      if (notes.value.length === 0) {
+        await fetchNotes(notebookId, true, preferredNoteId);
+      } else {
+        const currentNotes = filteredNotes.value;
+        if (currentNotes.length > 0) {
+          const target = preferredNoteId ? currentNotes.find(n => n.object_id === preferredNoteId) : null;
+          await selectNote(target ? target.object_id : currentNotes[0].object_id);
+        }
       }
       return;
     }
@@ -441,23 +499,25 @@ export const useNoteStore = defineStore('notes', () => {
       await fetchRecycledNotes();
       const currentNotes = filteredNotes.value;
       if (currentNotes.length > 0) {
-        await selectNote(currentNotes[0].object_id);
+        const target = preferredNoteId ? currentNotes.find(n => n.object_id === preferredNoteId) : null;
+        await selectNote(target ? target.object_id : currentNotes[0].object_id);
       }
       return;
     }
 
     if (notes.value.length === 0) {
-      await fetchNotes(notebookId);
+      await fetchNotes(notebookId, true, preferredNoteId);
     } else {
-      // Notes already cached in memory: instantly auto-select first note in this notebook
+      // Notes already cached in memory: auto-select preferred or first note in this notebook
       const currentNotebookNotes = filteredNotes.value;
       if (currentNotebookNotes.length > 0) {
-        await selectNote(currentNotebookNotes[0].object_id);
+        const target = preferredNoteId ? currentNotebookNotes.find(n => n.object_id === preferredNoteId) : null;
+        await selectNote(target ? target.object_id : currentNotebookNotes[0].object_id);
       }
     }
   }
 
-  async function fetchNotes(targetNotebookId?: string | null, forceRefresh = true) {
+  async function fetchNotes(targetNotebookId?: string | null, forceRefresh = true, preferredNoteId?: string) {
     const client = sessionStore.activeClient;
     if (!client || !sessionStore.activeSessionState?.isLoggedIn) return;
 
@@ -468,7 +528,8 @@ export const useNoteStore = defineStore('notes', () => {
     if (notes.value.length > 0 && !forceRefresh) {
       const currentNotebookNotes = filteredNotes.value;
       if (currentNotebookNotes.length > 0 && (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value))) {
-        await selectNote(currentNotebookNotes[0].object_id);
+        const target = preferredNoteId ? currentNotebookNotes.find(n => n.object_id === preferredNoteId) : null;
+        await selectNote(target ? target.object_id : currentNotebookNotes[0].object_id);
       }
       return;
     }
@@ -486,9 +547,12 @@ export const useNoteStore = defineStore('notes', () => {
       // Filter notes for the active notebook
       const currentNotebookNotes = filteredNotes.value;
 
-      // Auto-select first note if available, or force refresh currently active note
+      // Auto-select preferred note or first note if available, or force refresh currently active note
       if (currentNotebookNotes.length > 0) {
-        if (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value)) {
+        const target = preferredNoteId ? currentNotebookNotes.find(n => n.object_id === preferredNoteId) : null;
+        if (target) {
+          await selectNote(target.object_id);
+        } else if (!activeNoteId.value || !currentNotebookNotes.some(n => n.object_id === activeNoteId.value)) {
           await selectNote(currentNotebookNotes[0].object_id);
         } else if (forceRefresh && activeNoteId.value) {
           await selectNote(activeNoteId.value, true);
@@ -510,6 +574,9 @@ export const useNoteStore = defineStore('notes', () => {
 
     const seq = ++currentSelectNoteSeq;
     activeNoteId.value = noteId;
+    if (sessionStore.activeProfileId) {
+      saveServerActiveState(sessionStore.activeProfileId, activeNotebookId.value, noteId);
+    }
 
     // Check if target note is encrypted
     const targetItem = notes.value.find(n => n.object_id === noteId) || recycledNotes.value.find(n => n.object_id === noteId);

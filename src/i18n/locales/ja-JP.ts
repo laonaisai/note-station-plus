@@ -191,6 +191,7 @@ export const jaJP: TranslationMessages = {
     recycledBanner: 'このノートは現在ごみ箱にあり、読み取り専用です。編集するにはノートを復元してください。',
     bold: '太字',
     italic: '斜体',
+    strikethrough: '取り消し線',
     h1: '見出し1',
     h2: '見出し2',
     ul: '箇条書き',

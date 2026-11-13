@@ -205,6 +205,7 @@ export interface TranslationMessages {
     recycledBanner: string;
     bold: string;
     italic: string;
+    strikethrough: string;
     h1: string;
     h2: string;
     ul: string;

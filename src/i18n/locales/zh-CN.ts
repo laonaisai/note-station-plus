@@ -191,6 +191,7 @@ export const zhCN: TranslationMessages = {
     recycledBanner: '此便签当前位于回收站中，处于只读模式。如需编辑，请先恢复便签。',
     bold: '粗体',
     italic: '斜体',
+    strikethrough: '删除线',
     h1: '一级标题',
     h2: '二级标题',
     ul: '列表',

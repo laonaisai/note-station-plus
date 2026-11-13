@@ -191,6 +191,7 @@ export const koKR: TranslationMessages = {
     recycledBanner: '이 노트는 현재 휴지통에 있으며 읽기 전용 모드입니다. 편집하려면 먼저 노트를 복원하세요.',
     bold: '굵게',
     italic: '기울임꼴',
+    strikethrough: '취소선',
     h1: '제목 1',
     h2: '제목 2',
     ul: '글머리 기호 목록',

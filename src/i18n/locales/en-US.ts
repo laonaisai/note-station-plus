@@ -191,6 +191,7 @@ export const enUS: TranslationMessages = {
     recycledBanner: 'This note is currently in the recycle bin and is read-only. Restore it to edit.',
     bold: 'Bold',
     italic: 'Italic',
+    strikethrough: 'Strikethrough',
     h1: 'Heading 1',
     h2: 'Heading 2',
     ul: 'Bullet List',

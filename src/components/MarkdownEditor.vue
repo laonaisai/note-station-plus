@@ -232,49 +232,38 @@
               {{ t('common.save') }}
             </button>
 
-            <!-- Sync Actions Dropdown (整合同步当前NAS与同步到其他NAS为下拉菜单) -->
+            <!-- More Actions Dropdown (整合同步、导入、导出、分享、历史、便签加密管理等为下拉菜单) -->
             <div class="relative inline-flex items-center">
               <button
-                @click.stop="toggleSyncMenu"
+                @click.stop="toggleMoreMenu"
                 :class="[
                   'px-2 med:px-2.5 py-1 med:py-1.5 rounded-md font-medium transition flex items-center border cursor-pointer text-xs med:text-sm',
-                  isSyncMenuOpen
-                    ? 'bg-blue-100 dark:bg-blue-950/60 text-syno-blue dark:text-sky-300 border-blue-300 dark:border-blue-700'
-                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
+                  isMoreMenuOpen ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
                 ]"
-                :title="t('editor.syncMenuTitle')"
+                :title="t('editor.more')"
               >
-                <!-- Sync Icon: spins if currently syncing -->
+                <!-- Sync Icon spins if currently syncing -->
                 <svg
-                  :class="[
-                    'w-3.5 h-3.5 med:w-4 med:h-4 mr-1',
-                    (isSyncingWithServer || noteStore.isSyncingWithServer)
-                      ? 'animate-spin text-syno-blue'
-                      : (isSyncMenuOpen ? 'text-syno-blue dark:text-sky-300' : 'text-slate-500 dark:text-slate-400')
-                  ]"
+                  v-if="isSyncingWithServer || noteStore.isSyncingWithServer"
+                  class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1 animate-spin text-syno-blue"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>{{ t('editor.syncMenu') }}</span>
-                <svg
-                  class="w-3 h-3 med:w-3.5 med:h-3.5 ml-1 transition-transform duration-150"
-                  :class="[
-                    isSyncMenuOpen ? 'rotate-180 text-syno-blue dark:text-sky-300' : 'text-slate-400 dark:text-slate-500'
-                  ]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                <svg v-else class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+                <span>{{ t('editor.more') }}</span>
+                <svg class="w-3 h-3 med:w-3.5 med:h-3.5 ml-1 text-slate-400 dark:text-slate-500 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
-              <!-- Sync Dropdown Menu -->
+              <!-- Dropdown Menu -->
               <div
-                v-if="isSyncMenuOpen"
+                v-if="isMoreMenuOpen"
                 @click.stop
                 class="absolute right-0 top-full mt-1.5 w-52 med:w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 med:py-2 z-40 text-xs med:text-sm animate-in fade-in duration-150"
               >
@@ -314,34 +303,8 @@
                     <span class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ t('editor.syncToOtherServerTip') }}</span>
                   </div>
                 </button>
-              </div>
-            </div>
 
-            <!-- More Actions Dropdown (Requirement 4: 整合导入、导出、分享、历史为下拉菜单，置于同步按钮后) -->
-            <div class="relative inline-flex items-center">
-              <button
-                @click.stop="toggleMoreMenu"
-                :class="[
-                  'px-2 med:px-2.5 py-1 med:py-1.5 rounded-md font-medium transition flex items-center border cursor-pointer text-xs med:text-sm',
-                  isMoreMenuOpen ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
-                ]"
-                :title="t('editor.more')"
-              >
-                <svg class="w-3.5 h-3.5 med:w-4 med:h-4 mr-1 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-                <span>{{ t('editor.more') }}</span>
-                <svg class="w-3 h-3 med:w-3.5 med:h-3.5 ml-1 text-slate-400 dark:text-slate-500 transition-transform duration-150" :class="isMoreMenuOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              <!-- Dropdown Menu -->
-              <div
-                v-if="isMoreMenuOpen"
-                @click.stop
-                class="absolute right-0 top-full mt-1.5 w-48 med:w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1.5 med:py-2 z-40 text-xs med:text-sm animate-in fade-in duration-150"
-              >
+                <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
                 <!-- 导入 -->
                 <button
                   @click="triggerImport"
@@ -475,27 +438,6 @@
               </div>
             </div>
           </template>
-
-          <!-- Synchronous Scrolling Toggle Button (仅分屏模式显示) -->
-          <button
-            v-if="editorMode === 'split'"
-            @click="toggleSyncScroll"
-            :class="[
-              'px-2 med:px-2.5 py-1 med:py-1.5 rounded-lg border text-xs font-medium transition cursor-pointer flex items-center space-x-1.5 select-none mr-2',
-              isSyncScrollEnabled
-                ? 'bg-blue-50/90 dark:bg-blue-950/50 border-blue-200/90 dark:border-blue-800 text-syno-blue dark:text-sky-300 shadow-2xs'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            ]"
-            :title="isSyncScrollEnabled ? t('editor.syncScrollEnabled') : t('editor.syncScrollDisabled')"
-          >
-            <svg v-if="isSyncScrollEnabled" class="w-3.5 h-3.5 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            <svg v-else class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-            <span class="text-[11px] med:text-xs font-medium">{{ isSyncScrollEnabled ? t('editor.syncScrollOn') : t('editor.syncScrollOff') }}</span>
-          </button>
 
           <!-- Mode Toggle: Split / Edit / Preview -->
           <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 med:p-1 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -757,6 +699,7 @@
       <div v-if="!isRecycledNote" class="h-9 med:h-10 px-5 med:px-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center space-x-1 med:space-x-1.5 select-none overflow-x-auto shrink-0 text-xs med:text-sm">
         <button @click="insertMarkdown('**', '**')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs med:text-sm" :title="t('editor.bold') + ' (Ctrl+B)'">B</button>
         <button @click="insertMarkdown('*', '*')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 italic text-xs med:text-sm" :title="t('editor.italic')">I</button>
+        <button @click="insertMarkdown('~~', '~~')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 line-through text-xs med:text-sm font-semibold" :title="t('editor.strikethrough')">S</button>
         <button @click="insertMarkdown('# ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm font-semibold" :title="t('editor.h1')">H1</button>
         <button @click="insertMarkdown('## ')" class="p-1 med:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs med:text-sm font-semibold" :title="t('editor.h2')">H2</button>
         <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
@@ -789,6 +732,29 @@
           </svg>
           <span>{{ t('editor.attachments') }}</span>
         </button>
+
+        <!-- 同步滚动按钮 (仅分屏模式显示) -->
+        <template v-if="editorMode === 'split'">
+          <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+          <button
+            @click="toggleSyncScroll"
+            :class="[
+              'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center space-x-1 cursor-pointer transition select-none',
+              isSyncScrollEnabled
+                ? 'bg-blue-100 dark:bg-blue-900/40 text-syno-blue dark:text-sky-300 font-medium'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
+            ]"
+            :title="isSyncScrollEnabled ? t('editor.syncScrollEnabled') : t('editor.syncScrollDisabled')"
+          >
+            <svg v-if="isSyncScrollEnabled" class="w-3.5 h-3.5 med:w-4 med:h-4 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <svg v-else class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <span>{{ isSyncScrollEnabled ? t('editor.syncScrollOn') : t('editor.syncScrollOff') }}</span>
+          </button>
+        </template>
 
         <!-- Hidden File Inputs -->
         <input
@@ -1032,7 +998,6 @@ const md = new MarkdownIt({
 });
 injectLineNumbersPlugin(md);
 
-const isSyncMenuOpen = ref(false);
 const isMoreMenuOpen = ref(false);
 const isInfoModalOpen = ref(false);
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
@@ -1199,7 +1164,6 @@ watch(
     }
     isAddingTag.value = false;
     newTagText.value = '';
-    isSyncMenuOpen.value = false;
     isMoreMenuOpen.value = false;
   },
   { immediate: true }
@@ -1478,27 +1442,17 @@ async function handleOpenSync() {
   emit('open-sync');
 }
 
-function toggleSyncMenu() {
-  isSyncMenuOpen.value = !isSyncMenuOpen.value;
-  if (isSyncMenuOpen.value) {
-    isMoreMenuOpen.value = false;
-  }
-}
-
 function toggleMoreMenu() {
   isMoreMenuOpen.value = !isMoreMenuOpen.value;
-  if (isMoreMenuOpen.value) {
-    isSyncMenuOpen.value = false;
-  }
 }
 
 function handleSyncFromDropdown() {
-  isSyncMenuOpen.value = false;
+  isMoreMenuOpen.value = false;
   handleSyncWithServer();
 }
 
 function handleOpenSyncFromDropdown() {
-  isSyncMenuOpen.value = false;
+  isMoreMenuOpen.value = false;
   handleOpenSync();
 }
 
@@ -1726,9 +1680,6 @@ function formatFileSize(bytes?: number): string {
 }
 
 function onDocumentClick() {
-  if (isSyncMenuOpen.value) {
-    isSyncMenuOpen.value = false;
-  }
   if (isMoreMenuOpen.value) {
     isMoreMenuOpen.value = false;
   }
