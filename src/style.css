@@ -273,13 +273,25 @@ html, body, #app {
   color: #1e293b;
   font-weight: 600;
   border: 1px solid #cbd5e1;
-  padding: 0.5rem 0.75rem;
   text-align: left;
 }
 
 .markdown-preview td {
   border: 1px solid #e2e8f0;
-  padding: 0.5rem 0.75rem;
+}
+
+/* 覆盖 Tailwind Typography 针对无边框表格的第一列与最后一列清空内距规则，使网格表格第一列与边框保持对称内边距 */
+.markdown-preview table th,
+.markdown-preview table td,
+.markdown-preview thead th:first-child,
+.markdown-preview thead th:last-child,
+.markdown-preview tbody td:first-child,
+.markdown-preview tbody td:last-child,
+.markdown-preview tfoot td:first-child,
+.markdown-preview tfoot td:last-child {
+  padding: 0.5rem 0.75rem !important;
+  padding-inline-start: 0.75rem !important;
+  padding-inline-end: 0.75rem !important;
 }
 
 .markdown-preview tr:nth-child(even) td {

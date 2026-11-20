@@ -227,4 +227,16 @@ describe('Rich Text Table to Markdown Conversion', () => {
     expect(convertedNoteHtml).toContain('<td>DiskStation</td>');
     expect(convertedNoteHtml).toContain('<!-- note-station-plus:markdown');
   });
+
+  it('guarantees style.css overrides Tailwind typography table column edge padding', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const cssPath = path.resolve(__dirname, '../../src/style.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf-8');
+
+    expect(cssContent).toContain('.markdown-preview table th');
+    expect(cssContent).toContain('.markdown-preview thead th:first-child');
+    expect(cssContent).toContain('padding-inline-start: 0.75rem !important');
+    expect(cssContent).toContain('padding-inline-end: 0.75rem !important');
+  });
 });

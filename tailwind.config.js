@@ -15,6 +15,10 @@ export default {
           css: {
             'code::before': { content: '""' },
             'code::after': { content: '""' },
+            'thead th:first-child': { paddingInlineStart: '0.75rem' },
+            'thead th:last-child': { paddingInlineEnd: '0.75rem' },
+            'tbody td:first-child, tfoot td:first-child': { paddingInlineStart: '0.75rem' },
+            'tbody td:last-child, tfoot td:last-child': { paddingInlineEnd: '0.75rem' },
           },
         },
       },
