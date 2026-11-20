@@ -739,20 +739,24 @@
           <button
             @click="toggleSyncScroll"
             :class="[
-              'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center space-x-1 cursor-pointer transition select-none',
+              'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center justify-center cursor-pointer transition select-none',
               isSyncScrollEnabled
                 ? 'bg-blue-100 dark:bg-blue-900/40 text-syno-blue dark:text-sky-300 font-medium'
                 : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
             ]"
             :title="isSyncScrollEnabled ? t('editor.syncScrollEnabled') : t('editor.syncScrollDisabled')"
           >
-            <svg v-if="isSyncScrollEnabled" class="w-3.5 h-3.5 med:w-4 med:h-4 text-syno-blue dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            <!-- 形象的分屏双向同步滚动图标 (分屏窗口与两列同步联动滚动箭头) -->
+            <svg
+              class="w-3.5 h-3.5 med:w-4 med:h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <rect x="2.5" y="3.5" width="19" height="17" rx="2" stroke-width="1.7" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 3.5v17" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8v6m0 0l-1.5-1.5M7 14l1.5-1.5M17 8v6m0 0l-1.5-1.5M17 14l1.5-1.5" />
             </svg>
-            <svg v-else class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-            <span>{{ isSyncScrollEnabled ? t('editor.syncScrollOn') : t('editor.syncScrollOff') }}</span>
           </button>
         </template>
 
@@ -761,7 +765,7 @@
         <button
           @click="toggleSearch"
           :class="[
-            'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center space-x-1 cursor-pointer transition select-none',
+            'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center justify-center cursor-pointer transition select-none',
             isSearchOpen
               ? 'bg-blue-100 dark:bg-blue-900/40 text-syno-blue dark:text-sky-300 font-medium'
               : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
@@ -771,7 +775,6 @@
           <svg class="w-3.5 h-3.5 med:w-4 med:h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span>{{ t('editor.searchInNote') }}</span>
         </button>
 
         <!-- Hidden File Inputs -->

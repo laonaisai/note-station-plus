@@ -13,7 +13,7 @@ describe('新建便签与点击便签的服务连接检查与友好提示 (Serve
     setActivePinia(createPinia());
     sessionStore = useSessionStore();
     noteStore = useNoteStore();
-    showToastSpy = vi.spyOn(toastModule, 'showToast').mockImplementation(() => {});
+    showToastSpy = vi.spyOn(toastModule, 'showToast').mockImplementation(() => 'toast-id');
   });
 
   // 待测逻辑提取：与 NotebookSidebar.vue 中 checkServerConnection 保持 100% 一致
@@ -73,7 +73,7 @@ describe('新建便签与点击便签的服务连接检查与友好提示 (Serve
 
   it('当服务器正在连接中时，弹出连接中提示并阻止操作', async () => {
     sessionStore.activeProfileId = 'p1';
-    sessionStore.profiles = [{ id: 'p1', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
+    sessionStore.profiles = [{ id: 'p1', alias: '我的NAS', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
     sessionStore.sessionStates['p1'] = {
       serverId: 'p1',
       isLoggedIn: false,
@@ -89,7 +89,7 @@ describe('新建便签与点击便签的服务连接检查与友好提示 (Serve
 
   it('当服务器连接断开或未登录时，弹出未连接提示（带错误信息）并阻止操作', async () => {
     sessionStore.activeProfileId = 'p1';
-    sessionStore.profiles = [{ id: 'p1', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
+    sessionStore.profiles = [{ id: 'p1', alias: '我的NAS', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
     sessionStore.sessionStates['p1'] = {
       serverId: 'p1',
       isLoggedIn: false,
@@ -106,7 +106,7 @@ describe('新建便签与点击便签的服务连接检查与友好提示 (Serve
 
   it('当服务器连接成功时，正常允许新建便签与选择便签', async () => {
     sessionStore.activeProfileId = 'p1';
-    sessionStore.profiles = [{ id: 'p1', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
+    sessionStore.profiles = [{ id: 'p1', alias: '我的NAS', serverUrl: 'http://nas', account: 'admin', autoLogin: true, createdAt: 1 }];
     sessionStore.sessionStates['p1'] = {
       serverId: 'p1',
       isLoggedIn: true,
