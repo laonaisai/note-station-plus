@@ -116,6 +116,10 @@ export const enUS: TranslationMessages = {
     filterByTag: 'Filter by Tag',
     selectedTagsCount: '{count} tags selected',
     notConnected: 'Server not connected',
+    serverNotConfigured: 'No NAS server configured or selected. Please add and connect to a server first.',
+    serverConnecting: 'Current NAS server is connecting, please wait...',
+    serverNotConnected: 'Current NAS server is not connected. Please check server settings or reconnect.',
+    createNoteFailed: 'Failed to create note: {error}',
     noNotes: 'No notes in this notebook',
     noFavorites: 'No favorite notes yet',
     noShared: 'No shared notes yet',
@@ -252,7 +256,12 @@ export const enUS: TranslationMessages = {
     encryptModalTitle: 'Set Note Password',
     changePasswordModalTitle: 'Change Note Password',
     removeEncryptionModalTitle: 'Remove Note Encryption',
-    removeEncryptionWarning: 'Removing encryption will decrypt and store note contents in plaintext. Anyone will be able to view it. Are you sure?'
+    removeEncryptionWarning: 'Removing encryption will decrypt and store note contents in plaintext. Anyone will be able to view it. Are you sure?',
+    searchInNote: 'Find in Note',
+    searchPlaceholder: 'Find in note...',
+    prevMatch: 'Previous match (Shift+Enter)',
+    nextMatch: 'Next match (Enter)',
+    noMatches: 'No matches'
   },
   import: {
     title: 'Import Markdown Note',

@@ -116,6 +116,10 @@ export const jaJP: TranslationMessages = {
     filterByTag: 'タグで絞り込み',
     selectedTagsCount: '{count} 個のタグを選択中',
     notConnected: 'サーバー未接続',
+    serverNotConfigured: 'NAS サーバーが設定または選択されていません。先にサーバーを追加して接続してください。',
+    serverConnecting: '現在 NAS サーバーに接続中です。しばらくお待ちください...',
+    serverNotConnected: '現在 NAS サーバーへの接続に失敗しています。サーバー設定を確認するか再接続してください。',
+    createNoteFailed: 'ノートの作成に失敗しました: {error}',
     noNotes: 'ノートがありません',
     noFavorites: 'お気に入りノートはありません',
     noShared: '共有ノートはありません',
@@ -252,7 +256,12 @@ export const jaJP: TranslationMessages = {
     encryptModalTitle: 'ノートパスワードの設定',
     changePasswordModalTitle: 'ノートパスワードの変更',
     removeEncryptionModalTitle: 'ノートの暗号化解除',
-    removeEncryptionWarning: '暗号化を解除すると、ノート内容は平文で保存され、誰でも閲覧できるようになります。解除してもよろしいですか？'
+    removeEncryptionWarning: '暗号化を解除すると、ノート内容は平文で保存され、誰でも閲覧できるようになります。解除してもよろしいですか？',
+    searchInNote: 'ノート内を検索',
+    searchPlaceholder: 'ノート内を検索...',
+    prevMatch: '前のマッチ (Shift+Enter)',
+    nextMatch: '次のマッチ (Enter)',
+    noMatches: '一致なし'
   },
   import: {
     title: 'Markdown ノートをインポート',

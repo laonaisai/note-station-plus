@@ -608,7 +608,7 @@
           <div
             v-for="note in group.notes"
             :key="note.object_id"
-            @click="noteStore.selectNote(note.object_id)"
+            @click="handleNoteClick(note.object_id)"
             @contextmenu.prevent="openNoteContextMenu($event, note)"
             :class="[
               'group relative p-2 med:p-2.5 rounded-lg cursor-pointer transition-all duration-150 border flex items-center gap-2.5',
@@ -1633,10 +1633,47 @@ function formatTime(timestamp?: number): string {
 }
 
 /**
+ * 检查当前 NAS 服务连接状态并给出友好提示
+ */
+function checkServerConnection(): boolean {
+  if (!sessionStore.activeProfileId || sessionStore.profiles.length === 0) {
+    showToast(t('sidebar.serverNotConfigured'), 'warning');
+    return false;
+  }
+
+  const state = sessionStore.activeSessionState;
+  if (state?.isConnecting) {
+    showToast(t('sidebar.serverConnecting'), 'info');
+    return false;
+  }
+
+  if (!state?.isLoggedIn) {
+    const detail = state?.lastError ? `: ${state.lastError}` : '';
+    showToast(t('sidebar.serverNotConnected') + detail, 'warning');
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 点击便签卡片时，先检查当前服务是否连接成功
+ */
+async function handleNoteClick(noteId: string) {
+  if (!checkServerConnection()) {
+    return;
+  }
+  await noteStore.selectNote(noteId);
+}
+
+/**
  * 在当前选项卡中新建便签
  */
 async function handleCreateNoteInPanel(targetTabId: string) {
   if (noteStore.isCreating) return;
+  if (!checkServerConnection()) {
+    return;
+  }
   try {
     if (targetTabId && !targetTabId.startsWith('__')) {
       await noteStore.selectNotebook(targetTabId);
@@ -1646,9 +1683,13 @@ async function handleCreateNoteInPanel(targetTabId: string) {
         await noteStore.selectNotebook(firstNb.object_id);
       }
     }
-    await noteStore.createNote(t('sidebar.newNote'), `# ${t('sidebar.newNote')}\n\n`);
+    const created = await noteStore.createNote(t('sidebar.newNote'), `# ${t('sidebar.newNote')}\n\n`);
+    if (!created) {
+      showToast(t('sidebar.createNoteFailed', { error: 'Unknown error' }), 'error');
+    }
   } catch (e: any) {
     console.error('Failed to create note', e);
+    showToast(t('sidebar.createNoteFailed', { error: e?.message || e }), 'error');
   }
 }
 
@@ -1848,6 +1889,7 @@ async function triggerNoteSync() {
   const note = noteContextMenu.targetNote;
   closeNoteContextMenu();
   if (note) {
+    if (!checkServerConnection()) return;
     if (noteStore.activeNoteId !== note.object_id) {
       await noteStore.selectNote(note.object_id);
     }

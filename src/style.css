@@ -139,6 +139,34 @@ html, body, #app {
   opacity: 0.82;
 }
 
+/* In-Note Search Highlights in Markdown Preview */
+.markdown-preview mark.note-search-match {
+  background-color: #fef08a !important;
+  color: #0f172a !important;
+  border-radius: 2px;
+  padding: 0 2px;
+  transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.dark .markdown-preview mark.note-search-match {
+  background-color: #854d0e !important;
+  color: #f8fafc !important;
+}
+
+.markdown-preview mark.note-search-current {
+  background-color: #f59e0b !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px #d97706;
+}
+
+.dark .markdown-preview mark.note-search-current {
+  background-color: #f59e0b !important;
+  color: #000000 !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px #fbbf24;
+}
+
 .markdown-preview ul {
   list-style-type: disc;
   padding-left: 1.5rem;

@@ -756,6 +756,24 @@
           </button>
         </template>
 
+        <!-- 便签内查找按钮 -->
+        <span class="w-[1px] h-3.5 med:h-4 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+        <button
+          @click="toggleSearch"
+          :class="[
+            'p-1 med:p-1.5 rounded text-xs med:text-sm flex items-center space-x-1 cursor-pointer transition select-none',
+            isSearchOpen
+              ? 'bg-blue-100 dark:bg-blue-900/40 text-syno-blue dark:text-sky-300 font-medium'
+              : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
+          ]"
+          :title="t('editor.searchInNote') + ' (Ctrl+F)'"
+        >
+          <svg class="w-3.5 h-3.5 med:w-4 med:h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span>{{ t('editor.searchInNote') }}</span>
+        </button>
+
         <!-- Hidden File Inputs -->
         <input
           ref="imageInputRef"
@@ -842,6 +860,71 @@
             v-html="renderedPreviewHtml"
             @click="handlePreviewClick"
           ></div>
+        </div>
+      </div>
+
+      <!-- In-Note Search Bar at Bottom of Editor -->
+      <div
+        v-if="isSearchOpen"
+        class="px-4 py-1.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs shrink-0 select-none text-xs med:text-sm z-20 animate-in slide-in-from-bottom-2 duration-150"
+      >
+        <!-- Left: Search Input & Prev/Next Controls -->
+        <div class="flex items-center space-x-2 flex-1 max-w-md">
+          <div class="relative flex-1 flex items-center">
+            <svg class="w-3.5 h-3.5 med:w-4 med:h-4 text-slate-400 absolute left-2.5 pointer-events-none shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              ref="searchInputRef"
+              v-model="searchQuery"
+              @input="onSearchInput"
+              @keydown.enter.prevent="handleSearchKeydown"
+              @keydown.esc.prevent="closeSearch"
+              type="text"
+              :placeholder="t('editor.searchPlaceholder')"
+              class="w-full pl-8 pr-16 py-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-md outline-none focus:border-syno-blue dark:focus:border-sky-500 text-xs med:text-sm transition"
+            />
+            <span class="absolute right-2 text-[10px] med:text-xs text-slate-400 font-mono select-none">
+              {{ matchCountText }}
+            </span>
+          </div>
+
+          <!-- Prev / Next Navigation Buttons -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <button
+              @click="findPrev"
+              :disabled="totalMatches === 0"
+              class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 transition cursor-pointer"
+              :title="t('editor.prevMatch')"
+            >
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            <button
+              @click="findNext"
+              :disabled="totalMatches === 0"
+              class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 transition cursor-pointer"
+              :title="t('editor.nextMatch')"
+            >
+              <svg class="w-3.5 h-3.5 med:w-4 med:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Close Button -->
+        <div class="flex items-center ml-3 shrink-0">
+          <button
+            @click="closeSearch"
+            class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+            :title="t('common.close') + ' (Esc)'"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
       </div>
@@ -1013,6 +1096,19 @@ const previewContainerRef = ref<HTMLElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const attachmentInputRef = ref<HTMLInputElement | null>(null);
 
+// 便签内查找状态
+const isSearchOpen = ref(false);
+const searchQuery = ref('');
+const searchInputRef = ref<HTMLInputElement | null>(null);
+const currentMatchIndex = ref(0);
+const totalMatches = ref(0);
+
+const matchCountText = computed(() => {
+  if (!searchQuery.value.trim()) return '';
+  if (totalMatches.value === 0) return t('editor.noMatches');
+  return `${currentMatchIndex.value + 1}/${totalMatches.value}`;
+});
+
 // 同步滚动核心缓存与状态
 let cachedTextareaOffsets: number[] = [];
 let cachedPreviewAnchors: ScrollAnchor[] = [];
@@ -1165,6 +1261,7 @@ watch(
     isAddingTag.value = false;
     newTagText.value = '';
     isMoreMenuOpen.value = false;
+    closeSearch();
   },
   { immediate: true }
 );
@@ -1210,6 +1307,182 @@ const renderedPreviewHtml = computed(() => {
     return `<div class="p-3 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono whitespace-pre-wrap">${editMarkdown.value || ''}</div>`;
   }
 });
+
+// 当预览 HTML 重新渲染时，如果处于搜索状态，实时重新高亮搜索结果
+watch(renderedPreviewHtml, () => {
+  if (isSearchOpen.value && searchQuery.value.trim()) {
+    nextTick(() => {
+      executeSearch(true);
+    });
+  }
+});
+
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function clearHighlights() {
+  if (!previewContainerRef.value) return;
+  const marks = previewContainerRef.value.querySelectorAll('mark.note-search-match');
+  marks.forEach(mark => {
+    const parent = mark.parentNode;
+    if (parent) {
+      parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+      parent.normalize();
+    }
+  });
+  totalMatches.value = 0;
+  currentMatchIndex.value = 0;
+}
+
+function executeSearch(keepIndex = false) {
+  if (!previewContainerRef.value) return;
+  const container = previewContainerRef.value;
+
+  clearHighlights();
+
+  const query = searchQuery.value.trim();
+  if (!query) {
+    totalMatches.value = 0;
+    currentMatchIndex.value = 0;
+    return;
+  }
+
+  // 递归收集容器内所有的可搜索文本节点（排除按钮、浮层等）
+  const textNodes: Text[] = [];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (node.parentElement?.closest('button, script, style, .sticky')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  let currentNode: Node | null;
+  while ((currentNode = walker.nextNode())) {
+    textNodes.push(currentNode as Text);
+  }
+
+  const matchElements: HTMLElement[] = [];
+  const regex = new RegExp(escapeRegExp(query), 'gi');
+
+  for (const textNode of textNodes) {
+    const text = textNode.nodeValue || '';
+    if (!regex.test(text)) continue;
+
+    regex.lastIndex = 0;
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      const matchStart = match.index;
+      const matchEnd = regex.lastIndex;
+
+      if (matchStart > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex, matchStart)));
+      }
+
+      const mark = document.createElement('mark');
+      mark.className = 'note-search-match';
+      mark.textContent = match[0];
+      fragment.appendChild(mark);
+      matchElements.push(mark);
+
+      lastIndex = matchEnd;
+    }
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+    }
+
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  }
+
+  totalMatches.value = matchElements.length;
+
+  if (matchElements.length > 0) {
+    if (!keepIndex || currentMatchIndex.value >= matchElements.length) {
+      currentMatchIndex.value = 0;
+    }
+    highlightCurrentMatch(matchElements, currentMatchIndex.value);
+  } else {
+    currentMatchIndex.value = 0;
+  }
+}
+
+function highlightCurrentMatch(matchElements: HTMLElement[], index: number) {
+  matchElements.forEach((el, i) => {
+    if (i === index) {
+      el.classList.add('note-search-current');
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    } else {
+      el.classList.remove('note-search-current');
+    }
+  });
+}
+
+function onSearchInput() {
+  currentMatchIndex.value = 0;
+  executeSearch(false);
+}
+
+function findNext() {
+  if (totalMatches.value === 0 || !previewContainerRef.value) return;
+  const matchElements = Array.from(previewContainerRef.value.querySelectorAll('mark.note-search-match')) as HTMLElement[];
+  if (matchElements.length === 0) return;
+
+  currentMatchIndex.value = (currentMatchIndex.value + 1) % matchElements.length;
+  highlightCurrentMatch(matchElements, currentMatchIndex.value);
+}
+
+function findPrev() {
+  if (totalMatches.value === 0 || !previewContainerRef.value) return;
+  const matchElements = Array.from(previewContainerRef.value.querySelectorAll('mark.note-search-match')) as HTMLElement[];
+  if (matchElements.length === 0) return;
+
+  currentMatchIndex.value = (currentMatchIndex.value - 1 + matchElements.length) % matchElements.length;
+  highlightCurrentMatch(matchElements, currentMatchIndex.value);
+}
+
+function handleSearchKeydown(e: KeyboardEvent) {
+  if (e.shiftKey) {
+    findPrev();
+  } else {
+    findNext();
+  }
+}
+
+function openSearch() {
+  isSearchOpen.value = true;
+  if (editorMode.value === 'edit') {
+    editorMode.value = 'split';
+  }
+  nextTick(() => {
+    searchInputRef.value?.focus();
+    searchInputRef.value?.select();
+    executeSearch();
+  });
+}
+
+function closeSearch() {
+  isSearchOpen.value = false;
+  searchQuery.value = '';
+  clearHighlights();
+}
+
+function toggleSearch() {
+  if (isSearchOpen.value) {
+    closeSearch();
+  } else {
+    openSearch();
+  }
+}
 
 const isCopied = ref(false);
 
@@ -1728,6 +2001,21 @@ function handleGlobalKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault();
     saveNote(true);
+    return;
+  }
+  // Ctrl+F or Cmd+F to find in note
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+    if (noteStore.activeNoteId) {
+      e.preventDefault();
+      openSearch();
+    }
+    return;
+  }
+  // Escape to close search if open
+  if (e.key === 'Escape' && isSearchOpen.value) {
+    e.preventDefault();
+    closeSearch();
+    return;
   }
 }
 

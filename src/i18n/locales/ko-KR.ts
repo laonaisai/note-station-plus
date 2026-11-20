@@ -116,6 +116,10 @@ export const koKR: TranslationMessages = {
     filterByTag: '태그로 필터링',
     selectedTagsCount: '{count}개 태그 선택됨',
     notConnected: '서비스에 연결되지 않음',
+    serverNotConfigured: 'NAS 서버가 설정 또는 선택되지 않았습니다. 먼저 서버를 추가하고 연결하십시오.',
+    serverConnecting: '현재 NAS 서버에 연결 중입니다. 잠시만 기다려 주십시오...',
+    serverNotConnected: '현재 NAS 서버에 연결되지 않았습니다. 서버 설정을 확인하거나 다시 연결하십시오.',
+    createNoteFailed: '노트 생성 실패: {error}',
     noNotes: '현재 노트북에 노트가 없습니다',
     noFavorites: '즐겨찾기한 노트가 없습니다',
     noShared: '공유된 노트가 없습니다',
@@ -252,7 +256,12 @@ export const koKR: TranslationMessages = {
     encryptModalTitle: '노트 비밀번호 설정',
     changePasswordModalTitle: '노트 비밀번호 변경',
     removeEncryptionModalTitle: '노트 암호화 해제',
-    removeEncryptionWarning: '암호화를 해제하면 노트 내용이 일반 텍스트로 저장되어 누구나 볼 수 있게 됩니다. 해제하시겠습니까?'
+    removeEncryptionWarning: '암호화를 해제하면 노트 내용이 일반 텍스트로 저장되어 누구나 볼 수 있게 됩니다. 해제하시겠습니까?',
+    searchInNote: '노트 내 검색',
+    searchPlaceholder: '노트 내 검색...',
+    prevMatch: '이전 일치 항목 (Shift+Enter)',
+    nextMatch: '다음 일치 항목 (Enter)',
+    noMatches: '일치 없음'
   },
   import: {
     title: 'Markdown 노트 가져오기',

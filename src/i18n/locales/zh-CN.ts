@@ -116,6 +116,10 @@ export const zhCN: TranslationMessages = {
     filterByTag: '按标签筛选',
     selectedTagsCount: '已选 {count} 个标签',
     notConnected: '未连接服务',
+    serverNotConfigured: '未配置或选择 NAS 服务，请先添加并连接服务器',
+    serverConnecting: '当前 NAS 服务正在连接中，请稍候...',
+    serverNotConnected: '当前 NAS 服务未连接成功，请检查服务设置或重新连接',
+    createNoteFailed: '新建便签失败: {error}',
     noNotes: '当前笔记本暂无便签',
     noFavorites: '暂无收藏便签',
     noShared: '当前暂无共享便签',
@@ -252,7 +256,12 @@ export const zhCN: TranslationMessages = {
     encryptModalTitle: '设置便签密码',
     changePasswordModalTitle: '修改便签密码',
     removeEncryptionModalTitle: '解除便签加密',
-    removeEncryptionWarning: '解除加密后，便签内容将恢复为明文存储，任何人均可直接查看。确认解除密码保护？'
+    removeEncryptionWarning: '解除加密后，便签内容将恢复为明文存储，任何人均可直接查看。确认解除密码保护？',
+    searchInNote: '便签内查找',
+    searchPlaceholder: '在便签中查找...',
+    prevMatch: '上一个匹配项 (Shift+Enter)',
+    nextMatch: '下一个匹配项 (Enter)',
+    noMatches: '无匹配结果'
   },
   import: {
     title: '导入 Markdown 便签',

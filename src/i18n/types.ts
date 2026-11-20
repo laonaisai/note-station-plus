@@ -130,6 +130,10 @@ export interface TranslationMessages {
     filterByTag: string;
     selectedTagsCount: string;
     notConnected: string;
+    serverNotConfigured: string;
+    serverConnecting: string;
+    serverNotConnected: string;
+    createNoteFailed: string;
     noNotes: string;
     noFavorites: string;
     noShared: string;
@@ -267,6 +271,11 @@ export interface TranslationMessages {
     changePasswordModalTitle: string;
     removeEncryptionModalTitle: string;
     removeEncryptionWarning: string;
+    searchInNote: string;
+    searchPlaceholder: string;
+    prevMatch: string;
+    nextMatch: string;
+    noMatches: string;
   };
   import: {
     title: string;

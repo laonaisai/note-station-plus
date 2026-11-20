@@ -116,6 +116,10 @@ export const zhTW: TranslationMessages = {
     filterByTag: '依標籤篩選',
     selectedTagsCount: '已選取 {count} 個標籤',
     notConnected: '未連線至伺服器',
+    serverNotConfigured: '未設定或選擇 NAS 服務，請先新增並連線伺服器',
+    serverConnecting: '當前 NAS 服務正在連線中，請稍候...',
+    serverNotConnected: '當前 NAS 服務未連線成功，請檢查服務設定或重新連線',
+    createNoteFailed: '新增便箋失敗: {error}',
     noNotes: '目前筆記本尚無便箋',
     noFavorites: '目前尚無我的最愛便箋',
     noShared: '目前尚無公開分享便箋',
@@ -252,7 +256,12 @@ export const zhTW: TranslationMessages = {
     encryptModalTitle: '設定便箋密碼',
     changePasswordModalTitle: '變更便箋密碼',
     removeEncryptionModalTitle: '解除便箋加密',
-    removeEncryptionWarning: '解除加密後，便箋內容將恢復為明文儲存，任何人均可直接檢視。確認解除密碼保護？'
+    removeEncryptionWarning: '解除加密後，便箋內容將恢復為明文儲存，任何人均可直接檢視。確認解除密碼保護？',
+    searchInNote: '便箋內尋找',
+    searchPlaceholder: '在便箋中尋找...',
+    prevMatch: '上一個相符項目 (Shift+Enter)',
+    nextMatch: '下一個相符項目 (Enter)',
+    noMatches: '無相符結果'
   },
   import: {
     title: '匯入 Markdown 便箋',
